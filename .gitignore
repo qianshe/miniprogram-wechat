@@ -4,6 +4,7 @@ node_modules/
 file/
 .idea/
 .vscode/
+.promptx/
 # 默认忽略的文件
 shelf/
 workspace.xml
