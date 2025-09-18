@@ -93,6 +93,15 @@ Page({
   },
 
   /**
+   * TDesign弹窗状态变化
+   */
+  onProductSelectorChange(e) {
+    this.setData({
+      showProductSelector: e.detail.visible
+    });
+  },
+
+  /**
    * 关闭产品选择器
    */
   closeProductSelector() {
@@ -235,12 +244,25 @@ Page({
   },
 
   /**
-   * 表单输入变化
+   * TDesign输入框变化
+   */
+  onInputChange(e) {
+    const { field } = e.currentTarget.dataset;
+    const { value } = e.detail;
+
+    this.setData({
+      [`formData.${field}`]: value,
+      [`errors.${field}`]: ''
+    });
+  },
+
+  /**
+   * 表单输入变化 (保留兼容)
    */
   onInput(e) {
     const { field } = e.currentTarget.dataset;
     const { value } = e.detail;
-    
+
     this.setData({
       [`formData.${field}`]: value,
       [`errors.${field}`]: ''
@@ -320,31 +342,37 @@ Page({
       waitForBind: true
     };
     
-    // 调用创建订单API
+    // 调用云函数创建订单
     wx.showLoading({
       title: '创建订单中...'
     });
-    
-    // 发送请求创建订单
-    request.post('/api/admin/orders', orderData)
+
+    // 调用云函数创建订单
+    wx.cloud.callFunction({
+      name: 'orderManagement',
+      data: {
+        action: 'createOrder',
+        data: orderData
+      }
+    })
       .then(res => {
         wx.hideLoading();
-        
-        if (res.code === 200) {
-          const { orderNo, qrCodeUrl } = res.data;
-          
+
+        if (res.result.code === 200) {
+          const { orderNo, qrCodeUrl } = res.result.data;
+
           // 跳转到二维码展示页面
           wx.navigateTo({
             url: `/pages/admin/order/qr-code/qr-code?orderNo=${orderNo}&qrCodeUrl=${encodeURIComponent(qrCodeUrl)}`
           });
         } else {
-          throw new Error(res.message || '创建订单失败');
+          throw new Error(res.result.message || '创建订单失败');
         }
       })
       .catch(err => {
         wx.hideLoading();
         wx.showToast({
-          title: err.message || '创建订单失败',
+          title: err.message || err.result?.message || '创建订单失败',
           icon: 'none'
         });
       })

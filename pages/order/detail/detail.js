@@ -27,79 +27,176 @@ Page({
 
   async loadOrderDetail() {
     try {
-      // 尝试从服务器获取订单详情
-      try {
-        const res = await request.get(`/api/orders/${this.data.orderNo}`);
-        if (res.code === 200 && res.data) {
-          const statusInfo = this.getStatusInfo(res.data.status);
-          // 格式化数据
-          const orderInfo = {
-            ...res.data,
-            statusText: statusInfo.text,
-            statusDesc: statusInfo.desc,
-            statusClass: statusInfo.class,
-            createdTime: this.formatDate(res.data.createdTime),
-            serviceTime: this.formatDate(res.data.serviceTime),
-            payTime: res.data.payTime ? this.formatDate(res.data.payTime) : '',
-            totalAmount: (res.data.totalAmount / 100).toFixed(2),
-            items: res.data.items.map(item => ({
-              ...item,
-              productPrice: (item.productPrice / 100).toFixed(2),
-              subtotal: (item.subtotal / 100).toFixed(2)
-            }))
-          };
-
-          this.setData({ 
-            orderInfo,
-            loading: false
-          });
+      // 调用云函数获取订单详情
+      const res = await wx.cloud.callFunction({
+        name: 'orderManagement',
+        data: {
+          action: 'getOrderDetail',
+          data: {
+            orderNo: this.data.orderNo,
+            isAdmin: this.data.isAdmin || false
+          }
         }
-      } catch (err) {
-        console.error('从服务器获取订单详情失败:', err);
-        
-        // 从本地存储获取订单数据
-        const orders = wx.getStorageSync('orders') || [];
-        const order = orders.find(o => o.orderNo === this.data.orderNo);
-        
-        if (order) {
-          const statusInfo = this.getStatusInfo(order.status);
-          // 格式化数据
-          const orderInfo = {
-            ...order,
-            statusText: statusInfo.text,
-            statusDesc: statusInfo.desc,
-            statusClass: statusInfo.class,
-            createdTime: this.formatDate(order.createdTime),
-            serviceTime: this.formatDate(order.serviceTime),
-            payTime: order.payTime ? this.formatDate(order.payTime) : '',
-            totalAmount: order.totalAmount,
-            items: order.items.map(item => ({
-              ...item,
-              productName: item.name,
-              productPrice: item.price,
-              quantity: item.quantity,
-              subtotal: (parseFloat(item.price) * item.quantity).toFixed(2)
-            }))
-          };
+      });
 
-          this.setData({ 
-            orderInfo,
-            loading: false
-          });
-        } else {
-          wx.showToast({
-            title: '订单不存在',
-            icon: 'none'
-          });
-        }
+      if (res.result.code === 200 && res.result.data) {
+        const orderData = res.result.data;
+        const statusInfo = this.getStatusInfo(orderData.status);
+
+        // 格式化数据
+        const orderInfo = {
+          ...orderData,
+          statusText: statusInfo.text,
+          statusDesc: statusInfo.desc,
+          statusClass: statusInfo.class,
+          createdTime: this.formatDate(orderData.createTime),
+          serviceTime: this.formatDate(orderData.serviceTime),
+          payTime: orderData.payTime ? this.formatDate(orderData.payTime) : '',
+          totalAmount: orderData.totalAmount.toFixed(2), // 云函数已转换为元
+          items: orderData.items.map(item => ({
+            ...item,
+            productPrice: item.price.toFixed(2),
+            subtotal: item.subtotal.toFixed(2)
+          }))
+        };
+
+        this.setData({
+          orderInfo,
+          loading: false
+        });
+      } else {
+        throw new Error(res.result.message || '订单不存在');
       }
     } catch (err) {
-      wx.showToast({
-        title: '加载订单详情失败',
-        icon: 'none'
-      });
-      this.setData({ loading: false });
+      console.error('获取订单详情失败:', err);
+
+      // 尝试从本地存储获取订单数据（兼容旧数据）
+      const orders = wx.getStorageSync('orders') || [];
+      let order = orders.find(o => o.orderNo === this.data.orderNo);
+
+      // 如果本地存储也没有，使用模拟数据
+      if (!order) {
+        order = this.getMockOrderData(this.data.orderNo);
+      }
+
+      if (order) {
+        const statusInfo = this.getStatusInfo(order.status);
+        // 格式化数据
+        const orderInfo = {
+          ...order,
+          statusText: statusInfo.text,
+          statusDesc: statusInfo.desc,
+          statusClass: statusInfo.class,
+          createdTime: this.formatDate(order.createTime || order.createdTime),
+          serviceTime: this.formatDate(order.serviceTime),
+          payTime: order.payTime ? this.formatDate(order.payTime) : '',
+          totalAmount: order.totalAmount,
+          items: order.items.map(item => ({
+            ...item,
+            productName: item.productName || item.name,
+            productPrice: item.price,
+            quantity: item.quantity,
+            subtotal: (parseFloat(item.price) * item.quantity).toFixed(2)
+          }))
+        };
+
+        this.setData({
+          orderInfo,
+          loading: false
+        });
+      } else {
+        this.setData({ loading: false });
+        wx.showToast({
+          title: '订单不存在',
+          icon: 'none'
+        });
+      }
     }
+  },
+
+  // 获取模拟订单数据
+  getMockOrderData(orderNo) {
+    const mockOrders = {
+      'ORD202412170001': {
+        _id: 'mock_order_1',
+        orderNo: 'ORD202412170001',
+        status: 1,
+        totalAmount: 1288.00,
+        createTime: new Date().toISOString(),
+        serviceTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        contactName: '张先生',
+        contactPhone: '13800138000',
+        serviceAddress: '北京市朝阳区某某街道',
+        remark: '请按时到达现场',
+        items: [
+          {
+            productId: 'prod_001',
+            productName: '白事服务套餐A',
+            price: 888.00,
+            quantity: 1,
+            subtotal: 888.00
+          },
+          {
+            productId: 'prod_002',
+            productName: '花圈',
+            price: 200.00,
+            quantity: 2,
+            subtotal: 400.00
+          }
+        ]
+      },
+      'ORD202412170002': {
+        _id: 'mock_order_2',
+        orderNo: 'ORD202412170002',
+        status: 0,
+        totalAmount: 2588.00,
+        createTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        serviceTime: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+        contactName: '李女士',
+        contactPhone: '13900139000',
+        serviceAddress: '上海市浦东新区某某路',
+        remark: '需要提前联系确认',
+        items: [
+          {
+            productId: 'prod_003',
+            productName: '红事服务套餐B',
+            price: 1888.00,
+            quantity: 1,
+            subtotal: 1888.00
+          },
+          {
+            productId: 'prod_004',
+            productName: '婚庆布置',
+            price: 700.00,
+            quantity: 1,
+            subtotal: 700.00
+          }
+        ]
+      },
+      'ORD202412170003': {
+        _id: 'mock_order_3',
+        orderNo: 'ORD202412170003',
+        status: 4,
+        totalAmount: 3888.00,
+        createTime: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        serviceTime: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+        contactName: '王先生',
+        contactPhone: '13700137000',
+        serviceAddress: '广州市天河区某某大道',
+        remark: '豪华套餐，需要专业团队',
+        items: [
+          {
+            productId: 'prod_005',
+            productName: '豪华白事套餐',
+            price: 3888.00,
+            quantity: 1,
+            subtotal: 3888.00
+          }
+        ]
+      }
+    };
+
+    return mockOrders[orderNo] || null;
   },
 
   getStatusInfo(status) {

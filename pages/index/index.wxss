@@ -168,10 +168,47 @@
   padding: 48rpx 0;
 }
 
-/* 轮播图优化 */
-t-swiper {
-  margin: 24rpx 0;
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.08);
+/* 加载状态样式 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 0;
 }
+
+.loading-spinner {
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid #f3f3f3;
+  border-top: 4rpx solid #07c160;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 20rpx;
+  color: #666;
+  font-size: 28rpx;
+}
+
+/* 空状态样式 */
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+}
+
+.empty-text {
+  color: #999;
+  font-size: 28rpx;
+}
+
+

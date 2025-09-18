@@ -1,18 +1,19 @@
 <view class="custom-navbar">
-  <!-- <t-navbar class="demo-navbar" title="TDesign" leftArrow /> -->
+  <!-- 自定义导航栏 -->
 </view>
 
 <view class="side-bar-wrapper" style="height: calc(100vh - {{navbarHeight}}px)">
-  <t-side-bar value="{{sideBarIndex}}" bind:change="onSideBarChange">
-    <t-side-bar-item
+  <view class="side-bar">
+    <view
+      class="side-bar-item {{sideBarIndex === (item.value || index) ? 'active' : ''}}"
       wx:for="{{categories}}"
       wx:key="label"
-      value="{{item.value || index}}"
-      label="{{item.label}}"
-      disabled="{{item.disabled}}"
-      badge-props="{{item.badgeProps}}"
-    />
-  </t-side-bar>
+      bindtap="onSideBarChange"
+      data-value="{{item.value || index}}"
+    >
+      {{item.label}}
+    </view>
+  </view>
   <view class="content" style="transform: translateY(-{{sideBarIndex * 100}}%)">
     <scroll-view
       wx:for="{{categories}}"
@@ -27,23 +28,20 @@
       enhanced
     >
       <view class="title">{{item.title || item.label}}</view>
-      <t-cell-group>
-        <block wx:for="{{item.items}}" wx:key="index" wx:for-item="cargo">
-          <t-cell t-class-left="cell" 
-            title="{{cargo.label}}"
-            bind:tap="onGoodsClick"
-            data-id="{{cargo.id}}"
-          >
-            <t-image shape="round" src="{{cargo.image}}" slot="image" lazy t-class="image" />
-            <view slot="description" class="price">¥{{cargo.price}}</view>
-          </t-cell>
-        </block>
-      </t-cell-group>
+      <view class="product-list">
+        <view class="product-item" wx:for="{{item.items}}" wx:key="index" wx:for-item="cargo" bindtap="onGoodsClick" data-id="{{cargo.id}}">
+          <image class="product-image" src="{{cargo.image}}" mode="aspectFill" binderror="onImageError" data-index="{{index}}" />
+          <view class="product-info">
+            <text class="product-name">{{cargo.label}}</text>
+            <text class="product-price">¥{{cargo.price}}</text>
+          </view>
+        </view>
+      </view>
       
       <!-- 将加载状态移到商品列表后面 -->
       <view class="loading-status">
         <view class="loading-more" wx:if="{{loading}}">
-          <t-loading size="small" text="加载中..." />
+          <text class="loading-text">加载中...</text>
         </view>
         <view class="no-more" wx:elif="{{!item.hasMore}}">
           <text>没有更多商品了</text>

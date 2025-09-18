@@ -142,6 +142,8 @@
   font-size: 28rpx;
 }
 
+
+
 .sku-popup {
   background: #fff;
   padding: 30rpx;
@@ -176,12 +178,16 @@
   padding: 30rpx 0;
 }
 
+/* TDesign Popup组件已提供弹窗样式，移除自定义样式 */
+
 .quantity-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 20rpx;
 }
+
+/* TDesign Stepper组件已提供步进器样式，移除自定义样式 */
 
 .sku-footer {
   margin-top: 30rpx;
@@ -195,14 +201,4 @@
   color: #fff;
   border-radius: 40rpx;
   font-size: 28rpx;
-}
-
-.add-cart-btn {
-  flex: 1;
-  height: 80rpx;
-  background: #e34d59;
-  color: #fff;
-  border-radius: 40rpx;
-  font-size: 28rpx;
-  line-height: 80rpx;
 }

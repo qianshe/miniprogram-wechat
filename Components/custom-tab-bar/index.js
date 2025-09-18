@@ -78,23 +78,24 @@ Component({
     },
 
     onChange(e) {
-      const index = e.detail.value;
-      const page = this.data.list[index];
-      
-      if (!page || !page.pagePath) {
-        console.error('Invalid page at index:', index);
-        return;
-      }
-
+      const { value } = e.detail;
       const app = getApp();
-      app.globalData.currentTabIndex = index;
-    
-      wx.switchTab({
-        url: page.pagePath,
-        fail: (err) => {
-          console.error('Tab switch failed:', err);
-        }
+
+      // 更新全局状态
+      app.globalData.currentTabIndex = value;
+
+      // 更新当前组件状态
+      this.setData({
+        index: value
       });
+
+      // 跳转到对应页面
+      const targetPage = this.data.list[value];
+      if (targetPage) {
+        wx.switchTab({
+          url: targetPage.pagePath
+        });
+      }
     }
   }
 })

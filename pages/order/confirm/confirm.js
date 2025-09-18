@@ -71,7 +71,7 @@ Page({
     })
   },
 
-  submitOrder() {
+  async submitOrder() {
     if (!this.data.address) {
       wx.showToast({
         title: '请选择收货地址',
@@ -84,52 +84,63 @@ Page({
 
     // 构建订单数据
     const orderData = {
-      items: this.data.orderItems,
+      items: this.data.orderItems.map(item => ({
+        productId: item.id,
+        productName: item.name,
+        price: item.price,
+        quantity: item.quantity
+      })),
       totalAmount: this.data.totalAmount,
       address: this.data.address,
-      remarks: this.data.remarks,
-      createTime: new Date().getTime(),
-      orderStatus: 'pending', // 添加订单状态
-      systemType: this.data.systemType // 添加系统类型
+      remark: this.data.remarks || ''
     }
 
-    // TODO: 后续接入云函数
-    // 模拟提交订单
-    setTimeout(() => {
-      this.setData({ loading: false })
-      
-      // 保存订单到本地存储
-      const orders = wx.getStorageSync('orders') || [];
-      const newOrder = {
-        ...orderData,
-        orderNo: 'ORD' + Date.now(),
-        status: 0, // 待支付
-        createdTime: new Date().toISOString()
-      };
-      orders.push(newOrder);
-      wx.setStorageSync('orders', orders);
-      
-      wx.showToast({
-        title: '订单提交成功',
-        icon: 'success',
-        success: () => {
-          // 延迟返回，确保用户看到提示
-          setTimeout(() => {
-            // 跳转到订单列表页面
-            wx.redirectTo({
-              url: `../list/list?systemType=${this.data.systemType}`,
-              success: () => {
-                // 返回上一页并刷新购物车
-                const pages = getCurrentPages()
-                const cartPage = pages[pages.length - 2]
-                if (cartPage && cartPage.loadCartItems) {
-                  cartPage.loadCartItems()
-                }
-              }
-            })
-          }, 1500)
+    try {
+      // 调用云函数创建订单
+      const res = await wx.cloud.callFunction({
+        name: 'orderManagement',
+        data: {
+          action: 'createOrder',
+          data: orderData
         }
-      })
-    }, 1000)
+      });
+
+      this.setData({ loading: false });
+
+      if (res.result.code === 200) {
+        const { orderNo } = res.result.data;
+
+        wx.showToast({
+          title: '订单提交成功',
+          icon: 'success',
+          success: () => {
+            // 延迟返回，确保用户看到提示
+            setTimeout(() => {
+              // 跳转到订单详情页面
+              wx.redirectTo({
+                url: `../detail/detail?orderNo=${orderNo}`,
+                success: () => {
+                  // 返回上一页并刷新购物车
+                  const pages = getCurrentPages()
+                  const cartPage = pages[pages.length - 2]
+                  if (cartPage && cartPage.loadCartItems) {
+                    cartPage.loadCartItems()
+                  }
+                }
+              })
+            }, 1500)
+          }
+        });
+      } else {
+        throw new Error(res.result.message || '订单创建失败');
+      }
+    } catch (error) {
+      console.error('创建订单失败:', error);
+      this.setData({ loading: false });
+      wx.showToast({
+        title: error.message || error.result?.message || '订单创建失败',
+        icon: 'none'
+      });
+    }
   }
 })

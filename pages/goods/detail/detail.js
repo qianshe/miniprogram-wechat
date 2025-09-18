@@ -24,11 +24,11 @@ Page({
       console.log('商品详情:', goods);
       const goodsData = {
         ...goods,
-        displayTime: goods.createdTime.replace('T', ' ').slice(0, 16),
+        displayTime: goods.createTime ? new Date(goods.createTime).toLocaleString() : '未知时间',
         image: goods.imageUrl || 'https://tdesign.gtimg.com/mobile/demos/default_goods.png',
         images: goods.imageUrl ? [goods.imageUrl] : ['https://tdesign.gtimg.com/mobile/demos/default_goods.png']
       };
-      
+
       this.setData({
         goods: goodsData,
         loading: false
@@ -49,6 +49,8 @@ Page({
     this.setData({ quantity });
   },
 
+
+
   // 打开SKU弹窗
   showSkuPopup() {
     this.setData({ showSkuPopup: true });
@@ -56,7 +58,34 @@ Page({
 
   // 关闭SKU弹窗
   closeSkuPopup() {
-    this.setData({ showSkuPopup: false });
+    this.setData({
+      showSkuPopup: false
+    });
+  },
+
+  // 数量输入处理
+  onQuantityInput(e) {
+    let quantity = parseInt(e.detail.value) || 1;
+    const maxStock = this.data.goods.stock || 999;
+
+    if (quantity < 1) quantity = 1;
+    if (quantity > maxStock) quantity = maxStock;
+
+    this.setData({ quantity });
+  },
+
+  // TDesign弹窗状态变化
+  onPopupChange(e) {
+    this.setData({
+      showSkuPopup: e.detail.visible
+    });
+  },
+
+  // TDesign步进器数量变化
+  onQuantityChange(e) {
+    this.setData({
+      quantity: e.detail.value
+    });
   },
 
   // 加入购物车

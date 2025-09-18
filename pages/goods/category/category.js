@@ -141,12 +141,24 @@ Page({
         size,
         category: categoryId
       });
-      //result.total,数据总数用于判断是否还有更多数据
-      this.data.categories[categoryId].hasMore = result.total > this.data.categories[categoryId].items.length + result.size;
+
+      // 通过分类ID查找对应的分类索引
+      const categoryIndex = this.data.categories.findIndex(cat => cat.id === categoryId);
+      if (categoryIndex !== -1 && this.data.categories[categoryIndex]) {
+        // 更新hasMore状态
+        const currentItems = this.data.categories[categoryIndex].items || [];
+        const hasMore = result.total > currentItems.length + result.records.length;
+
+        // 更新分类的hasMore状态
+        const updatedCategories = [...this.data.categories];
+        updatedCategories[categoryIndex].hasMore = hasMore;
+        this.setData({ categories: updatedCategories });
+      }
+
       return result.records.map(product => ({
-        id: product.id,
+        id: product._id, // 云数据库使用_id
         label: product.name,
-        image: product.imageUrl || 'https://tdesign.gtimg.com/mobile/demos/example2.png',
+        image: product.imageUrl || '/images/default-product.png',
         price: product.price // api已处理价格转换
       }));
     } catch (err) {
@@ -156,8 +168,8 @@ Page({
   },
 
   onSideBarChange(e) {
-    const { value } = e.detail;
-    
+    const value = e.currentTarget.dataset.value;
+
     // 切换分类时重置分页状态
     this.setData({
       sideBarIndex: value,
@@ -167,6 +179,13 @@ Page({
       // 加载新分类的第一页数据
       this.loadBatchProducts(value);
     });
+  },
+
+  onImageError(e) {
+    const index = e.currentTarget.dataset.index;
+    console.log('图片加载失败，使用默认图片:', index);
+    // 这里可以设置默认图片
+    // 由于微信小程序的限制，我们无法直接修改src，但可以在数据层面处理
   },
 
   onGoodsClick(e) {

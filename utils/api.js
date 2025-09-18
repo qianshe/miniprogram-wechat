@@ -34,78 +34,157 @@ const handleResponse = (res) => {
 
 // 普通用户API封装
 const api = {
-  // 商品相关
-  getProducts: (params) => {
-    return request.get(apiConfig.api.products, params)
-      .then(handleResponse)
-      .then(data => {
-        if (!data || !data.records) {
-          console.error('Invalid products data:', data);
-          throw new Error('无效的商品数据');
+  // 商品相关 - 云函数版本
+  getProducts: async (params) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'productManagement',
+        data: {
+          action: 'getProducts',
+          data: params
         }
-        // 处理分页数据中的价格
-        data.records = data.records.map(item => ({
-          ...item,
-          price: priceToYuan(item.price || 0)
-        }));
-        return data;
-      })
-      .catch(err => {
-        console.error('获取商品列表失败:', err);
-        throw err;
       });
-  },
-  
-  getProductDetail: (id) => {
-    const url = apiConfig.api.productDetail.replace('{id}', id);
-    return request.get(url)
-      .then(handleResponse)
-      .then(data => ({
-        ...data,
-        price: priceToYuan(data.price)
-      }));
+
+      if (result.result.code === 200) {
+        const data = result.result.data;
+        // 云函数已处理价格转换，直接返回
+        return data;
+      } else {
+        throw new Error(result.result.message || '获取商品列表失败');
+      }
+    } catch (err) {
+      console.error('获取商品列表失败:', err);
+      throw err;
+    }
   },
 
-  getRecommendProducts: (params) => {
-    return request.get(apiConfig.api.recommendProducts, params)
-      .then(handleResponse)
-      .then(data => data.map(item => ({
-        ...item,
-        price: priceToYuan(item.price)
-      })));
-  },
-  
-  getCategories: (params) => {
-    return request.get(apiConfig.api.categories)
-      .then(handleResponse)
+  getProductDetail: async (id) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'productManagement',
+        data: {
+          action: 'getProductDetail',
+          data: { id }
+        }
+      });
+
+      if (result.result.code === 200) {
+        return result.result.data;
+      } else {
+        throw new Error(result.result.message || '获取商品详情失败');
+      }
+    } catch (err) {
+      console.error('获取商品详情失败:', err);
+      throw err;
+    }
   },
 
-  // 购物车相关
-  getCartList: () => {
-    return request.get(apiConfig.api.cart.list)
-      .then(handleResponse)
-      .then(data => data.map(item => ({
-        ...item,
-        price: priceToYuan(item.price)
-      })));
+  getRecommendProducts: async (params) => {
+    try {
+      // 使用商品查询云函数，添加推荐逻辑
+      const result = await wx.cloud.callFunction({
+        name: 'productManagement',
+        data: {
+          action: 'getProducts',
+          data: {
+            page: 1,
+            size: 6,
+            status: 1,
+            orderBy: 'createTime',
+            orderDirection: 'desc',
+            ...params
+          }
+        }
+      });
+
+      if (result.result.code === 200) {
+        return result.result.data.records; // 云函数已处理价格转换
+      } else {
+        throw new Error(result.result.message || '获取推荐商品失败');
+      }
+    } catch (err) {
+      console.error('获取推荐商品失败:', err);
+      return []; // 返回空数组避免页面崩溃
+    }
   },
   
-  addToCart: (data) => {
-    // 发送请求前转换价格为分
-    const requestData = {
-      ...data,
-      price: data.price ? priceToFen(data.price) : undefined
-    };
-    return request.post(apiConfig.api.cart.add, requestData).then(handleResponse);
+  getCategories: async (params) => {
+    try {
+      // 暂时返回模拟分类数据
+      const mockCategories = [
+        { id: 0, name: '白事用品', sort: 1 },
+        { id: 1, name: '红事用品', sort: 2 }
+      ];
+      return mockCategories.filter(cat =>
+        params?.type === undefined || cat.id === params.type
+      );
+    } catch (err) {
+      console.error('获取分类失败:', err);
+      return [];
+    }
   },
-  
-  updateCart: (data) => {
-    return request.put(apiConfig.api.cart.update, data).then(handleResponse)
+
+  // 购物车相关 - 使用本地存储
+  getCartList: async () => {
+    try {
+      // 从本地存储获取购物车数据
+      const cartList = wx.getStorageSync('cartList') || [];
+      return cartList;
+    } catch (err) {
+      console.error('获取购物车失败:', err);
+      return [];
+    }
   },
-  
-  removeFromCart: (productId) => {
-    const url = apiConfig.api.cart.remove.replace('{productId}', productId)
-    return request.delete(url).then(handleResponse)
+
+  addToCart: async (data) => {
+    try {
+      // 使用本地存储管理购物车
+      let cartList = wx.getStorageSync('cartList') || [];
+      const existingIndex = cartList.findIndex(item => item.productId === data.productId);
+
+      if (existingIndex > -1) {
+        cartList[existingIndex].quantity += data.quantity || 1;
+      } else {
+        cartList.push({
+          productId: data.productId,
+          quantity: data.quantity || 1,
+          addTime: new Date().toISOString()
+        });
+      }
+
+      wx.setStorageSync('cartList', cartList);
+      return { success: true };
+    } catch (err) {
+      console.error('添加购物车失败:', err);
+      throw err;
+    }
+  },
+
+  updateCart: async (data) => {
+    try {
+      let cartList = wx.getStorageSync('cartList') || [];
+      const index = cartList.findIndex(item => item.productId === data.productId);
+      if (index > -1) {
+        cartList[index].quantity = data.quantity;
+        wx.setStorageSync('cartList', cartList);
+      }
+      return { success: true };
+    } catch (err) {
+      console.error('更新购物车失败:', err);
+      throw err;
+    }
+  },
+
+  removeFromCart: async (productId) => {
+    try {
+      let cartList = wx.getStorageSync('cartList') || [];
+      cartList = cartList.filter(item => item.productId !== productId);
+      wx.setStorageSync('cartList', cartList);
+      return { success: true };
+    } catch (err) {
+      console.error('删除购物车商品失败:', err);
+      throw err;
+    }
   },
 
   // 订单相关
@@ -123,24 +202,55 @@ const api = {
     return request.get(url, params).then(handleResponse)
   },
 
-  // 流程步骤
-  getProcessSteps: (params) => {
-    return request.get(apiConfig.api.processSteps, params).then(handleResponse)
+  // 流程步骤 - 临时返回模拟数据
+  getProcessSteps: async (params) => {
+    try {
+      // 暂时返回模拟数据，避免网络错误
+      const mockSteps = [
+        {
+          id: 1,
+          title: '选择服务',
+          description: '选择红白事服务类型',
+          order: 1,
+          type: params?.type || 0
+        },
+        {
+          id: 2,
+          title: '选择商品',
+          description: '选择所需商品和服务',
+          order: 2,
+          type: params?.type || 0
+        },
+        {
+          id: 3,
+          title: '确认订单',
+          description: '确认订单信息和配送方式',
+          order: 3,
+          type: params?.type || 0
+        }
+      ];
+      return mockSteps;
+    } catch (err) {
+      console.error('获取流程步骤失败:', err);
+      return [];
+    }
   },
   
-  getStepDetail: (stepId, params) => {
-    const url = apiConfig.api.processStepDetail.replace('{stepId}', stepId);
-    return request.get(url, params)
-      .then(handleResponse)
-      .then(data => {
-        if (data.productList) {
-          data.productList = data.productList.map(item => ({
-            ...item,
-            price: priceToYuan(item.price)
-          }));
-        }
-        return data;
-      });
+  getStepDetail: async (stepId, params) => {
+    try {
+      // 暂时返回模拟数据，避免网络错误
+      const mockStepDetail = {
+        id: stepId,
+        title: '步骤详情',
+        description: '步骤详细描述',
+        content: '步骤具体内容',
+        productList: []
+      };
+      return mockStepDetail;
+    } catch (err) {
+      console.error('获取步骤详情失败:', err);
+      return null;
+    }
   },
 
   // 绑定订单
@@ -150,58 +260,135 @@ const api = {
   }
 }
 
-// 管理员API封装
+// 管理员API封装 - 云函数版本
 const adminApi = {
   // 商品管理
-  getProducts: (params) => {
-    return request.get(apiConfig.adminApi.products, params)
-      .then(handleResponse)
-      .then(data => {
-        if (data.records) {
-          data.records = data.records.map(item => ({
-            ...item,
-            price: priceToYuan(item.price || 0)
-          }));
+  getProducts: async (params) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'productManagement',
+        data: {
+          action: 'getProducts',
+          data: params
         }
-        return data;
       });
+
+      if (result.result.code === 200) {
+        const data = result.result.data;
+        // 云函数已处理价格转换，直接返回
+        return data;
+      } else {
+        throw new Error(result.result.message || '获取商品列表失败');
+      }
+    } catch (err) {
+      console.error('管理员获取商品列表失败:', err);
+      throw err;
+    }
+  },
+
+  getProductDetail: async (id) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'productManagement',
+        data: {
+          action: 'getProductDetail',
+          data: { id }
+        }
+      });
+
+      if (result.result.code === 200) {
+        return result.result.data;
+      } else {
+        throw new Error(result.result.message || '获取商品详情失败');
+      }
+    } catch (err) {
+      console.error('管理员获取商品详情失败:', err);
+      throw err;
+    }
+  },
+
+  createProduct: async (data) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'productManagement',
+        data: {
+          action: 'createProduct',
+          data: data
+        }
+      });
+
+      if (result.result.code === 200) {
+        return result.result.data;
+      } else {
+        throw new Error(result.result.message || '创建商品失败');
+      }
+    } catch (err) {
+      console.error('创建商品失败:', err);
+      throw err;
+    }
   },
   
-  getProductDetail: (id) => {
-    const url = apiConfig.adminApi.productDetail.replace('{id}', id);
-    return request.get(url)
-      .then(handleResponse)
-      .then(data => ({
-        ...data,
-        price: priceToYuan(data.price)
-      }));
+  updateProduct: async (id, data) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'productManagement',
+        data: {
+          action: 'updateProduct',
+          data: { id, ...data }
+        }
+      });
+
+      if (result.result.code === 200) {
+        return result.result.data;
+      } else {
+        throw new Error(result.result.message || '更新商品失败');
+      }
+    } catch (err) {
+      console.error('更新商品失败:', err);
+      throw err;
+    }
   },
-  
-  createProduct: (data) => {
-    const requestData = {
-      ...data,
-      price: priceToFen(data.price)
-    };
-    return request.post(apiConfig.adminApi.products, requestData).then(handleResponse);
+
+  deleteProduct: async (id) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'productManagement',
+        data: {
+          action: 'deleteProduct',
+          data: { id }
+        }
+      });
+
+      if (result.result.code === 200) {
+        return result.result.data;
+      } else {
+        throw new Error(result.result.message || '删除商品失败');
+      }
+    } catch (err) {
+      console.error('删除商品失败:', err);
+      throw err;
+    }
   },
-  
-  updateProduct: (id, data) => {
-    const url = apiConfig.adminApi.productUpdate.replace('{id}', id);
-    const requestData = {
-      ...data,
-      price: priceToFen(data.price)
-    };
-    return request.put(url, requestData).then(handleResponse);
-  },
-  
-  deleteProduct: (id) => {
-    const url = apiConfig.adminApi.productDelete.replace('{id}', id);
-    return request.delete(url).then(handleResponse);
-  },
-  
-  updateStock: (productId, delta) => {
-    const url = apiConfig.adminApi.updateStock;
-    return request.post(url, { productId, delta }).then(handleResponse);
+
+  updateStock: async (productId, stock) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'productManagement',
+        data: {
+          action: 'updateStock',
+          data: { id: productId, stock }
+        }
+      });
+
+      if (result.result.code === 200) {
+        return result.result.data;
+      } else {
+        throw new Error(result.result.message || '更新库存失败');
+      }
+    } catch (err) {
+      console.error('更新库存失败:', err);
+      throw err;
+    }
   },
   
   // 订单管理

@@ -2,36 +2,34 @@
   <view class="page-header">
     <view class="page-title">订单管理</view>
     <view class="action-buttons">
-      <button class="create-btn" bindtap="navigateToCreate">新建订单</button>
+      <t-button theme="primary" bindtap="navigateToCreate">新建订单</t-button>
     </view>
   </view>
 
   <!-- 搜索框 -->
   <view class="search-container">
-    <view class="search-box">
-      <input
-        class="search-input"
-        placeholder="搜索订单号或联系人"
-        value="{{searchKeyword}}"
-        bindinput="onSearchChange"
-        bindconfirm="onSearchConfirm"
-      />
-      <view class="search-icon">
-        <image src="/assets/icons/search.png" mode="aspectFit"></image>
-      </view>
-    </view>
+    <t-search
+      placeholder="搜索订单号或联系人"
+      value="{{searchKeyword}}"
+      bind:change="onSearchChange"
+      bind:submit="onSearchConfirm"
+      bind:clear="onSearchClear"
+    />
     <view class="filter-btn" bindtap="toggleFilterPanel">
-      <image src="/assets/icons/filter.png" mode="aspectFit"></image>
+      <t-icon name="filter" size="20" />
+      <text>筛选</text>
     </view>
   </view>
 
   <!-- 筛选面板 -->
-  <view class="filter-panel {{showFilterPanel ? 'show' : ''}}">
+  <t-popup
+    visible="{{showFilterPanel}}"
+    placement="bottom"
+    bind:visible-change="onFilterPopupChange"
+  >
     <view class="filter-header">
       <text>筛选条件</text>
-      <view class="close-icon" bindtap="toggleFilterPanel">
-        <image src="/assets/icons/close.png" mode="aspectFit"></image>
-      </view>
+      <t-icon name="close" size="20" bindtap="toggleFilterPanel" />
     </view>
     <view class="filter-content">
       <view class="filter-item">
@@ -49,29 +47,27 @@
       <view class="filter-item">
         <text class="filter-label">价格区间</text>
         <view class="price-range">
-          <input
-            type="digit"
+          <t-input
+            type="number"
             placeholder="最低价"
             value="{{minPrice}}"
-            bindinput="onMinPriceChange"
-            class="price-input"
+            bind:change="onMinPriceChange"
           />
           <text class="price-separator">至</text>
-          <input
-            type="digit"
+          <t-input
+            type="number"
             placeholder="最高价"
             value="{{maxPrice}}"
-            bindinput="onMaxPriceChange"
-            class="price-input"
+            bind:change="onMaxPriceChange"
           />
         </view>
       </view>
     </view>
     <view class="filter-footer">
-      <button class="reset-btn" bindtap="resetFilter">重置</button>
-      <button class="apply-btn" bindtap="applyFilter">确定</button>
+      <t-button theme="default" bindtap="resetFilter">重置</t-button>
+      <t-button theme="primary" bindtap="applyFilter">确定</t-button>
     </view>
-  </view>
+  </t-popup>
 
   <view class="tabs">
     <view 
@@ -105,8 +101,8 @@
   </view>
 
   <view class="order-list">
-    <view class="loading" wx:if="{{loading}}">加载中...</view>
-    <view class="empty" wx:elif="{{!orders.length}}">暂无订单</view>
+    <t-loading wx:if="{{loading}}" text="加载中..." />
+    <t-empty wx:elif="{{!orders.length}}" description="暂无订单" />
     <view class="orders" wx:else>
       <view class="order-item" wx:for="{{orders}}" wx:key="orderNo">
         <view class="order-header">

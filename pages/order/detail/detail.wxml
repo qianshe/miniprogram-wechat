@@ -38,7 +38,7 @@
         <text class="label">订单编号</text>
         <view class="value-with-action">
           <text class="value">{{orderInfo.orderNo}}</text>
-          <text class="action-btn" bindtap="copyOrderNo">复制</text>
+          <t-button size="small" theme="default" bindtap="copyOrderNo">复制</t-button>
         </view>
       </view>
       <view class="info-item">
@@ -61,14 +61,14 @@
         <text class="label">联系电话</text>
         <view class="value-with-action">
           <text class="value">{{orderInfo.contactPhone}}</text>
-          <text class="action-btn" bindtap="callPhone">拨打</text>
+          <t-button size="small" theme="primary" bindtap="callPhone">拨打</t-button>
         </view>
       </view>
       <view class="info-item">
         <text class="label">服务地址</text>
         <view class="value-with-action">
           <text class="value address">{{orderInfo.address}}</text>
-          <text class="action-btn" bindtap="viewLocation" wx:if="{{orderInfo.latitude && orderInfo.longitude}}">查看</text>
+          <t-button size="small" theme="default" bindtap="viewLocation" wx:if="{{orderInfo.latitude && orderInfo.longitude}}">查看</t-button>
         </view>
       </view>
     </view>
@@ -119,21 +119,20 @@
 
     <view class="actions">
       <block wx:if="{{orderInfo.status === 0}}">
-        <button class="btn cancel" bindtap="handleCancel">取消订单</button>
-        <button class="btn pay {{systemType}}-btn" bindtap="handlePay">立即支付</button>
+        <t-button theme="default" bindtap="handleCancel">取消订单</t-button>
+        <t-button theme="primary" bindtap="handlePay">立即支付</t-button>
       </block>
       <block wx:elif="{{orderInfo.status === 1}}">
-        <button class="btn service" bindtap="contactService">联系客服</button>
-        <button class="btn refund" bindtap="applyRefund">申请退款</button>
+        <t-button theme="default" bindtap="contactService">联系客服</t-button>
+        <t-button theme="danger" bindtap="applyRefund">申请退款</t-button>
       </block>
       <block wx:elif="{{orderInfo.status === 2 || orderInfo.status === 3}}">
-        <button class="btn delete" bindtap="deleteOrder">删除订单</button>
-        <button class="btn rebuy {{systemType}}-btn" bindtap="rebuyOrder">再次购买</button>
+        <t-button theme="default" bindtap="deleteOrder">删除订单</t-button>
+        <t-button theme="primary" bindtap="rebuyOrder">再次购买</t-button>
       </block>
     </view>
   </block>
-  <view class="not-found" wx:else>
-    <text>订单不存在</text>
-    <button class="btn back" bindtap="goBack">返回列表</button>
-  </view>
+  <t-empty wx:else description="订单不存在">
+    <t-button theme="primary" bindtap="goBack">返回列表</t-button>
+  </t-empty>
 </view>

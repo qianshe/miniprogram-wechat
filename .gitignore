@@ -5,6 +5,8 @@ file/
 .idea/
 .vscode/
 .promptx/
+database/
+docs/
 # 默认忽略的文件
 shelf/
 workspace.xml

@@ -1,8 +1,6 @@
 {
     "navigationBarTitleText": "首页",
     "usingComponents": {
-      "t-search": "tdesign-miniprogram/search/search",
-      "t-swiper": "tdesign-miniprogram/swiper/swiper",
       "t-loading": "tdesign-miniprogram/loading/loading",
       "t-empty": "tdesign-miniprogram/empty/empty"
     },

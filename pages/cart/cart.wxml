@@ -16,9 +16,11 @@
   <!-- 购物车列表 -->
   <view class="cart-list" wx:elif="{{cartItems.length}}">
     <view class="cart-item" wx:for="{{cartItems}}" wx:key="id">
-      <view class="checkbox" bindtap="toggleSelect" data-index="{{index}}">
-        <icon type="success" size="20" color="{{item.selected ? (systemType === 'red' ? '#d32f2f' : '#07c160') : '#ddd'}}"/>
-      </view>
+      <t-checkbox
+        checked="{{item.selected}}"
+        bind:change="onCheckboxChange"
+        data-index="{{index}}"
+      />
       <image 
         class="item-image" 
         src="{{item.image}}" 
@@ -27,34 +29,40 @@
       <view class="item-info">
         <text class="item-name">{{item.name}}</text>
         <text class="item-price {{systemType}}-price">¥{{item.price}}</text>
-        <view class="quantity-control">
-          <view class="btn-decrease {{item.quantity <= minQuantity ? 'disabled' : ''}} {{systemType}}-btn" 
-                bindtap="decreaseQuantity" 
-                data-index="{{index}}">-</view>
-          <text class="quantity">{{item.quantity}}</text>
-          <view class="btn-increase {{item.quantity >= maxQuantity ? 'disabled' : ''}} {{systemType}}-btn" 
-                bindtap="increaseQuantity" 
-                data-index="{{index}}">+</view>
-        </view>
+        <t-stepper
+          value="{{item.quantity}}"
+          min="{{minQuantity}}"
+          max="{{maxQuantity}}"
+          bind:change="onQuantityChange"
+          data-index="{{index}}"
+        />
       </view>
       <view class="delete-btn" bindtap="deleteItem" data-index="{{index}}">
-        <icon type="clear" size="20" color="#999"/>
+        <t-icon name="close" size="20" color="#999"/>
       </view>
     </view>
   </view>
 
   <!-- 底部结算栏 -->
   <view class="footer {{systemType}}-footer" wx:if="{{cartItems.length}}">
-    <view class="select-all" bindtap="toggleSelectAll">
-      <icon type="success" size="20" color="{{allSelected ? (systemType === 'red' ? '#d32f2f' : '#07c160') : '#ddd'}}"/>
+    <view class="select-all">
+      <t-checkbox
+        checked="{{allSelected}}"
+        bind:change="onSelectAllChange"
+      />
       <text>全选</text>
     </view>
     <view class="total-info">
       <text>合计：</text>
       <text class="total-price {{systemType}}-price">¥{{totalAmount}}</text>
     </view>
-    <view class="checkout-btn {{selectedCount ? 'active' : ''}} {{systemType}}-checkout-btn" bindtap="checkout">
+    <t-button
+      theme="primary"
+      size="large"
+      disabled="{{!selectedCount}}"
+      bindtap="checkout"
+    >
       结算({{selectedCount}})
-    </view>
+    </t-button>
   </view>
 </view>

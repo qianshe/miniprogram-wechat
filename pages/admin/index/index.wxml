@@ -8,82 +8,42 @@
         <view class="admin-role">{{adminInfo.role}}</view>
       </view>
     </view>
-    <view class="logout-btn" bindtap="logout">退出登录</view>
+    <t-button size="small" theme="default" bindtap="logout">退出登录</t-button>
   </view>
   
   <!-- 功能模块导航 -->
-  <view class="module-grid">
-    <view class="module-item" wx:for="{{modules}}" wx:key="id" bindtap="openModule" data-path="{{item.path}}">
-      <image class="module-icon" src="{{item.icon}}" mode="aspectFit"></image>
-      <view class="module-name">{{item.name}}</view>
-    </view>
-  </view>
+  <t-cell-group title="功能模块">
+    <t-cell
+      wx:for="{{modules}}"
+      wx:key="id"
+      title="{{item.name}}"
+      description="{{item.desc}}"
+      arrow
+      bindtap="onModuleTap"
+      data-path="{{item.path}}"
+    >
+      <view slot="left-icon" class="module-icon">{{item.icon}}</view>
+    </t-cell>
+  </t-cell-group>
   
   <!-- 今日数据统计 -->
-  <view class="section-title">今日数据概览</view>
-  <view class="stat-grid">
-    <view class="stat-item" bindtap="viewTodayOrders">
-      <view class="stat-value">{{todayStats.orders}}</view>
-      <view class="stat-label">今日订单</view>
-    </view>
-    <view class="stat-item">
-      <view class="stat-value">¥{{todayStats.sales}}</view>
-      <view class="stat-label">今日销售额</view>
-    </view>
-    <view class="stat-item">
-      <view class="stat-value">{{todayStats.users}}</view>
-      <view class="stat-label">新增用户</view>
-    </view>
-    <view class="stat-item">
-      <view class="stat-value">{{todayStats.visits}}</view>
-      <view class="stat-label">访问人次</view>
-    </view>
-  </view>
+  <t-cell-group title="今日数据概览">
+    <t-cell title="订单数" bindtap="onStatsTap" data-type="orders" arrow>
+      <view slot="note" class="stat-value">{{todayStats.orders}}</view>
+    </t-cell>
+    <t-cell title="商品数" bindtap="onStatsTap" data-type="products" arrow>
+      <view slot="note" class="stat-value">{{todayStats.products}}</view>
+    </t-cell>
+    <t-cell title="销售额">
+      <view slot="note" class="stat-value">¥{{todayStats.sales}}</view>
+    </t-cell>
+    <t-cell title="总收入">
+      <view slot="note" class="stat-value">¥{{todayStats.revenue}}</view>
+    </t-cell>
+  </t-cell-group>
   
-  <!-- 待处理事项 -->
-  <view class="section-title">待处理事项</view>
-  <view class="todo-list">
-    <view class="todo-item" bindtap="viewPendingOrders">
-      <view class="todo-info">
-        <image class="todo-icon" src="/assets/images/icon-new-order.png" mode="aspectFit"></image>
-        <view class="todo-name">待处理订单</view>
-      </view>
-      <view class="todo-count">{{pendingTasks.newOrders}}</view>
-    </view>
-    <view class="todo-item" bindtap="viewOutOfStockProducts">
-      <view class="todo-info">
-        <image class="todo-icon" src="/assets/images/icon-stock.png" mode="aspectFit"></image>
-        <view class="todo-name">缺货产品</view>
-      </view>
-      <view class="todo-count">{{pendingTasks.outOfStock}}</view>
-    </view>
-    <view class="todo-item" bindtap="viewFeedbacks">
-      <view class="todo-info">
-        <image class="todo-icon" src="/assets/images/icon-feedback.png" mode="aspectFit"></image>
-        <view class="todo-name">用户反馈</view>
-      </view>
-      <view class="todo-count">{{pendingTasks.feedbacks}}</view>
-    </view>
-    <view class="todo-item" bindtap="viewRefunds">
-      <view class="todo-info">
-        <image class="todo-icon" src="/assets/images/icon-refund.png" mode="aspectFit"></image>
-        <view class="todo-name">退款申请</view>
-      </view>
-      <view class="todo-count">{{pendingTasks.refunds}}</view>
-    </view>
-  </view>
-  
-  <!-- 热销产品排行 -->
-  <view class="section-title">热销产品排行</view>
-  <view class="product-rank-list">
-    <view class="product-rank-item" wx:for="{{topProducts}}" wx:key="id" bindtap="viewProduct" data-id="{{item.id}}">
-      <view class="rank-number">{{index + 1}}</view>
-      <image class="product-thumb" src="{{item.thumb}}" mode="aspectFill"></image>
-      <view class="product-info">
-        <view class="product-name">{{item.name}}</view>
-        <view class="product-sales">销量: {{item.sales}}件</view>
-      </view>
-      <view class="product-amount">¥{{item.amount}}</view>
-    </view>
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <text class="loading-text">加载中...</text>
   </view>
 </view> 

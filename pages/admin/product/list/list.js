@@ -211,7 +211,7 @@ Page({
   },
 
   /**
-   * 搜索产品
+   * TDesign搜索框变化
    */
   onSearchInput(e) {
     this.setData({
@@ -219,8 +219,28 @@ Page({
     })
   },
 
+  /**
+   * TDesign搜索框清空
+   */
+  onSearchClear() {
+    this.setData({
+      keyword: ''
+    }, () => {
+      this.resetAndLoad();
+    });
+  },
+
   onSearchConfirm() {
     this.resetAndLoad()
+  },
+
+  /**
+   * TDesign弹窗显示状态变化
+   */
+  onFilterPopupChange(e) {
+    this.setData({
+      showFilterPanel: e.detail.visible
+    });
   },
 
   /**

@@ -87,35 +87,43 @@ Page({
       errorMessage: ''
     });
     
-    // 调用订单详情API
-    api.getOrderDetail(orderNo)
-      .then(data => {
-        // 格式化金额，将分转为元
-        if (data.totalAmount) {
-          data.totalAmount = (data.totalAmount / 100).toFixed(2);
+    // 调用云函数获取订单详情
+    wx.cloud.callFunction({
+      name: 'orderManagement',
+      data: {
+        action: 'getOrderDetail',
+        data: {
+          orderNo: orderNo,
+          isAdmin: false
         }
-        
-        if (data.items && data.items.length > 0) {
-          data.items = data.items.map(item => ({
-            ...item,
-            price: (item.price / 100).toFixed(2)
-          }));
+      }
+    })
+      .then(res => {
+        if (res.result.code === 200 && res.result.data) {
+          const data = res.result.data;
+
+          this.setData({
+            orderInfo: {
+              ...data,
+              // 检查是否已经绑定到当前用户
+              isBinded: this.data.isLoggedIn && data.userId === this.data.userId,
+              totalAmount: data.totalAmount.toFixed(2), // 云函数已转换为元
+              items: data.items.map(item => ({
+                ...item,
+                price: item.price.toFixed(2)
+              }))
+            },
+            loading: false
+          });
+        } else {
+          throw new Error(res.result.message || '订单不存在');
         }
-        
-        this.setData({
-          orderInfo: {
-            ...data,
-            // 检查是否已经绑定到当前用户
-            isBinded: this.data.isLoggedIn && data.userId === this.data.userId
-          },
-          loading: false
-        });
       })
       .catch(err => {
         console.error('获取订单信息失败:', err);
         this.setData({
           loading: false,
-          errorMessage: err.message || '获取订单信息失败'
+          errorMessage: err.message || err.result?.message || '获取订单信息失败'
         });
       });
   },
@@ -152,27 +160,40 @@ Page({
       title: '正在绑定...'
     });
     
-    // 调用绑定订单接口
-    api.bindOrder(this.data.orderNo, this.data.userId)
-      .then(() => {
+    // 调用云函数绑定订单
+    wx.cloud.callFunction({
+      name: 'orderManagement',
+      data: {
+        action: 'bindOrder',
+        data: {
+          orderNo: this.data.orderNo,
+          userId: this.data.userId
+        }
+      }
+    })
+      .then(res => {
         wx.hideLoading();
-        
-        wx.showToast({
-          title: '绑定成功',
-          icon: 'success'
-        });
-        
-        // 刷新订单状态
-        this.setData({
-          'orderInfo.isBinded': true,
-          'orderInfo.userId': this.data.userId
-        });
+
+        if (res.result.code === 200) {
+          wx.showToast({
+            title: '绑定成功',
+            icon: 'success'
+          });
+
+          // 刷新订单状态
+          this.setData({
+            'orderInfo.isBinded': true,
+            'orderInfo.userId': this.data.userId
+          });
+        } else {
+          throw new Error(res.result.message || '绑定失败');
+        }
       })
       .catch(err => {
         wx.hideLoading();
-        
+
         wx.showToast({
-          title: err.message || '绑定失败',
+          title: err.message || err.result?.message || '绑定失败',
           icon: 'none'
         });
       });

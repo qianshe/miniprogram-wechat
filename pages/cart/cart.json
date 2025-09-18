@@ -1,4 +1,9 @@
 {
   "navigationBarTitleText": "购物车",
-  "usingComponents": {}
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-stepper": "tdesign-miniprogram/stepper/stepper",
+    "t-checkbox": "tdesign-miniprogram/checkbox/checkbox",
+    "t-button": "tdesign-miniprogram/button/button"
+  }
 }

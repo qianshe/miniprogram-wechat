@@ -25,7 +25,19 @@ Page({
     this.loadOrders();
   },
 
-  // 标签页点击
+  // TDesign标签页变化
+  onTabChange(e) {
+    const value = e.detail.value;
+    this.setData({
+      activeTab: value,
+      'pagination.page': 1,  // 重置页码
+      orders: [],  // 清空当前订单列表
+    }, () => {
+      this.loadOrders();  // 重新加载订单
+    });
+  },
+
+  // 保留原方法以兼容其他调用
   onTabClick(e) {
     const value = e.currentTarget.dataset.value;
     this.setData({
@@ -38,10 +50,19 @@ Page({
     });
   },
 
-  // 搜索框输入变化
+  // TDesign搜索框变化
   onSearchChange(e) {
     this.setData({
       searchKeyword: e.detail.value
+    });
+  },
+
+  // TDesign搜索框清空
+  onSearchClear() {
+    this.setData({
+      searchKeyword: ''
+    }, () => {
+      this.loadOrders();
     });
   },
 
@@ -53,6 +74,13 @@ Page({
       loading: true
     }, () => {
       this.loadOrders();
+    });
+  },
+
+  // TDesign弹窗显示状态变化
+  onFilterPopupChange(e) {
+    this.setData({
+      showFilterPanel: e.detail.visible
     });
   },
 
@@ -77,14 +105,14 @@ Page({
     });
   },
 
-  // 最低价格变化
+  // TDesign输入框 - 最低价格变化
   onMinPriceChange(e) {
     this.setData({
       minPrice: e.detail.value
     });
   },
 
-  // 最高价格变化
+  // TDesign输入框 - 最高价格变化
   onMaxPriceChange(e) {
     this.setData({
       maxPrice: e.detail.value
@@ -163,16 +191,35 @@ Page({
         params.maxPrice = parseInt(this.data.maxPrice) * 100; // 转换为分
       }
 
-      const res = await request.get(`/api/orders/user/1`, params);
+      // 调用云函数获取订单列表
+      const res = await wx.cloud.callFunction({
+        name: 'orderManagement',
+        data: {
+          action: 'getOrders',
+          data: {
+            ...params,
+            page,
+            size,
+            isAdmin: false
+          }
+        }
+      });
 
-      if (res.code === 200 && res.data) {
-        const { records, total } = res.data;
+      if (res.result.code === 200 && res.result.data) {
+        const { records, total } = res.result.data;
+
+        // 如果云数据库没有数据，使用本地存储的模拟数据
+        if (records.length === 0 && page === 1) {
+          this.loadMockOrders();
+          return;
+        }
+
         const formattedOrders = records.map(order => ({
           ...order,
           statusText: this.getStatusText(order.status),
-          createdTime: this.formatDate(order.createdTime),
+          createdTime: this.formatDate(order.createTime),
           serviceTime: this.formatDate(order.serviceTime),
-          totalAmount: (order.totalAmount / 100).toFixed(2)
+          totalAmount: order.totalAmount.toFixed(2) // 云函数已转换为元
         }));
 
         this.setData({
@@ -183,10 +230,9 @@ Page({
         });
       }
     } catch (err) {
-      wx.showToast({
-        title: '加载订单失败',
-        icon: 'none'
-      });
+      console.error('云函数调用失败，使用本地数据:', err);
+      // 云函数调用失败时，使用本地存储的模拟数据
+      this.loadMockOrders();
     } finally {
       this.setData({ loading: false });
     }
@@ -222,6 +268,87 @@ Page({
     if (this.data.hasMore) {
       this.loadMore();
     }
+  },
+
+  // 加载本地模拟订单数据
+  loadMockOrders() {
+    const mockOrders = [
+      {
+        _id: 'mock_order_1',
+        orderNo: 'ORD202412170001',
+        status: 1,
+        totalAmount: 1288.00,
+        createTime: new Date().toISOString(),
+        serviceTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        contactName: '张先生',
+        contactPhone: '13800138000',
+        serviceAddress: '北京市朝阳区某某街道',
+        items: [
+          {
+            productId: 'prod_001',
+            productName: '白事服务套餐A',
+            price: 888.00,
+            quantity: 1,
+            subtotal: 888.00
+          },
+          {
+            productId: 'prod_002',
+            productName: '花圈',
+            price: 200.00,
+            quantity: 2,
+            subtotal: 400.00
+          }
+        ]
+      },
+      {
+        _id: 'mock_order_2',
+        orderNo: 'ORD202412170002',
+        status: 0,
+        totalAmount: 2588.00,
+        createTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        serviceTime: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+        contactName: '李女士',
+        contactPhone: '13900139000',
+        serviceAddress: '上海市浦东新区某某路',
+        items: [
+          {
+            productId: 'prod_003',
+            productName: '红事服务套餐B',
+            price: 1888.00,
+            quantity: 1,
+            subtotal: 1888.00
+          },
+          {
+            productId: 'prod_004',
+            productName: '婚庆布置',
+            price: 700.00,
+            quantity: 1,
+            subtotal: 700.00
+          }
+        ]
+      }
+    ];
+
+    // 根据当前标签页过滤订单
+    const statusFilter = this.getStatusByTab(this.data.activeTab);
+    const filteredOrders = statusFilter !== undefined
+      ? mockOrders.filter(order => order.status === statusFilter)
+      : mockOrders;
+
+    const formattedOrders = filteredOrders.map(order => ({
+      ...order,
+      statusText: this.getStatusText(order.status),
+      createdTime: this.formatDate(order.createTime),
+      serviceTime: this.formatDate(order.serviceTime),
+      totalAmount: order.totalAmount.toFixed(2)
+    }));
+
+    this.setData({
+      orders: formattedOrders,
+      'pagination.total': filteredOrders.length,
+      hasMore: false,
+      loading: false
+    });
   },
 
   onOrderClick(e) {

@@ -26,7 +26,7 @@
     <view class="section-title">商品信息</view>
     <view class="info-item">
       <text class="label">商品编号</text>
-      <text class="value">{{goods.id}}</text>
+      <text class="value">{{goods._id}}</text>
     </view>
     <view class="info-item">
       <text class="label">上架时间</text>
@@ -34,7 +34,7 @@
     </view>
     <view class="info-item">
       <text class="label">分类</text>
-      <text class="value">{{goods.categoryId}}</text>
+      <text class="value">{{goods.category === 0 ? '白事用品' : '红事用品'}}</text>
     </view>
   </view>
 
@@ -44,31 +44,32 @@
   </view>
 
   <!-- SKU选择弹窗 -->
-  <t-popup visible="{{showSkuPopup}}" bind:visible-change="closeSkuPopup" placement="bottom">
-    <view class="sku-popup">
-      <view class="sku-header">
-        <image src="{{goods.image}}" mode="aspectFill" class="sku-image" />
-        <view class="sku-info">
-          <view class="sku-price">¥{{goods.displayPrice}}</view>
-          <view class="sku-stock">库存: {{goods.stock}}</view>
+  <t-popup visible="{{showSkuPopup}}" placement="bottom" bind:visible-change="onPopupChange">
+    <view class="popup-content">
+      <view class="sku-popup">
+        <view class="sku-header">
+          <image src="{{goods.image}}" mode="aspectFill" class="sku-image" />
+          <view class="sku-info">
+            <view class="sku-price">¥{{goods.price}}</view>
+            <view class="sku-stock">库存: {{goods.stock}}</view>
+          </view>
         </view>
-      </view>
-      
-      <view class="sku-content">
-        <view class="quantity-section">
-          <text>购买数量</text>
-          <t-stepper 
-            value="{{quantity}}" 
-            min="1" 
-            max="{{goods.stock}}"
-            theme="filled"
-            bind:change="onQuantityChange" 
-          />
-        </view>
-      </view>
 
-      <view class="sku-footer">
-        <button class="confirm-btn" bindtap="addToCart">确定</button>
+        <view class="sku-content">
+          <view class="quantity-section">
+            <text>购买数量</text>
+            <t-stepper
+              value="{{quantity}}"
+              min="1"
+              max="{{goods.stock}}"
+              bind:change="onQuantityChange"
+            />
+          </view>
+        </view>
+
+        <view class="sku-footer">
+          <button class="confirm-btn" bindtap="addToCart">确定</button>
+        </view>
       </view>
     </view>
   </t-popup>

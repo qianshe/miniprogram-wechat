@@ -87,14 +87,24 @@
 }
 
 .module-icon {
-  width: 80rpx;
-  height: 80rpx;
+  font-size: 60rpx;
   margin-bottom: 10rpx;
 }
 
+.module-info {
+  text-align: center;
+}
+
 .module-name {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #333;
+  font-weight: bold;
+  margin-bottom: 5rpx;
+}
+
+.module-desc {
+  font-size: 22rpx;
+  color: #666;
 }
 
 /* 通用的区块标题 */
@@ -283,4 +293,17 @@
   font-size: 30rpx;
   color: #f44336;
   font-weight: bold;
-} 
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+}

@@ -116,21 +116,21 @@ Page({
 
     try {
 
-      // 调用后端登录接口
-      const loginRes = await request.post('/api/auth/wx/login', {
-        userInfo,
-        code
-      }, { needAuth: false });
+      // 调用云函数登录
+      const loginRes = await wx.cloud.callFunction({
+        name: 'login',
+        data: {
+          userInfo
+        }
+      });
 
-      if (loginRes.code === 200 && loginRes.data) {
-        // 保存token和用户信息
-        auth.setToken(loginRes.data.token, loginRes.data.refresh_token);
-        
-        // 转换用户角色信息
+      if (loginRes.result.code === 200 && loginRes.result.data) {
+        // 保存用户信息（云开发不需要token管理）
         const userInfoWithRole = {
           ...userInfo,
-          role: loginRes.data.role || 0,
-          isAdmin: loginRes.data.role === 1
+          openid: loginRes.result.data.openid,
+          role: loginRes.result.data.role || 0,
+          isAdmin: loginRes.result.data.isAdmin || false
         };
         wx.setStorageSync('userInfo', userInfoWithRole);
 
@@ -150,43 +150,15 @@ Page({
           icon: 'success'
         });
       } else {
-        throw new Error(loginRes.message || '登录失败');
+        throw new Error(loginRes.result.message || '登录失败');
       }
     } catch (err) {
-      console.error('登录失败:', err);
-
-      // todo 错误处理，模拟登录效果，正式环境请删除
-      // 保存token和用户信息
-      auth.setToken('test_token', 'test_refresh_token');
-      wx.setStorageSync('userInfo', {
-        avatarUrl: userInfo.avatarUrl,
-        nickName: userInfo.nickName,
-        role: 0,
-        isAdmin: false
-      });
-      app.globalData.userInfo = {
-        avatarUrl: userInfo.avatarUrl,
-        nickName: userInfo.nickName,
-        role: 0,
-        isAdmin: false
-      };
-      this.setData({
-        userInfo: {
-          avatarUrl: userInfo.avatarUrl,
-          nickName: userInfo.nickName,
-          role: 0,
-          isAdmin: false
-        },
-        hasUserInfo: true,
-        isAdmin: false
-      });
-      app.globalData.isAdmin = false;
-
-      // 以上内容为模拟登录效果，正式环境请删除
+      console.error('云函数登录失败:', err);
 
       wx.showToast({
-        title: err.message || '登录失败，请稍后重试',
-        icon: 'none'
+        title: '登录失败，请重试',
+        icon: 'none',
+        duration: 2000
       });
     } finally {
       this.setData({ loading: false });
@@ -196,20 +168,18 @@ Page({
 
   // 检查登录状态
   checkLoginStatus() {
-    // 检查token是否存在
-    if (auth.checkAuth()) {
-      const userInfo = wx.getStorageSync('userInfo');
-      if (userInfo) {
-        // 更新页面和全局状态
-        this.setData({
-          userInfo,
-          hasUserInfo: true,
-          isAdmin: userInfo.isAdmin || false
-        });
-        app.globalData.userInfo = userInfo;
-        app.globalData.isAdmin = userInfo.isAdmin || false;
-        return true;
-      }
+    // 云开发模式下检查本地存储的用户信息
+    const userInfo = wx.getStorageSync('userInfo');
+    if (userInfo && userInfo.openid) {
+      // 更新页面和全局状态
+      this.setData({
+        userInfo,
+        hasUserInfo: true,
+        isAdmin: userInfo.isAdmin || false
+      });
+      app.globalData.userInfo = userInfo;
+      app.globalData.isAdmin = userInfo.isAdmin || false;
+      return true;
     }
 
     // 如果token不存在或用户信息不存在，则清除登录状态

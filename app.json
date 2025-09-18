@@ -34,6 +34,10 @@
   "useExtendedLib": {
     "weui": true
   },
+  "networkTimeout": {
+    "request": 10000,
+    "downloadFile": 10000
+  },
   "tabBar": {
     "custom": true,
     "color": "#999999",

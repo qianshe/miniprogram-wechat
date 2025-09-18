@@ -1,34 +1,27 @@
 <wxs src="../../../utils/tools.wxs" module="tools" />
 <!--pages/create-order/create-order.wxml-->
 <view class="create-order-container">
+  <!-- 订单信息 -->
   <t-cell-group title="订单信息">
-    <t-input
-      label="客户名称"
-      placeholder="请输入客户名称"
-      bind:change="onCustomerNameChange"
-      value="{{customerName}}"
-    />
-    <t-input
-      label="联系电话"
-      placeholder="请输入联系电话"
-      bind:change="onPhoneChange"
-      value="{{phone}}"
-    />
-    <view class="product-actions">
-      <t-cell title="选择商品" hover arrow bind:tap="showProductSelector" />
-    </view>
+    <t-cell title="客户名称" arrow>
+      <t-input slot="note" placeholder="请输入客户名称" bind:change="onCustomerNameChange" value="{{customerName}}" />
+    </t-cell>
+    <t-cell title="联系电话" arrow>
+      <t-input slot="note" placeholder="请输入联系电话" bind:change="onPhoneChange" value="{{phone}}" type="number" />
+    </t-cell>
+    <t-cell title="选择商品" arrow bindtap="showProductSelector" />
   </t-cell-group>
 
   <view class="product-list" wx:if="{{selectedProducts.length}}">
     <view class="product-item" wx:for="{{selectedProducts}}" wx:key="id">
       <text class="product-name">{{item.name}}</text>
       <view class="quantity-control">
-        <t-icon name="remove" size="20" bind:tap="decreaseQuantity" data-index="{{index}}" />
-        <text>{{item.quantity}}</text>
-        <t-icon name="add" size="20" bind:tap="increaseQuantity" data-index="{{index}}" />
+        <button class="quantity-btn" bindtap="decreaseQuantity" data-index="{{index}}">-</button>
+        <text class="quantity-text">{{item.quantity}}</text>
+        <button class="quantity-btn" bindtap="increaseQuantity" data-index="{{index}}">+</button>
       </view>
       <text class="product-price">￥{{tools.formatPrice(item.price * item.quantity)}}</text>
-      <t-icon class="remove-btn" name="close" size="20" bind:tap="removeProduct" data-index="{{index}}" />
+      <button class="remove-btn" bindtap="removeProduct" data-index="{{index}}">×</button>
     </view>
   </view>
 
@@ -36,46 +29,49 @@
   <view class="debug-box" wx:if="{{debugText}}">
     <view class="debug-header">
       <text class="debug-title">调试输出:</text>
-      <t-button size="small" variant="text" bind:tap="copyDebugText">复制</t-button>
+      <button class="copy-btn" bindtap="copyDebugText">复制</button>
     </view>
     <text class="debug-content" selectable="true">{{debugText}}</text>
   </view>
 
   <!-- 底部固定按钮 -->
   <view class="bottom-bar">
-    <t-button 
-      class="voice-btn" 
-      theme="primary" 
-      size="small"
-      variant="outline"
-      icon="mic"
-      bind:tap="startVoiceInput"
-    >语音</t-button>
+    <button class="voice-btn" bindtap="startVoiceInput">🎤 语音</button>
     <view class="total-amount">
       <text>合计：</text>
       <text class="amount">￥{{totalAmount}}</text>
     </view>
-    <t-button theme="primary" bind:tap="createOrder">创建订单</t-button>
+    <button class="create-btn" bindtap="createOrder">创建订单</button>
   </view>
 </view>
 
 <!-- 商品选择弹出层 -->
-<t-popup visible="{{showProductSelector}}" bind:visible-change="onPopupChange">
+<t-popup visible="{{showProductSelector}}" placement="bottom" bind:visible-change="onPopupChange">
   <view class="popup-content">
-    <t-search model:value="{{searchValue}}" placeholder="搜索商品" bind:change="onSearchChange" />
-    <scroll-view 
-      scroll-y 
-      class="product-scroll" 
+    <view class="popup-header">
+      <text class="popup-title">选择商品</text>
+      <t-button variant="text" bindtap="hideProductSelector">×</t-button>
+    </view>
+    <view class="search-container">
+      <t-search
+        placeholder="搜索商品"
+        bind:change="onSearchChange"
+        value="{{searchValue}}"
+      />
+    </view>
+    <scroll-view
+      scroll-y
+      class="product-scroll"
       bindscrolltolower="onLoadMoreProducts"
     >
       <block wx:if="{{filteredProducts.length > 0}}">
-        <view class="product-option" 
-              wx:for="{{filteredProducts}}" 
-              wx:key="id" 
-              bind:tap="selectProduct" 
+        <view class="product-option"
+              wx:for="{{filteredProducts}}"
+              wx:key="id"
+              bindtap="selectProduct"
               data-product="{{item}}">
-          <text>{{item.name}}</text>
-          <text>¥{{item.price}}</text>
+          <text class="product-name">{{item.name}}</text>
+          <text class="product-price">¥{{item.price}}</text>
         </view>
       </block>
       <view class="loading-tips" wx:if="{{productsLoading}}">加载中...</view>

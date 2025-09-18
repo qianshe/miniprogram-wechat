@@ -1,4 +1,11 @@
 {
   "navigationBarTitleText": "创建订单",
-  "usingComponents": {}
+  "usingComponents": {
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
+    "t-cell": "tdesign-miniprogram/cell/cell"
+  }
 } 

@@ -29,12 +29,28 @@ Page({
     this.setData({ phone: e.detail.value })
   },
 
+  // 隐藏商品选择器
+  hideProductSelector() {
+    this.setData({ showProductSelector: false })
+  },
+
+  // 阻止事件冒泡
+  stopPropagation() {
+    // 阻止点击弹窗内容时关闭弹窗
+  },
+
   showProductSelector() {
     this.setData({ showProductSelector: true })
   },
 
+  // TDesign弹窗状态变化
   onPopupChange(e) {
     this.setData({ showProductSelector: e.detail.visible })
+  },
+
+  // 隐藏商品选择器
+  hideProductSelector() {
+    this.setData({ showProductSelector: false })
   },
 
   onSearchChange(e) {
@@ -136,36 +152,46 @@ Page({
 
     try {
       wx.showLoading({ title: '正在创建订单' });
-      
+
       const orderData = {
-        customerName: this.data.customerName,
-        phone: this.data.phone,
-        products: this.data.selectedProducts.map(p => ({
+        contactName: this.data.customerName,
+        contactPhone: this.data.phone,
+        items: this.data.selectedProducts.map(p => ({
           productId: p.id,
+          productName: p.name,
+          price: p.price,
           quantity: p.quantity
         })),
-        totalAmount: this.data.totalAmount
+        totalAmount: this.data.totalAmount,
+        remark: this.data.remark || ''
       };
 
-      const res = await request.post('/api/orders', orderData);
-      
-      if (res.code === 200) {
+      // 调用云函数创建订单
+      const res = await wx.cloud.callFunction({
+        name: 'orderManagement',
+        data: {
+          action: 'createOrder',
+          data: orderData
+        }
+      });
+
+      if (res.result.code === 200) {
         // 获取订单号和二维码链接
-        const { orderNo, qrCodeUrl } = res.data;
-        
+        const { orderNo, qrCodeUrl } = res.result.data;
+
         wx.hideLoading();
-        
+
         // 跳转到订单详情页，并传递订单信息
         wx.navigateTo({
           url: `/pages/order/detail/detail?orderNo=${orderNo}`
         });
       } else {
-        throw new Error(res.message || '订单创建失败');
+        throw new Error(res.result.message || '订单创建失败');
       }
     } catch (error) {
       console.error('创建订单失败:', error);
       wx.showToast({
-        title: error.message || '订单创建失败',
+        title: error.message || error.result?.message || '订单创建失败',
         icon: 'none'
       });
       wx.hideLoading();

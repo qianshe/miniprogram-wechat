@@ -4,80 +4,81 @@
   </view>
   
   <!-- 订单表单 -->
-  <view class="form-section">
-    <view class="section-title">客户信息</view>
-    
-    <view class="form-group">
-      <view class="form-label">联系人姓名<text class="required">*</text></view>
-      <input 
-        class="form-input {{errors.contactName ? 'input-error' : ''}}" 
-        placeholder="请输入联系人姓名" 
-        value="{{formData.contactName}}" 
-        bindinput="onInput" 
+  <t-cell-group title="客户信息">
+    <t-cell title="联系人姓名" required>
+      <t-input
+        slot="note"
+        placeholder="请输入联系人姓名"
+        value="{{formData.contactName}}"
+        bind:change="onInputChange"
         data-field="contactName"
+        status="{{errors.contactName ? 'error' : ''}}"
+        tips="{{errors.contactName}}"
       />
-      <view class="error-message" wx:if="{{errors.contactName}}">{{errors.contactName}}</view>
-    </view>
-    
-    <view class="form-group">
-      <view class="form-label">联系电话<text class="required">*</text></view>
-      <input 
-        class="form-input {{errors.contactPhone ? 'input-error' : ''}}" 
-        type="number" 
-        placeholder="请输入联系电话" 
-        value="{{formData.contactPhone}}" 
-        bindinput="onInput" 
+    </t-cell>
+
+    <t-cell title="联系电话" required>
+      <t-input
+        slot="note"
+        type="number"
+        placeholder="请输入联系电话"
+        value="{{formData.contactPhone}}"
+        bind:change="onInputChange"
         data-field="contactPhone"
+        status="{{errors.contactPhone ? 'error' : ''}}"
+        tips="{{errors.contactPhone}}"
       />
-      <view class="error-message" wx:if="{{errors.contactPhone}}">{{errors.contactPhone}}</view>
-    </view>
-    
-    <view class="form-group">
-      <view class="form-label">服务时间<text class="required">*</text></view>
-      <picker 
-        mode="date" 
-        value="{{formData.serviceTime}}" 
+    </t-cell>
+
+    <t-cell title="服务时间" required>
+      <picker
+        slot="note"
+        mode="date"
+        value="{{formData.serviceTime}}"
         bindchange="onServiceTimeChange"
         start="{{formData.serviceTime}}"
       >
-        <view class="form-picker {{errors.serviceTime ? 'input-error' : ''}}">
+        <view class="form-picker">
           {{formData.serviceTime || '请选择服务时间'}}
-          <view class="picker-arrow"></view>
+          <t-icon name="chevron-right" size="16" />
         </view>
       </picker>
-      <view class="error-message" wx:if="{{errors.serviceTime}}">{{errors.serviceTime}}</view>
-    </view>
-    
-    <view class="form-group">
-      <view class="form-label">服务地址<text class="required">*</text></view>
-      <textarea 
-        class="form-textarea {{errors.address ? 'input-error' : ''}}" 
-        placeholder="请输入详细地址" 
-        value="{{formData.address}}" 
-        bindinput="onInput" 
+      <view class="error-tips" wx:if="{{errors.serviceTime}}">{{errors.serviceTime}}</view>
+    </t-cell>
+
+    <t-cell title="服务地址" required>
+      <t-input
+        slot="note"
+        type="textarea"
+        placeholder="请输入详细地址"
+        value="{{formData.address}}"
+        bind:change="onInputChange"
         data-field="address"
+        status="{{errors.address ? 'error' : ''}}"
+        tips="{{errors.address}}"
       />
-      <view class="error-message" wx:if="{{errors.address}}">{{errors.address}}</view>
-    </view>
-    
-    <view class="form-group">
-      <view class="form-label">备注</view>
-      <textarea 
-        class="form-textarea" 
-        placeholder="可选填" 
-        value="{{formData.remark}}" 
-        bindinput="onInput" 
+    </t-cell>
+
+    <t-cell title="备注">
+      <t-input
+        slot="note"
+        type="textarea"
+        placeholder="可选填"
+        value="{{formData.remark}}"
+        bind:change="onInputChange"
         data-field="remark"
       />
-    </view>
-  </view>
+    </t-cell>
+  </t-cell-group>
   
   <!-- 产品列表 -->
-  <view class="form-section">
-    <view class="section-header">
-      <view class="section-title">产品信息</view>
-      <view class="add-product-btn" bindtap="openProductSelector">添加产品</view>
-    </view>
+  <t-cell-group title="产品信息">
+    <t-cell title="选择产品" arrow bindtap="openProductSelector">
+      <t-button slot="note" size="small" theme="primary">添加产品</t-button>
+    </t-cell>
+  </t-cell-group>
+
+  <view class="form-section" wx:if="{{selectedProducts.length > 0 || errors.products}}">
     
     <view class="error-message" wx:if="{{errors.products}}">{{errors.products}}</view>
     
@@ -114,33 +115,36 @@
   
   <!-- 操作按钮 -->
   <view class="action-buttons">
-    <button class="cancel-btn" bindtap="goBack">取消</button>
-    <button 
-      class="submit-btn {{isSubmitting ? 'disabled' : ''}}" 
-      bindtap="submitOrder" 
+    <t-button theme="default" bindtap="goBack">取消</t-button>
+    <t-button
+      theme="primary"
+      loading="{{isSubmitting}}"
+      bindtap="submitOrder"
       disabled="{{isSubmitting}}"
     >
       {{isSubmitting ? '提交中...' : '提交订单'}}
-    </button>
+    </t-button>
   </view>
   
   <!-- 产品选择弹窗 -->
-  <view class="product-selector {{showProductSelector ? 'show' : ''}}">
-    <view class="selector-mask" bindtap="closeProductSelector"></view>
+  <t-popup
+    visible="{{showProductSelector}}"
+    placement="bottom"
+    bind:visible-change="onProductSelectorChange"
+  >
     <view class="selector-content">
       <view class="selector-header">
         <view class="selector-title">选择产品</view>
-        <view class="close-btn" bindtap="closeProductSelector">×</view>
+        <t-icon name="close" size="20" bindtap="closeProductSelector" />
       </view>
-      
+
       <view class="selector-search">
-        <input 
-          class="search-input" 
-          placeholder="搜索产品名称" 
-          bindinput="onSearchInput" 
+        <t-input
+          placeholder="搜索产品名称"
+          bind:change="onSearchInput"
           value="{{searchKeyword}}"
+          prefix-icon="search"
         />
-        <view class="search-icon">🔍</view>
       </view>
       
       <view class="selector-list">
@@ -162,5 +166,5 @@
         <view class="empty-results" wx:else>无匹配产品</view>
       </view>
     </view>
-  </view>
-</view> 
+  </t-popup>
+</view>

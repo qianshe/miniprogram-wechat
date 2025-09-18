@@ -1,4 +1,8 @@
 {
   "navigationBarTitleText": "商品扫描",
-  "usingComponents": {}
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-empty": "tdesign-miniprogram/empty/empty"
+  }
 } 

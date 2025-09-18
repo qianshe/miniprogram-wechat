@@ -1,12 +1,11 @@
 <!-- miniprogram/custom-tab-bar/index.wxml -->
 <view class="wrapper">
-
   <t-tab-bar t-class="t-tab-bar" value="{{index}}" bindchange="onChange">
-    <t-tab-bar-item 
-    wx:for="{{list}}" 
-    wx:key="index" 
+    <t-tab-bar-item
+    wx:for="{{list}}"
+    wx:key="index"
     value="{{index}}"
-    icon="{{item.icon}}" 
+    icon="{{item.icon}}"
     text="{{item.text}}"
     ></t-tab-bar-item>
   </t-tab-bar>

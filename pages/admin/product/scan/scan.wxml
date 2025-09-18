@@ -51,8 +51,8 @@
         </view>
         
         <view class="action-buttons">
-          <button class="action-btn secondary" bindtap="reScan">重新扫描</button>
-          <button class="action-btn primary" bindtap="quickAddToOrder">快速下单</button>
+          <t-button theme="default" bindtap="reScan">重新扫描</t-button>
+          <t-button theme="primary" bindtap="quickAddToOrder">快速下单</t-button>
         </view>
       </block>
       
@@ -64,19 +64,14 @@
   </block>
   
   <!-- 正在扫描或加载中 -->
-  <block wx:elif="{{isScanning || isLoading}}">
-    <view class="loading-container">
-      <view class="loading-icon"></view>
-      <view class="loading-text">{{isScanning ? '扫描中...' : '识别中...'}}</view>
-    </view>
-  </block>
+  <t-loading wx:elif="{{isScanning || isLoading}}" text="{{isScanning ? '扫描中...' : '识别中...'}}" />
   
   <!-- 初始状态或错误状态 -->
   <block wx:else>
     <view class="scan-placeholder">
       <view class="placeholder-icon">📷</view>
       <view class="placeholder-text">请扫描商品以查询价格和库存信息</view>
-      <button class="scan-btn" bindtap="startScan">开始扫描</button>
+      <t-button theme="primary" size="large" bindtap="startScan">开始扫描</t-button>
       
       <view class="error-message" wx:if="{{errorMessage}}">
         {{errorMessage}}
@@ -93,6 +88,6 @@
   
   <!-- 底部操作按钮 -->
   <view class="bottom-buttons" wx:if="{{!isScanning && !isLoading && !scanResult}}">
-    <button class="bottom-btn" bindtap="goBack">返回</button>
+    <t-button theme="default" bindtap="goBack">返回</t-button>
   </view>
 </view> 

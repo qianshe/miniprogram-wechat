@@ -16,9 +16,9 @@
   </view>
   
   <view class="action-buttons">
-    <button class="action-btn primary" bindtap="saveQrCode">保存到相册</button>
-    <button class="action-btn secondary" bindtap="shareOrder">分享订单</button>
-    <button class="action-btn plain" bindtap="backToList">返回列表</button>
+    <t-button theme="primary" bindtap="saveQrCode">保存到相册</t-button>
+    <t-button theme="default" bindtap="shareOrder">分享订单</t-button>
+    <t-button theme="light" bindtap="backToList">返回列表</t-button>
   </view>
   
   <view class="order-detail-section">

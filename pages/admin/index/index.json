@@ -2,5 +2,10 @@
   "navigationBarTitleText": "管理后台",
   "enablePullDownRefresh": true,
   "backgroundColor": "#f5f5f5",
-  "usingComponents": {}
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  }
 } 

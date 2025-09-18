@@ -68,9 +68,14 @@
   transform: translateY(-50%);
 }
 
-.search-icon image {
-  width: 40rpx;
-  height: 40rpx;
+.search-icon .iconfont {
+  font-size: 0;
+  color: #666;
+}
+
+.search-icon .iconfont::before {
+  content: "🔍";
+  font-size: 32rpx;
 }
 
 .filter-btn {
@@ -83,9 +88,14 @@
   background-color: #fff;
 }
 
-.filter-btn image {
-  width: 40rpx;
-  height: 40rpx;
+.filter-btn .iconfont {
+  font-size: 0;
+  color: #666;
+}
+
+.filter-btn .iconfont::before {
+  content: "📊";
+  font-size: 32rpx;
 }
 
 .sort-options {

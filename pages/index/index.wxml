@@ -31,7 +31,7 @@
               wx:key="id"
               bindtap="onStepClick"
               data-id="{{item.id}}">
-          <text class="step-name">{{item.step_name}}</text>
+          <text class="step-name">{{item.title}}</text>
           <text class="step-desc">{{item.description}}</text>
           <view class="step-arrow"></view>
         </view>
@@ -48,7 +48,7 @@
               wx:key="id"
               class="product-item"
               bindtap="onProductClick"
-              data-id="{{item.id}}">
+              data-id="{{item._id || item.id}}">
           <image src="{{item.imageUrl}}" mode="aspectFill" class="product-image"/>
           <view class="product-info">
             <view class="product-name">{{item.name}}</view>

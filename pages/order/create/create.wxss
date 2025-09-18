@@ -253,3 +253,64 @@
   color: #999;
   font-size: 28rpx;
 }
+
+/* TDesign CellGroup和Input组件已提供表单样式，移除自定义样式 */
+
+
+
+.remove-btn {
+  width: 40rpx;
+  height: 40rpx;
+  background: #ff4d4f;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.copy-btn {
+  padding: 10rpx 20rpx;
+  background: #1890ff;
+  color: #fff;
+  border-radius: 6rpx;
+  font-size: 24rpx;
+  border: none;
+}
+
+/* TDesign Popup和Search组件已提供弹窗和搜索样式，移除自定义样式 */
+
+
+
+
+
+/* TDesign弹窗内容样式 */
+.popup-content {
+  background: #fff;
+  padding: 20rpx;
+}
+
+.product-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.product-option:active {
+  background: #f8f8f8;
+}
+
+.product-option .product-name {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.product-option .product-price {
+  font-size: 28rpx;
+  color: #ff4d4f;
+  font-weight: bold;
+}

@@ -51,6 +51,17 @@ Page({
     }
   },
 
+  // TDesign checkbox事件处理
+  onCheckboxChange(e) {
+    const index = e.currentTarget.dataset.index
+    const selected = e.detail.checked
+    this.setData({
+      [`cartItems[${index}].selected`]: selected
+    })
+    this.updateTotalAmount()
+  },
+
+  // 保留原方法以兼容其他调用
   toggleSelect(e) {
     const index = e.currentTarget.dataset.index
     const selected = !this.data.cartItems[index].selected
@@ -60,6 +71,21 @@ Page({
     this.updateTotalAmount()
   },
 
+  // TDesign全选checkbox事件处理
+  onSelectAllChange(e) {
+    const allSelected = e.detail.checked
+    const cartItems = this.data.cartItems.map(item => ({
+      ...item,
+      selected: allSelected
+    }))
+    this.setData({
+      allSelected,
+      cartItems
+    })
+    this.updateTotalAmount()
+  },
+
+  // 保留原方法以兼容其他调用
   toggleSelectAll() {
     const allSelected = !this.data.allSelected
     const cartItems = this.data.cartItems.map(item => ({
@@ -71,6 +97,13 @@ Page({
       cartItems
     })
     this.updateTotalAmount()
+  },
+
+  // TDesign步进器事件处理
+  onQuantityChange(e) {
+    const index = e.currentTarget.dataset.index
+    const quantity = e.detail.value
+    this.updateQuantity(index, quantity)
   },
 
   increaseQuantity(e) {

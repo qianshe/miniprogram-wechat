@@ -1,4 +1,7 @@
 /**app.wxss**/
+
+/* 已迁移至 TDesign 组件内联字体，移除此处全局字体与覆盖，避免绝对路径加载 */
+
 .tab-container {
   height: 100%;
   display: flex;
@@ -7,4 +10,4 @@
   justify-content: space-between;
   padding: 200rpx 0;
   box-sizing: border-box;
-} 
+}
