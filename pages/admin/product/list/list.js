@@ -1,4 +1,5 @@
-const app = getApp()
+const app = getApp();
+const { adminApi } = require('../../../../utils/api.js');
 
 Page({
   /**
@@ -131,22 +132,43 @@ Page({
       ...this.data.filterParams
     }
 
-    // 这里应该从API获取产品数据
-    // 模拟API请求
-    setTimeout(() => {
-      // 模拟产品数据
-      const mockProducts = this.getMockProducts(params)
-      
-      const hasMore = mockProducts.length === this.data.pageSize
-      const newPage = this.data.page + 1
+    // 调用统一API获取产品数据
+    adminApi.getProducts({
+      page: params.page,
+      size: params.pageSize,
+      keyword: params.keyword,
+      orderBy: params.orderBy,
+      orderDirection: params.orderDirection,
+      ...params
+    })
+      .then(data => {
+        const { records, total } = data;
+        const hasMore = params.page * params.pageSize < total;
+        const newPage = this.data.page + 1;
 
-      this.setData({
-        products: reset ? mockProducts : [...this.data.products, ...mockProducts],
-        page: newPage,
-        hasMore,
-        isLoading: false,
-        total: 100 // 模拟总数
+        this.setData({
+          products: reset ? records : [...this.data.products, ...records],
+          page: newPage,
+          hasMore,
+          isLoading: false,
+          total
+        });
       })
+      .catch(err => {
+        console.error('获取商品列表失败:', err);
+        // 失败时使用模拟数据作为后备
+        const mockProducts = this.getMockProducts(params);
+        const hasMore = mockProducts.length === this.data.pageSize;
+        const newPage = this.data.page + 1;
+
+        this.setData({
+          products: reset ? mockProducts : [...this.data.products, ...mockProducts],
+          page: newPage,
+          hasMore,
+          isLoading: false,
+          total: 100 // 模拟总数
+        });
+      });
     }, 1000)
   },
 
@@ -388,30 +410,36 @@ Page({
   /**
    * 删除产品
    */
-  deleteProduct(e) {
+  async deleteProduct(e) {
     const id = e.currentTarget.dataset.id
-    
+
     wx.showModal({
       title: '确认删除',
       content: '确定要删除该产品吗？删除后无法恢复',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
-          // 这里应该调用API删除产品
-          // 模拟API请求
-          setTimeout(() => {
-            // 更新本地数据
-            const products = this.data.products.filter(item => item.id !== id)
-            
-            this.setData({
-              products,
-              total: this.data.total - 1
-            })
-            
+          try {
+            wx.showLoading({ title: '删除中...' });
+
+            // 调用统一API删除产品
+            await adminApi.deleteProduct(id);
+
+            wx.hideLoading();
             wx.showToast({
               title: '删除成功',
               icon: 'success'
-            })
-          }, 500)
+            });
+
+            // 重新加载产品列表
+            this.loadProducts();
+          } catch (error) {
+            wx.hideLoading();
+            console.error('删除产品失败:', error);
+            wx.showToast({
+              title: error.message || '删除失败',
+              icon: 'none'
+            });
+          }
         }
       }
     })

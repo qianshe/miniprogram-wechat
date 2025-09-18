@@ -235,10 +235,7 @@ async function getOrders(data, context) {
     
     if (!isAdmin) {
       // 普通用户只能查看自己的订单
-      conditions.push(_.or([
-        { userOpenid: OPENID },
-        { userId: userId }
-      ]));
+      conditions.push({ userOpenid: OPENID });
     }
     
     if (status !== undefined && status !== null) {
@@ -260,16 +257,15 @@ async function getOrders(data, context) {
     // 获取总数
     const countResult = await query.count();
     
-    // 格式化订单数据
-    const orders = ordersResult.data.map(order => ({
-      ...order,
-      totalAmount: order.totalAmount / 100, // 转换为元
-      items: order.items.map(item => ({
-        ...item,
-        price: item.price / 100,
-        subtotal: item.subtotal / 100
-      }))
-    }));
+    // 格式化订单数据 - 列表查询不返回items以提升性能
+    const orders = ordersResult.data.map(order => {
+      const { items, ...orderWithoutItems } = order;
+      return {
+        ...orderWithoutItems,
+        totalAmount: order.totalAmount / 100, // 转换为元
+        itemCount: order.items ? order.items.length : 0 // 只返回商品数量
+      };
+    });
     
     return {
       code: 200,
@@ -294,56 +290,142 @@ async function getOrders(data, context) {
  * 获取订单详情
  */
 async function getOrderDetail(data, context) {
+  const startTime = Date.now();
   const { OPENID } = cloud.getWXContext();
   const { orderNo, isAdmin = false } = data;
-  
+
+  console.log(`[${new Date().toISOString()}] 开始获取订单详情:`, {
+    orderNo,
+    isAdmin,
+    userOpenid: OPENID,
+    requestId: context.requestId
+  });
+
   if (!orderNo) {
+    console.warn('订单号为空:', { data });
     return {
       code: 400,
       message: '订单号不能为空'
     };
   }
-  
+
   try {
-    let query = db.collection('orders').where({ orderNo });
-    
+    // 构建查询条件 - 支持通过_id或orderNo查询
+    const conditions = [
+      _.or([
+        { _id: orderNo },      // 支持通过_id查询
+        { orderNo: orderNo }   // 支持通过orderNo查询
+      ])
+    ];
+    console.log('初始查询条件 (支持_id和orderNo):', conditions);
+
     if (!isAdmin) {
       // 普通用户只能查看自己的订单
-      query = query.where({
-        orderNo,
-        userOpenid: OPENID
-      });
+      conditions.push({ userOpenid: OPENID });
+      console.log('添加用户权限条件后:', conditions);
+    } else {
+      console.log('管理员权限，跳过用户权限检查');
     }
-    
+
+    const query = db.collection('orders').where(_.and(conditions));
+    console.log('最终查询条件:', _.and(conditions));
+
+    console.log('开始执行数据库查询...');
     const result = await query.get();
-    
+    console.log('数据库查询结果:', {
+      recordCount: result.data.length,
+      hasData: result.data.length > 0
+    });
+
     if (result.data.length === 0) {
+      // 查询所有订单进行调试
+      console.log('查询失败，开始调试查询...');
+      const debugQuery = await db.collection('orders').get();
+      console.log('数据库中所有订单:', debugQuery.data.map(order => ({
+        _id: order._id,
+        orderNo: order.orderNo,
+        userOpenid: order.userOpenid,
+        status: order.status
+      })));
+
+      // 查询指定订单号的所有记录（不限制用户）
+      const orderNoQuery = await db.collection('orders').where({ orderNo }).get();
+      console.log('指定订单号的所有记录:', orderNoQuery.data.map(order => ({
+        _id: order._id,
+        orderNo: order.orderNo,
+        userOpenid: order.userOpenid,
+        userId: order.userId,
+        status: order.status
+      })));
+
+      console.warn('订单不存在:', {
+        orderNo,
+        isAdmin,
+        userOpenid: OPENID,
+        queryConditions: conditions
+      });
       return {
         code: 404,
         message: '订单不存在'
       };
     }
-    
+
     const order = result.data[0];
-    
+    console.log('找到订单原始数据:', {
+      orderId: order._id,
+      orderNo: order.orderNo,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      itemCount: order.items?.length || 0,
+      userOpenid: order.userOpenid,
+      createTime: order.createTime
+    });
+
     // 格式化订单数据
+    console.log('开始格式化订单数据...');
     const formattedOrder = {
       ...order,
       totalAmount: order.totalAmount / 100, // 转换为元
-      items: order.items.map(item => ({
-        ...item,
-        price: item.price / 100,
-        subtotal: item.subtotal / 100
-      }))
+      items: order.items.map((item, index) => {
+        console.log(`格式化商品项 ${index + 1}:`, {
+          原始价格: item.price,
+          转换后价格: item.price / 100,
+          数量: item.quantity,
+          原始小计: item.subtotal,
+          转换后小计: item.subtotal / 100
+        });
+        return {
+          ...item,
+          price: item.price / 100,
+          subtotal: item.subtotal / 100
+        };
+      })
     };
-    
+
+    const executionTime = Date.now() - startTime;
+    console.log(`[${new Date().toISOString()}] 订单详情获取成功:`, {
+      orderNo,
+      isAdmin,
+      executionTime: `${executionTime}ms`,
+      formattedTotalAmount: formattedOrder.totalAmount,
+      itemCount: formattedOrder.items.length
+    });
+
     return {
       code: 200,
       message: '获取订单详情成功',
       data: formattedOrder
     };
   } catch (error) {
-    console.error('获取订单详情失败:', error);
+    const executionTime = Date.now() - startTime;
+    console.error(`[${new Date().toISOString()}] 获取订单详情失败:`, {
+      orderNo,
+      isAdmin,
+      userOpenid: OPENID,
+      executionTime: `${executionTime}ms`,
+      error: error.message,
+      stack: error.stack
+    });
     return {
       code: 500,
       message: '获取订单详情失败'
@@ -381,8 +463,14 @@ async function updateOrderStatus(data, context) {
   }
   
   try {
+    // 支持通过_id或orderNo更新
+    const whereCondition = _.or([
+      { _id: orderNo },
+      { orderNo: orderNo }
+    ]);
+
     const result = await db.collection('orders')
-      .where({ orderNo })
+      .where(whereCondition)
       .update({
         data: {
           status: parseInt(status),
@@ -467,12 +555,9 @@ function generateOrderNo() {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
-  const hour = String(now.getHours()).padStart(2, '0');
-  const minute = String(now.getMinutes()).padStart(2, '0');
-  const second = String(now.getSeconds()).padStart(2, '0');
   const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  
-  return `ORD${year}${month}${day}${hour}${minute}${second}${random}`;
+
+  return `order_${year}${month}${day}_${random}`;
 }
 
 /**

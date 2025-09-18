@@ -1,107 +1,57 @@
-const request = require('./request.js')
-const apiConfig = require('../config/api.config.js')
-
-// 价格转换：分转元
+// 云函数统一调用管理器
+// 价格转换工具函数
 const priceToYuan = (price) => {
   return (parseFloat(price || 0) / 100).toFixed(2);
 }
 
-// 价格转换：元转分
 const priceToFen = (price) => {
   return Math.round(parseFloat(price || 0) * 100);
 }
 
-// 通用响应处理
-const handleResponse = (res) => {
-  console.log('API Response:', res);
-  
-  if (!res || typeof res !== 'object') {
-    throw new Error('无效的响应数据');
-  }
+// 云函数调用封装
+const callCloudFunction = async (functionName, action, data = {}) => {
+  try {
+    const result = await wx.cloud.callFunction({
+      name: functionName,
+      data: {
+        action,
+        data
+      }
+    });
 
-  // 检查标准返回结构
-  if (res.code !== 200) {
-    const error = new Error(res.message || '操作失败');
-    error.code = res.code;
-    error.data = res.data;
-    console.error('API Error:', error);
-    throw error;
+    if (result.result.code === 200) {
+      return result.result.data;
+    } else {
+      throw new Error(result.result.message || '云函数调用失败');
+    }
+  } catch (err) {
+    console.error(`云函数调用失败 [${functionName}.${action}]:`, err);
+    throw err;
   }
-
-  // 只返回data字段
-  return res.data;
 };
 
 // 普通用户API封装
 const api = {
-  // 商品相关 - 云函数版本
+  // 商品相关 - 统一云函数调用
   getProducts: async (params) => {
-    try {
-      const result = await wx.cloud.callFunction({
-        name: 'productManagement',
-        data: {
-          action: 'getProducts',
-          data: params
-        }
-      });
-
-      if (result.result.code === 200) {
-        const data = result.result.data;
-        // 云函数已处理价格转换，直接返回
-        return data;
-      } else {
-        throw new Error(result.result.message || '获取商品列表失败');
-      }
-    } catch (err) {
-      console.error('获取商品列表失败:', err);
-      throw err;
-    }
+    return await callCloudFunction('productManagement', 'getProducts', params);
   },
 
   getProductDetail: async (id) => {
-    try {
-      const result = await wx.cloud.callFunction({
-        name: 'productManagement',
-        data: {
-          action: 'getProductDetail',
-          data: { id }
-        }
-      });
-
-      if (result.result.code === 200) {
-        return result.result.data;
-      } else {
-        throw new Error(result.result.message || '获取商品详情失败');
-      }
-    } catch (err) {
-      console.error('获取商品详情失败:', err);
-      throw err;
-    }
+    return await callCloudFunction('productManagement', 'getProductDetail', { id });
   },
 
   getRecommendProducts: async (params) => {
     try {
-      // 使用商品查询云函数，添加推荐逻辑
-      const result = await wx.cloud.callFunction({
-        name: 'productManagement',
-        data: {
-          action: 'getProducts',
-          data: {
-            page: 1,
-            size: 6,
-            status: 1,
-            orderBy: 'createTime',
-            orderDirection: 'desc',
-            ...params
-          }
-        }
+      const data = await callCloudFunction('productManagement', 'getProducts', {
+        page: 1,
+        size: 6,
+        status: 1,
+        orderBy: 'createTime',
+        orderDirection: 'desc',
+        ...params
       });
-
-      if (result.result.code === 200) {
-        return result.result.data.records; // 云函数已处理价格转换
-      } else {
-        throw new Error(result.result.message || '获取推荐商品失败');
-      }
+      return data.records; // 返回商品列表
     } catch (err) {
       console.error('获取推荐商品失败:', err);
       return []; // 返回空数组避免页面崩溃
@@ -187,228 +137,151 @@ const api = {
     }
   },
 
-  // 订单相关
-  createOrder: (data) => {
-    return request.post(apiConfig.api.orders, data).then(handleResponse)
-  },
-  
-  getOrderDetail: (orderNo) => {
-    const url = apiConfig.api.orderDetail.replace('{orderNo}', orderNo)
-    return request.get(url).then(handleResponse)
-  },
-  
-  getUserOrders: (userId, params) => {
-    const url = apiConfig.api.orderList.replace('{userId}', userId)
-    return request.get(url, params).then(handleResponse)
+  // 订单相关 - 统一云函数调用
+  createOrder: async (data) => {
+    return await callCloudFunction('orderManagement', 'createOrder', data);
   },
 
-  // 流程步骤 - 临时返回模拟数据
+  getOrderDetail: async (orderNo, isAdmin = false) => {
+    console.log('[API] 调用getOrderDetail:', { orderNo, isAdmin });
+    const result = await callCloudFunction('orderManagement', 'getOrderDetail', { orderNo, isAdmin });
+    console.log('[API] getOrderDetail返回结果:', result);
+    return result;
+  },
+
+  getUserOrders: async (params) => {
+    return await callCloudFunction('orderManagement', 'getOrders', { ...params, isAdmin: false });
+  },
+
+  // 流程步骤 - 统一云函数调用
   getProcessSteps: async (params) => {
     try {
-      // 暂时返回模拟数据，避免网络错误
-      const mockSteps = [
-        {
-          id: 1,
-          title: '选择服务',
-          description: '选择红白事服务类型',
-          order: 1,
-          type: params?.type || 0
-        },
-        {
-          id: 2,
-          title: '选择商品',
-          description: '选择所需商品和服务',
-          order: 2,
-          type: params?.type || 0
-        },
-        {
-          id: 3,
-          title: '确认订单',
-          description: '确认订单信息和配送方式',
-          order: 3,
-          type: params?.type || 0
-        }
-      ];
-      return mockSteps;
+      const data = await callCloudFunction('processManagement', 'getProcessSteps', params);
+      return data.records; // 返回步骤列表
     } catch (err) {
       console.error('获取流程步骤失败:', err);
       return [];
     }
   },
-  
-  getStepDetail: async (stepId, params) => {
+
+  getStepDetail: async (stepId) => {
     try {
-      // 暂时返回模拟数据，避免网络错误
-      const mockStepDetail = {
-        id: stepId,
-        title: '步骤详情',
-        description: '步骤详细描述',
-        content: '步骤具体内容',
-        productList: []
-      };
-      return mockStepDetail;
+      return await callCloudFunction('processManagement', 'getStepDetail', { id: stepId });
     } catch (err) {
       console.error('获取步骤详情失败:', err);
       return null;
     }
   },
 
-  // 绑定订单
-  bindOrder: (orderNo, userId) => {
-    return request.post(apiConfig.api.bindOrder, { orderNo, userId })
-      .then(handleResponse);
+  // 绑定订单 - 统一云函数调用
+  bindOrder: async (orderNo, userId) => {
+    return await callCloudFunction('orderManagement', 'bindOrder', { orderNo, userId });
+  },
+
+  // 用户登录 - 统一云函数调用
+  login: async (userInfo) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'login',
+        data: { userInfo }
+      });
+
+      if (result.result.code === 200) {
+        return result.result.data;
+      } else {
+        throw new Error(result.result.message || '登录失败');
+      }
+    } catch (err) {
+      console.error('登录云函数调用失败:', err);
+      throw err;
+    }
+  },
+
+  // 提交反馈 - 统一云函数调用
+  submitFeedback: async (data) => {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'submitFeedback',
+        data
+      });
+
+      if (result.result && result.result.code === 200) {
+        return result.result.data;
+      } else {
+        throw new Error(result.result?.message || '提交反馈失败');
+      }
+    } catch (err) {
+      console.error('提交反馈云函数调用失败:', err);
+      throw err;
+    }
   }
 }
 
-// 管理员API封装 - 云函数版本
+// 管理员API封装 - 统一云函数调用
 const adminApi = {
   // 商品管理
   getProducts: async (params) => {
-    try {
-      const result = await wx.cloud.callFunction({
-        name: 'productManagement',
-        data: {
-          action: 'getProducts',
-          data: params
-        }
-      });
-
-      if (result.result.code === 200) {
-        const data = result.result.data;
-        // 云函数已处理价格转换，直接返回
-        return data;
-      } else {
-        throw new Error(result.result.message || '获取商品列表失败');
-      }
-    } catch (err) {
-      console.error('管理员获取商品列表失败:', err);
-      throw err;
-    }
+    return await callCloudFunction('productManagement', 'getProducts', params);
   },
 
   getProductDetail: async (id) => {
-    try {
-      const result = await wx.cloud.callFunction({
-        name: 'productManagement',
-        data: {
-          action: 'getProductDetail',
-          data: { id }
-        }
-      });
-
-      if (result.result.code === 200) {
-        return result.result.data;
-      } else {
-        throw new Error(result.result.message || '获取商品详情失败');
-      }
-    } catch (err) {
-      console.error('管理员获取商品详情失败:', err);
-      throw err;
-    }
+    return await callCloudFunction('productManagement', 'getProductDetail', { id });
   },
 
   createProduct: async (data) => {
-    try {
-      const result = await wx.cloud.callFunction({
-        name: 'productManagement',
-        data: {
-          action: 'createProduct',
-          data: data
-        }
-      });
-
-      if (result.result.code === 200) {
-        return result.result.data;
-      } else {
-        throw new Error(result.result.message || '创建商品失败');
-      }
-    } catch (err) {
-      console.error('创建商品失败:', err);
-      throw err;
-    }
+    return await callCloudFunction('productManagement', 'createProduct', { ...data, isAdmin: true });
   },
-  
-  updateProduct: async (id, data) => {
-    try {
-      const result = await wx.cloud.callFunction({
-        name: 'productManagement',
-        data: {
-          action: 'updateProduct',
-          data: { id, ...data }
-        }
-      });
 
-      if (result.result.code === 200) {
-        return result.result.data;
-      } else {
-        throw new Error(result.result.message || '更新商品失败');
-      }
-    } catch (err) {
-      console.error('更新商品失败:', err);
-      throw err;
-    }
+  updateProduct: async (id, data) => {
+    return await callCloudFunction('productManagement', 'updateProduct', { id, ...data, isAdmin: true });
   },
 
   deleteProduct: async (id) => {
-    try {
-      const result = await wx.cloud.callFunction({
-        name: 'productManagement',
-        data: {
-          action: 'deleteProduct',
-          data: { id }
-        }
-      });
-
-      if (result.result.code === 200) {
-        return result.result.data;
-      } else {
-        throw new Error(result.result.message || '删除商品失败');
-      }
-    } catch (err) {
-      console.error('删除商品失败:', err);
-      throw err;
-    }
+    return await callCloudFunction('productManagement', 'deleteProduct', { id, isAdmin: true });
   },
 
   updateStock: async (productId, stock) => {
-    try {
-      const result = await wx.cloud.callFunction({
-        name: 'productManagement',
-        data: {
-          action: 'updateStock',
-          data: { id: productId, stock }
-        }
-      });
+    return await callCloudFunction('productManagement', 'updateStock', { id: productId, stock, isAdmin: true });
+  },
+  
+  // 订单管理 - 统一云函数调用
+  getOrders: async (params) => {
+    return await callCloudFunction('orderManagement', 'getOrders', { ...params, isAdmin: true });
+  },
 
-      if (result.result.code === 200) {
-        return result.result.data;
-      } else {
-        throw new Error(result.result.message || '更新库存失败');
-      }
-    } catch (err) {
-      console.error('更新库存失败:', err);
-      throw err;
-    }
+  getOrderDetail: async (orderNo) => {
+    return await callCloudFunction('orderManagement', 'getOrderDetail', { orderNo, isAdmin: true });
   },
-  
-  // 订单管理
-  getOrders: (params) => {
-    return request.get(apiConfig.adminApi.orders, params).then(handleResponse);
+
+  updateOrderStatus: async (orderNo, status) => {
+    return await callCloudFunction('orderManagement', 'updateOrderStatus', { orderNo, status, isAdmin: true });
   },
-  
-  getOrderDetail: (orderNo) => {
-    const url = apiConfig.adminApi.orderDetail.replace('{orderNo}', orderNo);
-    return request.get(url).then(handleResponse);
+
+  // 订单统计 - 暂未实现云函数版本
+  getOrderStatistics: async () => {
+    console.warn('adminApi.getOrderStatistics暂未实现云函数版本');
+    throw new Error('此功能暂未实现');
   },
-  
-  // 订单统计
-  getOrderStatistics: (params) => {
-    return request.get(apiConfig.adminApi.orderStatistics, params).then(handleResponse);
+
+  // 流程管理 - 统一云函数调用
+  getProcessSteps: async (params) => {
+    return await callCloudFunction('processManagement', 'getProcessSteps', params);
   },
-  
-  // 流程管理
-  getProcessSteps: (params) => {
-    return request.get(apiConfig.adminApi.processSteps, params).then(handleResponse);
+
+  getStepDetail: async (id) => {
+    return await callCloudFunction('processManagement', 'getStepDetail', { id });
+  },
+
+  createProcessStep: async (data) => {
+    return await callCloudFunction('processManagement', 'createProcessStep', { ...data, isAdmin: true });
+  },
+
+  updateProcessStep: async (id, data) => {
+    return await callCloudFunction('processManagement', 'updateProcessStep', { id, ...data, isAdmin: true });
+  },
+
+  deleteProcessStep: async (id) => {
+    return await callCloudFunction('processManagement', 'deleteProcessStep', { id, isAdmin: true });
   }
 }
 
@@ -416,5 +289,6 @@ module.exports = {
   api,
   adminApi,
   priceToYuan,
-  priceToFen
+  priceToFen,
+  callCloudFunction  // 导出云函数调用管理器，供其他模块使用
 };

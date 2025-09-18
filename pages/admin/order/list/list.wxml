@@ -109,7 +109,7 @@
           <text class="order-no">订单号：{{item.orderNo}}</text>
           <text class="order-status status-{{item.status}}">{{item.statusText}}</text>
         </view>
-        <view class="order-info" bindtap="onOrderClick" data-orderno="{{item.orderNo}}">
+        <view class="order-info" bindtap="onOrderClick" data-orderid="{{item._id}}">
           <view class="info-row">
             <text class="label">联系人：</text>
             <text>{{item.contactName}}</text>
@@ -134,31 +134,31 @@
         <view class="order-actions">
           <!-- 订单动作按钮 - 根据订单状态显示不同的按钮 -->
           <block wx:if="{{item.status === 0}}">
-            <button 
-              class="action-btn confirm-btn" 
-              data-orderno="{{item.orderNo}}" 
-              data-status="1" 
+            <button
+              class="action-btn confirm-btn"
+              data-orderid="{{item._id}}"
+              data-status="1"
               bindtap="updateOrderStatus">确认支付</button>
           </block>
           <block wx:elif="{{item.status === 1}}">
-            <button 
-              class="action-btn process-btn" 
-              data-orderno="{{item.orderNo}}" 
-              data-status="4" 
+            <button
+              class="action-btn process-btn"
+              data-orderid="{{item._id}}"
+              data-status="4"
               bindtap="updateOrderStatus">进入处理</button>
           </block>
           <block wx:elif="{{item.status === 4}}">
-            <button 
-              class="action-btn complete-btn" 
-              data-orderno="{{item.orderNo}}" 
-              data-status="5" 
+            <button
+              class="action-btn complete-btn"
+              data-orderid="{{item._id}}"
+              data-status="5"
               bindtap="updateOrderStatus">标记完成</button>
           </block>
           <block wx:if="{{item.status !== 2 && item.status !== 3}}">
-            <button 
-              class="action-btn cancel-btn" 
-              data-orderno="{{item.orderNo}}" 
-              data-status="2" 
+            <button
+              class="action-btn cancel-btn"
+              data-orderid="{{item._id}}"
+              data-status="2"
               bindtap="updateOrderStatus">取消订单</button>
           </block>
           <button 

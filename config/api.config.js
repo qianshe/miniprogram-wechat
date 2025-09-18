@@ -1,69 +1,27 @@
-const ENV = {
-  dev: 'http://localhost:8080',
-  prod: 'https://localhost'
-};
+// API配置文件 - 已迁移到云函数，此文件仅保留必要配置
+// 注意：大部分API已迁移到云函数调用，此配置主要用于向后兼容
 
 const config = {
-  baseUrl: ENV.dev,  // 当前使用开发环境
-  timeout: 10000,    // 超时时间增加到10秒
+  // 基础配置（保留用于可能的HTTP请求）
+  timeout: 10000,
   header: {
     'content-type': 'application/json'
   },
-  
-  // 普通用户接口
-  api: {
-    // 商品相关
-    products: '/api/products',
-    productDetail: '/api/products/{id}',
-    recommendProducts: '/api/products/recommend',
-    categories: '/api/products/categories',
-    categoryDetail: '/api/products/categories/{id}',
-    
-    // 流程步骤
-    processSteps: '/api/process/steps',
-    processStepDetail: '/api/process/step-details/{stepId}',
-    
-    // 订单相关
-    orders: '/api/orders',
-    orderDetail: '/api/orders/{orderNo}',
-    orderList: '/api/orders/user/{userId}',
-    bindOrder: '/api/orders/bind',
-    
-    // 购物车
-    cart: {
-      add: '/api/cart/add',
-      update: '/api/cart/update', 
-      remove: '/api/cart/{productId}',
-      clear: '/api/cart/clear',
-      list: '/api/cart/list'
-    },
-    
-    // 认证
-    auth: {
-      wxLogin: '/api/auth/wx/login',
-      phoneLogin: '/api/auth/phone/login'
-    }
+
+  // 云函数配置
+  cloudFunctions: {
+    // 商品管理云函数
+    productManagement: 'productManagement',
+    // 订单管理云函数
+    orderManagement: 'orderManagement',
+    // 流程管理云函数
+    processManagement: 'processManagement'
   },
-  
-  // 管理员接口
-  adminApi: {
-    // 商品管理
-    products: '/api/admin/products',
-    productDetail: '/api/admin/products/{id}',
-    productUpdate: '/api/admin/products/{id}',
-    productDelete: '/api/admin/products/{id}',
-    updateStock: '/api/admin/product/updateStock',
-    
-    // 订单管理
-    orders: '/api/admin/orders',
-    orderDetail: '/api/admin/orders/{orderNo}',
-    orderStatistics: '/api/admin/orders/statistics',
-    exportOrders: '/api/admin/orders/export',
-    
-    // 流程管理
-    processSteps: '/api/admin/process/steps',
-    processStepDetail: '/api/admin/process/steps/{stepId}/detail',
-    updateStepSort: '/api/admin/process/steps/{stepId}/sort'
+
+  // 废弃的API配置（仅用于错误提示）
+  deprecated: {
+    message: '此API配置已废弃，请使用云函数调用',
+    migrationGuide: '请参考文档迁移到云函数调用方式'
   }
 };
 

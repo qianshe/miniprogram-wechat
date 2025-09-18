@@ -1,4 +1,3 @@
-const request = require('../../../../utils/request.js');
 const { adminApi } = require('../../../../utils/api.js');
 
 Page({
@@ -17,10 +16,10 @@ Page({
   onLoad(options) {
     if (options.orderNo && options.qrCodeUrl) {
       this.setData({
-        orderNo: options.orderNo,
+        orderNo: options.orderNo, // 订单号
         qrCodeUrl: decodeURIComponent(options.qrCodeUrl)
       });
-      
+
       // 获取订单详情
       this.loadOrderDetail(options.orderNo);
     } else {
@@ -37,31 +36,31 @@ Page({
   /**
    * 加载订单详情
    */
-  loadOrderDetail(orderNo) {
+  async loadOrderDetail(orderNo) {
     wx.showLoading({
       title: '加载中...'
     });
-    
-    adminApi.getOrderDetail(orderNo)
-      .then(data => {
-        wx.hideLoading();
-        
-        // 格式化显示金额，将分转为元
-        if (data.totalAmount) {
-          data.totalAmount = (data.totalAmount / 100).toFixed(2);
+
+    try {
+      // 调用统一API获取订单详情
+      const data = await adminApi.getOrderDetail(orderNo);
+
+      wx.hideLoading();
+
+      this.setData({
+        orderInfo: {
+          ...data,
+          totalAmount: data.totalAmount.toFixed(2) // 云函数已转换为元
         }
-        
-        this.setData({
-          orderInfo: data
-        });
-      })
-      .catch(err => {
-        wx.hideLoading();
-        wx.showToast({
-          title: err.message || '获取订单详情失败',
-          icon: 'none'
-        });
       });
+    } catch (err) {
+      wx.hideLoading();
+      console.error('获取订单详情失败:', err);
+      wx.showToast({
+        title: err.message || err.result?.message || '获取订单详情失败',
+        icon: 'none'
+      });
+    }
   },
 
   /**
@@ -150,5 +149,7 @@ Page({
       path: `/pages/scan-result/scan-result?orderNo=${this.data.orderNo}`,
       imageUrl: this.data.qrCodeUrl
     };
-  }
+  },
+
+
 }); 

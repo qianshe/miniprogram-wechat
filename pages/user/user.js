@@ -1,7 +1,7 @@
 // index.js
 const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
+const { api } = require('../../utils/api.js');
 const auth = require('../../utils/auth.js');
-const request = require('../../utils/request.js');
 const app = getApp();
 
 Page({
@@ -116,42 +116,33 @@ Page({
 
     try {
 
-      // 调用云函数登录
-      const loginRes = await wx.cloud.callFunction({
-        name: 'login',
-        data: {
-          userInfo
-        }
+      // 调用统一API登录
+      const loginData = await api.login(userInfo);
+
+      // 保存用户信息（云开发不需要token管理）
+      const userInfoWithRole = {
+        ...userInfo,
+        openid: loginData.openid,
+        role: loginData.role || 0,
+        isAdmin: loginData.isAdmin || false
+      };
+      wx.setStorageSync('userInfo', userInfoWithRole);
+
+      // 更新页面状态
+      this.setData({
+        userInfo: userInfoWithRole,
+        hasUserInfo: true,
+        isAdmin: userInfoWithRole.isAdmin
       });
 
-      if (loginRes.result.code === 200 && loginRes.result.data) {
-        // 保存用户信息（云开发不需要token管理）
-        const userInfoWithRole = {
-          ...userInfo,
-          openid: loginRes.result.data.openid,
-          role: loginRes.result.data.role || 0,
-          isAdmin: loginRes.result.data.isAdmin || false
-        };
-        wx.setStorageSync('userInfo', userInfoWithRole);
+      // 更新全局用户信息
+      app.globalData.userInfo = userInfoWithRole;
+      app.globalData.isAdmin = userInfoWithRole.isAdmin;
 
-        // 更新页面状态
-        this.setData({
-          userInfo: userInfoWithRole,
-          hasUserInfo: true,
-          isAdmin: userInfoWithRole.isAdmin
-        });
-
-        // 更新全局用户信息
-        app.globalData.userInfo = userInfoWithRole;
-        app.globalData.isAdmin = userInfoWithRole.isAdmin;
-
-        wx.showToast({
-          title: '登录成功',
-          icon: 'success'
-        });
-      } else {
-        throw new Error(loginRes.result.message || '登录失败');
-      }
+      wx.showToast({
+        title: '登录成功',
+        icon: 'success'
+      });
     } catch (err) {
       console.error('云函数登录失败:', err);
 

@@ -1,3 +1,5 @@
+const { adminApi } = require('../../../../utils/api.js');
+
 Page({
   /**
    * 页面的初始数据
@@ -347,32 +349,22 @@ Page({
       title: '创建订单中...'
     });
 
-    // 调用云函数创建订单
-    wx.cloud.callFunction({
-      name: 'orderManagement',
-      data: {
-        action: 'createOrder',
-        data: orderData
-      }
-    })
-      .then(res => {
+    // 调用统一API创建订单
+    adminApi.createOrder(orderData)
+      .then(data => {
         wx.hideLoading();
 
-        if (res.result.code === 200) {
-          const { orderNo, qrCodeUrl } = res.result.data;
+        const { orderNo, qrCodeUrl } = data;
 
-          // 跳转到二维码展示页面
-          wx.navigateTo({
-            url: `/pages/admin/order/qr-code/qr-code?orderNo=${orderNo}&qrCodeUrl=${encodeURIComponent(qrCodeUrl)}`
-          });
-        } else {
-          throw new Error(res.result.message || '创建订单失败');
-        }
+        // 跳转到二维码展示页面
+        wx.navigateTo({
+          url: `/pages/admin/order/qr-code/qr-code?orderNo=${orderNo}&qrCodeUrl=${encodeURIComponent(qrCodeUrl)}`
+        });
       })
       .catch(err => {
         wx.hideLoading();
         wx.showToast({
-          title: err.message || err.result?.message || '创建订单失败',
+          title: err.message || '创建订单失败',
           icon: 'none'
         });
       })

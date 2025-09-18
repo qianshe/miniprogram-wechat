@@ -78,11 +78,11 @@
     <t-loading wx:if="{{loading}}" text="加载中..." />
     <t-empty wx:elif="{{!orders.length}}" description="暂无订单" />
     <view class="orders" wx:else>
-      <view class="order-item" 
-            wx:for="{{orders}}" 
-            wx:key="orderNo"
+      <view class="order-item"
+            wx:for="{{orders}}"
+            wx:key="_id"
             bindtap="onOrderClick"
-            data-orderno="{{item.orderNo}}">
+            data-orderid="{{item._id}}">
         <view class="order-header">
           <text class="order-no">订单号：{{item.orderNo}}</text>
           <text class="order-status status-{{item.status}}">{{item.statusText}}</text>

@@ -1,4 +1,4 @@
-const request = require('../../../utils/request.js');
+const { api } = require('../../../utils/api.js');
 const auth = require('../../../utils/auth.js');
 
 Page({
@@ -166,28 +166,18 @@ Page({
         remark: this.data.remark || ''
       };
 
-      // 调用云函数创建订单
-      const res = await wx.cloud.callFunction({
-        name: 'orderManagement',
-        data: {
-          action: 'createOrder',
-          data: orderData
-        }
+      // 调用统一API创建订单
+      const data = await api.createOrder(orderData);
+
+      // 获取订单号和二维码链接
+      const { orderNo, qrCodeUrl } = data;
+
+      wx.hideLoading();
+
+      // 跳转到订单详情页，并传递订单信息
+      wx.navigateTo({
+        url: `/pages/order/detail/detail?orderNo=${orderNo}`
       });
-
-      if (res.result.code === 200) {
-        // 获取订单号和二维码链接
-        const { orderNo, qrCodeUrl } = res.result.data;
-
-        wx.hideLoading();
-
-        // 跳转到订单详情页，并传递订单信息
-        wx.navigateTo({
-          url: `/pages/order/detail/detail?orderNo=${orderNo}`
-        });
-      } else {
-        throw new Error(res.result.message || '订单创建失败');
-      }
     } catch (error) {
       console.error('创建订单失败:', error);
       wx.showToast({

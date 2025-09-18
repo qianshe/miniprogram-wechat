@@ -1,3 +1,5 @@
+const { api } = require('../../../utils/api.js');
+
 Page({
   data: {
     orderItems: [],
@@ -96,44 +98,34 @@ Page({
     }
 
     try {
-      // 调用云函数创建订单
-      const res = await wx.cloud.callFunction({
-        name: 'orderManagement',
-        data: {
-          action: 'createOrder',
-          data: orderData
-        }
-      });
+      // 调用统一API创建订单
+      const data = await api.createOrder(orderData);
 
       this.setData({ loading: false });
 
-      if (res.result.code === 200) {
-        const { orderNo } = res.result.data;
+      const { orderNo } = data;
 
-        wx.showToast({
-          title: '订单提交成功',
-          icon: 'success',
-          success: () => {
-            // 延迟返回，确保用户看到提示
-            setTimeout(() => {
-              // 跳转到订单详情页面
-              wx.redirectTo({
-                url: `../detail/detail?orderNo=${orderNo}`,
-                success: () => {
-                  // 返回上一页并刷新购物车
-                  const pages = getCurrentPages()
-                  const cartPage = pages[pages.length - 2]
-                  if (cartPage && cartPage.loadCartItems) {
-                    cartPage.loadCartItems()
-                  }
+      wx.showToast({
+        title: '订单提交成功',
+        icon: 'success',
+        success: () => {
+          // 延迟返回，确保用户看到提示
+          setTimeout(() => {
+            // 跳转到订单详情页面
+            wx.redirectTo({
+              url: `../detail/detail?orderNo=${orderNo}`,
+              success: () => {
+                // 返回上一页并刷新购物车
+                const pages = getCurrentPages()
+                const cartPage = pages[pages.length - 2]
+                if (cartPage && cartPage.loadCartItems) {
+                  cartPage.loadCartItems()
                 }
-              })
-            }, 1500)
-          }
-        });
-      } else {
-        throw new Error(res.result.message || '订单创建失败');
-      }
+              }
+            })
+          }, 1500)
+        }
+      });
     } catch (error) {
       console.error('创建订单失败:', error);
       this.setData({ loading: false });

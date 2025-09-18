@@ -34,8 +34,8 @@ Page({
       try {
         // 解码URL
         const url = decodeURIComponent(options.q);
-        // 从URL中提取订单号
-        const match = url.match(/orderNo=([A-Za-z0-9]+)/);
+        // 从URL中提取订单号（支持order_YYYYMMDD_XXX格式）
+        const match = url.match(/orderNo=([A-Za-z0-9_]+)/);
         if (match && match[1]) {
           const orderNo = match[1];
           this.setData({ orderNo });
@@ -87,43 +87,28 @@ Page({
       errorMessage: ''
     });
     
-    // 调用云函数获取订单详情
-    wx.cloud.callFunction({
-      name: 'orderManagement',
-      data: {
-        action: 'getOrderDetail',
-        data: {
-          orderNo: orderNo,
-          isAdmin: false
-        }
-      }
-    })
-      .then(res => {
-        if (res.result.code === 200 && res.result.data) {
-          const data = res.result.data;
-
-          this.setData({
-            orderInfo: {
-              ...data,
-              // 检查是否已经绑定到当前用户
-              isBinded: this.data.isLoggedIn && data.userId === this.data.userId,
-              totalAmount: data.totalAmount.toFixed(2), // 云函数已转换为元
-              items: data.items.map(item => ({
-                ...item,
-                price: item.price.toFixed(2)
-              }))
-            },
-            loading: false
-          });
-        } else {
-          throw new Error(res.result.message || '订单不存在');
-        }
+    // 调用统一API获取订单详情
+    api.getOrderDetail(orderNo, false)
+      .then(data => {
+        this.setData({
+          orderInfo: {
+            ...data,
+            // 检查是否已经绑定到当前用户
+            isBinded: this.data.isLoggedIn && data.userId === this.data.userId,
+            totalAmount: data.totalAmount.toFixed(2), // 云函数已转换为元
+            items: data.items.map(item => ({
+              ...item,
+              price: item.price.toFixed(2)
+            }))
+          },
+          loading: false
+        });
       })
       .catch(err => {
         console.error('获取订单信息失败:', err);
         this.setData({
           loading: false,
-          errorMessage: err.message || err.result?.message || '获取订单信息失败'
+          errorMessage: err.message || '获取订单信息失败'
         });
       });
   },
@@ -160,40 +145,27 @@ Page({
       title: '正在绑定...'
     });
     
-    // 调用云函数绑定订单
-    wx.cloud.callFunction({
-      name: 'orderManagement',
-      data: {
-        action: 'bindOrder',
-        data: {
-          orderNo: this.data.orderNo,
-          userId: this.data.userId
-        }
-      }
-    })
-      .then(res => {
+    // 调用统一API绑定订单
+    api.bindOrder(this.data.orderNo, this.data.userId)
+      .then(() => {
         wx.hideLoading();
 
-        if (res.result.code === 200) {
-          wx.showToast({
-            title: '绑定成功',
-            icon: 'success'
-          });
+        wx.showToast({
+          title: '绑定成功',
+          icon: 'success'
+        });
 
-          // 刷新订单状态
-          this.setData({
-            'orderInfo.isBinded': true,
-            'orderInfo.userId': this.data.userId
-          });
-        } else {
-          throw new Error(res.result.message || '绑定失败');
-        }
+        // 刷新订单状态
+        this.setData({
+          'orderInfo.isBinded': true,
+          'orderInfo.userId': this.data.userId
+        });
       })
       .catch(err => {
         wx.hideLoading();
 
         wx.showToast({
-          title: err.message || err.result?.message || '绑定失败',
+          title: err.message || '绑定失败',
           icon: 'none'
         });
       });
@@ -215,5 +187,7 @@ Page({
     if (this.data.orderNo) {
       this.loadOrderInfo(this.data.orderNo);
     }
-  }
+  },
+
+
 }); 

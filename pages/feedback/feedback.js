@@ -1,4 +1,6 @@
 // pages/feedback/feedback.js
+const { api } = require('../../utils/api.js');
+
 Page({
 
   /**
@@ -94,17 +96,21 @@ Page({
       return
     }
     
-    wx.cloud.callFunction({
-      name: 'submitFeedback',
-      data: {
-        content: this.data.content,
-        contact: this.data.contact,
-        images: this.data.fileList
-      },
-      success: () => {
+    api.submitFeedback({
+      content: this.data.content,
+      contact: this.data.contact,
+      images: this.data.fileList
+    })
+      .then(() => {
         wx.showToast({ title: '提交成功' })
         setTimeout(() => wx.navigateBack(), 1500)
-      }
-    })
+      })
+      .catch(err => {
+        console.error('提交反馈失败:', err);
+        wx.showToast({
+          title: err.message || '提交失败，请重试',
+          icon: 'none'
+        })
+      })
   }
 })

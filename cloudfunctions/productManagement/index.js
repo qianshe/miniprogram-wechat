@@ -255,8 +255,18 @@ async function createProduct(data, context) {
 
   console.log(`[${new Date().toISOString()}] 开始创建商品:`, {
     openid: OPENID,
-    productName: data.name
+    productName: data.name,
+    isAdmin: data.isAdmin
   });
+
+  // 权限检查 - 只有管理员可以创建商品
+  if (!data.isAdmin) {
+    console.warn('创建商品失败: 无管理员权限', { openid: OPENID });
+    return {
+      code: 403,
+      message: '无权限执行此操作'
+    };
+  }
 
   // 数据验证
   if (!data.name || !data.price) {
@@ -330,12 +340,22 @@ async function createProduct(data, context) {
 async function updateProduct(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, ...updateData } = data;
+  const { id, isAdmin, ...updateData } = data;
 
   console.log(`[${new Date().toISOString()}] 开始更新商品:`, {
     openid: OPENID,
-    productId: id
+    productId: id,
+    isAdmin
   });
+
+  // 权限检查 - 只有管理员可以更新商品
+  if (!isAdmin) {
+    console.warn('更新商品失败: 无管理员权限', { openid: OPENID, productId: id });
+    return {
+      code: 403,
+      message: '无权限执行此操作'
+    };
+  }
 
   if (!id) {
     console.warn('更新商品失败: 商品ID为空');
@@ -396,12 +416,22 @@ async function updateProduct(data, context) {
 async function deleteProduct(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id } = data;
+  const { id, isAdmin } = data;
 
   console.log(`[${new Date().toISOString()}] 开始删除商品:`, {
     openid: OPENID,
-    productId: id
+    productId: id,
+    isAdmin
   });
+
+  // 权限检查 - 只有管理员可以删除商品
+  if (!isAdmin) {
+    console.warn('删除商品失败: 无管理员权限', { openid: OPENID, productId: id });
+    return {
+      code: 403,
+      message: '无权限执行此操作'
+    };
+  }
 
   if (!id) {
     console.warn('删除商品失败: 商品ID为空');
@@ -448,13 +478,23 @@ async function deleteProduct(data, context) {
 async function updateStock(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, stock } = data;
+  const { id, stock, isAdmin } = data;
 
   console.log(`[${new Date().toISOString()}] 开始更新库存:`, {
     openid: OPENID,
     productId: id,
-    newStock: stock
+    newStock: stock,
+    isAdmin
   });
+
+  // 权限检查 - 只有管理员可以更新库存
+  if (!isAdmin) {
+    console.warn('更新库存失败: 无管理员权限', { openid: OPENID, productId: id });
+    return {
+      code: 403,
+      message: '无权限执行此操作'
+    };
+  }
 
   if (!id) {
     console.warn('更新库存失败: 商品ID为空');

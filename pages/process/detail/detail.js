@@ -35,15 +35,30 @@ Page({
 
   async loadStepDetail(stepId) {
     try {
-      // 获取步骤详情，包含相关商品
-      const stepDetail = await api.getStepDetail(stepId, {
-        type: this.data.systemType === 'red' ? 1 : 0
-      });
+      // 获取步骤详情
+      const stepDetail = await api.getStepDetail(stepId);
 
-      // 直接使用API返回的数据，不需要额外处理价格
+      // 如果有关联商品ID，获取商品详情
+      let relatedProducts = [];
+      if (stepDetail.productList && stepDetail.productList.length > 0) {
+        try {
+          // 并行获取所有关联商品的详情
+          const productPromises = stepDetail.productList.map(productId =>
+            api.getProductDetail(productId).catch(err => {
+              console.warn(`获取商品详情失败: ${productId}`, err);
+              return null;
+            })
+          );
+          const products = await Promise.all(productPromises);
+          relatedProducts = products.filter(product => product !== null);
+        } catch (err) {
+          console.error('获取关联商品失败:', err);
+        }
+      }
+
       this.setData({
         stepInfo: stepDetail,
-        relatedProducts: stepDetail.productList || [],
+        relatedProducts,
         loading: false,
         productsLoading: false
       });
@@ -132,7 +147,7 @@ Page({
       // 转换价格为元
       const products = whiteProducts.map(item => ({
         ...item,
-        price: api.priceToYuan(item.price)
+        price: priceToYuan(item.price)
       }));
       
       this.setData({
