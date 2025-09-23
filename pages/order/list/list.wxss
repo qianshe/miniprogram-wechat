@@ -347,12 +347,15 @@
 }
 
 .filter-btn {
-  width: 70rpx;
+  min-width: 100rpx;
   height: 70rpx;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   margin-left: 20rpx;
+  padding: 0 16rpx;
+  gap: 6rpx;
 }
 
 .filter-btn .iconfont {

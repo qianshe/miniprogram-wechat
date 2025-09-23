@@ -1,5 +1,6 @@
 // pages/feedback/feedback.js
 const { api } = require('../../utils/api.js');
+const validation = require('../../utils/validation.js');
 
 Page({
 
@@ -91,11 +92,42 @@ Page({
   },
 
   submitFeedback() {
-    if (!this.data.content) {
-      wx.showToast({ title: '请输入反馈内容', icon: 'none' })
-      return
+    // 表单验证规则
+    const validationRules = {
+      content: {
+        required: true,
+        label: '反馈内容',
+        type: 'string',
+        minLength: 10,
+        maxLength: 500
+      },
+      contact: {
+        required: false,
+        label: '联系方式',
+        type: 'string',
+        maxLength: 100
+      }
+    };
+
+    // 构建表单数据
+    const formData = {
+      content: this.data.content,
+      contact: this.data.contact || ''
+    };
+
+    // 执行表单验证
+    const validationResult = validation.validateForm(formData, validationRules);
+
+    if (!validationResult.valid) {
+      const firstError = Object.values(validationResult.errors)[0];
+      wx.showToast({
+        title: firstError,
+        icon: 'none',
+        duration: 3000
+      });
+      return;
     }
-    
+
     api.submitFeedback({
       content: this.data.content,
       contact: this.data.contact,

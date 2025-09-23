@@ -60,5 +60,8 @@
   },
   "usingComponents": {
     "custom-tab-bar": "Components/custom-tab-bar/index"
-  }
+  },
+  "requiredPrivateInfos": [
+    "chooseAddress"
+  ]
 }

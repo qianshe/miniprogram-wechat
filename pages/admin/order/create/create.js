@@ -1,4 +1,5 @@
 const { adminApi } = require('../../../../utils/api.js');
+const validation = require('../../../../utils/validation.js');
 
 Page({
   /**
@@ -25,7 +26,8 @@ Page({
     
     // 页面状态
     isSubmitting: false,
-    errors: {}
+    errors: {},
+    fieldErrors: {}
   },
 
   /**
@@ -268,6 +270,8 @@ Page({
     this.setData({
       [`formData.${field}`]: value,
       [`errors.${field}`]: ''
+    }, () => {
+      this.validateField(field, value);
     });
   },
 
@@ -276,32 +280,43 @@ Page({
    */
   validateForm() {
     const { formData, selectedProducts } = this.data;
-    const errors = {};
-    
-    if (!formData.contactName) {
-      errors.contactName = '请输入联系人姓名';
-    }
-    
-    if (!formData.contactPhone) {
-      errors.contactPhone = '请输入联系电话';
-    } else if (!/^1[3-9]\d{9}$/.test(formData.contactPhone)) {
-      errors.contactPhone = '请输入正确的手机号码';
-    }
-    
-    if (!formData.serviceTime) {
-      errors.serviceTime = '请选择服务时间';
-    }
-    
-    if (!formData.address) {
-      errors.address = '请输入服务地址';
-    }
-    
+
+    const validationRules = {
+      contactName: {
+        required: true,
+        label: '联系人姓名',
+        type: 'string',
+        minLength: 2,
+        maxLength: 20
+      },
+      contactPhone: {
+        required: true,
+        label: '联系电话',
+        type: 'phone'
+      },
+      serviceTime: {
+        required: true,
+        label: '服务时间'
+      },
+      address: {
+        required: true,
+        label: '服务地址',
+        type: 'string',
+        minLength: 5,
+        maxLength: 200
+      }
+    };
+
+    const formValidation = validation.validateForm(formData, validationRules);
+    const errors = formValidation.errors;
+
+    // 验证商品列表
     if (selectedProducts.length === 0) {
       errors.products = '请至少选择一个产品';
     }
-    
+
     this.setData({ errors });
-    
+
     return Object.keys(errors).length === 0;
   },
 
@@ -312,19 +327,20 @@ Page({
     if (!this.validateForm()) {
       wx.showToast({
         title: '请完善订单信息',
-        icon: 'none'
+        icon: 'none',
+        duration: 3000
       });
       return;
     }
-    
+
     if (this.data.isSubmitting) return;
-    
+
     this.setData({
       isSubmitting: true
     });
-    
+
     const { formData, selectedProducts, totalAmount } = this.data;
-    
+
     // 构建订单数据
     const orderData = {
       contactName: formData.contactName,
@@ -343,7 +359,19 @@ Page({
       // 标记为管理员创建，等待用户绑定
       waitForBind: true
     };
-    
+
+    // 使用统一的订单验证
+    const orderValidation = validation.validateOrderData(orderData);
+    if (!orderValidation.valid) {
+      this.setData({ isSubmitting: false });
+      wx.showToast({
+        title: orderValidation.errors[0],
+        icon: 'none',
+        duration: 3000
+      });
+      return;
+    }
+
     // 调用云函数创建订单
     wx.showLoading({
       title: '创建订单中...'
@@ -356,16 +384,27 @@ Page({
 
         const { orderNo, qrCodeUrl } = data;
 
-        // 跳转到二维码展示页面
-        wx.navigateTo({
-          url: `/pages/admin/order/qr-code/qr-code?orderNo=${orderNo}&qrCodeUrl=${encodeURIComponent(qrCodeUrl)}`
+        // 成功反馈
+        wx.showToast({
+          title: '订单创建成功',
+          icon: 'success',
+          duration: 2000
         });
+
+        // 延迟跳转，让用户看到成功提示
+        setTimeout(() => {
+          // 跳转到二维码展示页面
+          wx.navigateTo({
+            url: `/pages/admin/order/qr-code/qr-code?orderNo=${orderNo}&qrCodeUrl=${encodeURIComponent(qrCodeUrl)}`
+          });
+        }, 1000);
       })
       .catch(err => {
         wx.hideLoading();
         wx.showToast({
           title: err.message || '创建订单失败',
-          icon: 'none'
+          icon: 'none',
+          duration: 3000
         });
       })
       .finally(() => {

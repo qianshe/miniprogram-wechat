@@ -1,4 +1,5 @@
 const { api } = require('../../../utils/api.js');
+const validation = require('../../../utils/validation.js');
 
 Page({
   data: {
@@ -7,6 +8,7 @@ Page({
     address: null,
     remarks: '',
     loading: false,
+    errors: {},
     systemType: 'white', // 默认为白事系统
     themeColor: '#333333', // 默认主题色
     defaultAddress: {
@@ -74,12 +76,49 @@ Page({
   },
 
   async submitOrder() {
-    if (!this.data.address) {
+    // 清除之前的错误
+    this.setData({ errors: {} })
+
+    // 表单验证规则
+    const validationRules = {
+      address: {
+        required: true,
+        label: '收货地址',
+        type: 'address'
+      },
+      remarks: {
+        required: false,
+        label: '备注',
+        type: 'string',
+        maxLength: 200
+      }
+    };
+
+    // 构建表单数据
+    const formData = {
+      address: this.data.address,
+      remarks: this.data.remarks || ''
+    };
+
+    // 验证地址对象
+    const addressValidation = validation.validateAddressObject(this.data.address);
+    if (!addressValidation.valid) {
       wx.showToast({
-        title: '请选择收货地址',
-        icon: 'none'
-      })
-      return
+        title: addressValidation.message,
+        icon: 'none',
+        duration: 3000
+      });
+      return;
+    }
+
+    // 验证订单商品
+    if (!this.data.orderItems || this.data.orderItems.length === 0) {
+      wx.showToast({
+        title: '订单商品不能为空',
+        icon: 'none',
+        duration: 3000
+      });
+      return;
     }
 
     this.setData({ loading: true })

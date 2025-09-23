@@ -25,11 +25,11 @@ Page({
       console.log('购物车数据:', cartList);
       
       const cartItems = cartList.map(item => ({
-        id: item.productId,
-        name: item.productName,
-        image: item.productImage,
-        price: item.price,
-        quantity: item.quantity,
+        id: item.id || item.productId,
+        name: item.name || item.productName || '未知商品',
+        image: item.image || item.productImage || item.imageUrl || 'https://tdesign.gtimg.com/mobile/demos/default_goods.png',
+        price: item.price || item.productPrice || '0.00',
+        quantity: item.quantity || 1,
         selected: false
       }));
       
@@ -257,11 +257,11 @@ Page({
       const productIds = localCartItems.map(item => item.id);
       if (productIds.length === 0) return [];
       
-      const res = await request.post('/api/products/batch', { ids: productIds });
+      const res = await api.getProductsByIds(productIds);
       
-      if (res.code === 200 && res.data) {
+      if (res.code === 200 && res.data && res.data.records) {
         return localCartItems.map(cartItem => {
-          const serverProduct = res.data.find(p => p.id === cartItem.id);
+          const serverProduct = res.data.records.find(p => p.id === cartItem.id);
           if (serverProduct) {
             return {
               ...cartItem,
@@ -285,7 +285,7 @@ Page({
   
   async fetchCartFromServer() {
     try {
-      const res = await request.get('/api/cart/list');
+      const res = await api.getCartList();
       if (res.code === 200 && res.data) {
         return res.data.map(item => ({
           id: item.productId,
@@ -304,8 +304,17 @@ Page({
   },
   
   async syncCartToServer() {
-    const token = auth.getToken();
-    if (!token) return;
+    // 使用云开发认证检查用户登录状态
+    if (!auth.checkAuth()) {
+      console.log('用户未登录，跳过购物车同步');
+      return;
+    }
+
+    const userInfo = auth.getUserInfo();
+    if (!userInfo) {
+      console.log('无法获取用户信息，跳过购物车同步');
+      return;
+    }
     
     try {
       console.log('开始同步购物车到服务器');

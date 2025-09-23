@@ -39,7 +39,7 @@
   </view>
 
   <!-- 底部操作栏 -->
-  <view class="bottom-bar">
+  <view class="bottom-bar {{systemType}}-theme">
     <button class="add-cart-btn" bindtap="showSkuPopup">加入购物车</button>
   </view>
 

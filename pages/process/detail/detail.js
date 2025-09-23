@@ -15,14 +15,16 @@ Page({
     // 获取系统类型和步骤ID
     const systemType = options.systemType || 'white';
     const themeColor = systemType === 'red' ? '#d32f2f' : '#333333';
-    const stepId = options.id || '';
-    
+    const stepId = options.stepId || '';
+
+
+
     this.setData({
       systemType,
       themeColor,
       stepId
     });
-    
+
     if (stepId) {
       this.loadStepDetail(stepId);
     } else {
@@ -37,6 +39,17 @@ Page({
     try {
       // 获取步骤详情
       const stepDetail = await api.getStepDetail(stepId);
+
+      // 检查步骤详情是否获取成功
+      if (!stepDetail) {
+        const mockStepInfo = this.getMockStepInfo(stepId);
+        this.setData({
+          stepInfo: mockStepInfo,
+          loading: false
+        });
+        this.loadMockRelatedProducts();
+        return;
+      }
 
       // 如果有关联商品ID，获取商品详情
       let relatedProducts = [];
@@ -64,7 +77,12 @@ Page({
       });
 
     } catch (err) {
-      console.error('获取步骤详情失败:', err);
+      console.error('[DEBUG] 获取步骤详情异常:', {
+        stepId,
+        error: err,
+        errorMessage: err.message,
+        errorStack: err.stack
+      });
       // 加载模拟数据
       const mockStepInfo = this.getMockStepInfo(stepId);
       this.setData({
@@ -175,41 +193,37 @@ Page({
     const { product } = e.currentTarget.dataset;
     
     try {
-      // 调用购物车API
+      // 直接更新本地购物车数据
+      let cartList = wx.getStorageSync('cartList') || [];
+      const existingIndex = cartList.findIndex(item => item.id === product.id);
+
+      if (existingIndex > -1) {
+        cartList[existingIndex].quantity += 1;
+      } else {
+        cartList.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.imageUrl || product.image,
+          quantity: 1,
+          systemType: this.data.systemType
+        });
+      }
+
+      // 更新本地存储
+      wx.setStorageSync('cartList', cartList);
+
+      // 调用API同步到服务器
       api.addToCart({
         productId: product.id,
         quantity: 1
-      }).then(() => {
-        // API调用成功后，同步更新本地购物车数据
-        let cartList = wx.getStorageSync('cartList') || [];
-        const existingIndex = cartList.findIndex(item => item.id === product.id);
-        
-        if (existingIndex > -1) {
-          cartList[existingIndex].quantity += 1;
-        } else {
-          cartList.push({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.imageUrl || product.image,
-            quantity: 1,
-            systemType: this.data.systemType // 添加系统类型标记
-          });
-        }
-
-        // 更新本地存储
-        wx.setStorageSync('cartList', cartList);
-
-        wx.showToast({
-          title: '添加成功',
-          icon: 'success'
-        });
       }).catch(err => {
-        console.error('添加购物车失败:', err);
-        wx.showToast({
-          title: '添加失败',
-          icon: 'none'
-        });
+        console.warn('同步购物车到服务器失败:', err);
+      });
+
+      wx.showToast({
+        title: '添加成功',
+        icon: 'success'
       });
     } catch (err) {
       console.error('添加购物车失败:', err);

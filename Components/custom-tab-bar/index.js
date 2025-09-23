@@ -65,7 +65,7 @@ Component({
             {
               pagePath: "/pages/user/user",
               text: "个人中心",
-              icon: "user"
+              icon: "user-circle"
             }
           ]
       };

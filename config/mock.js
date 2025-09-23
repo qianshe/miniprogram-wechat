@@ -3,36 +3,36 @@ const mockData = {
   // 流程数据
   redSteps: [
     {
-      id: 1,
-      step_name: '婚礼筹备',
+      _id: 'mock_red_1',
+      title: '婚礼筹备',
       description: '确定婚礼日期、场地等'
     },
     {
-      id: 2,
-      step_name: '婚礼流程',
+      _id: 'mock_red_2',
+      title: '婚礼流程',
       description: '婚礼仪式、拍照、宴会等'
     },
     {
-      id: 3,
-      step_name: '婚宴准备',
+      _id: 'mock_red_3',
+      title: '婚宴准备',
       description: '制定菜单、布置现场等'
     }
   ],
 
   whiteSteps: [
     {
-      id: 1,
-      step_name: '初期处理',
+      _id: 'mock_white_1',
+      title: '初期处理',
       description: '联系殡仪馆、准备材料'
     },
     {
-      id: 2,
-      step_name: '后期手续',
+      _id: 'mock_white_2',
+      title: '后期手续',
       description: '办理相关证明文件'
     },
     {
-      id: 3,
-      step_name: '追悼仪式',
+      _id: 'mock_white_3',
+      title: '追悼仪式',
       description: '举办追悼会、安葬等'
     }
   ],

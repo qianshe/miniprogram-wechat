@@ -1,2 +1,43 @@
 <!--pages/admin/login/login.wxml-->
-<text>pages/admin/login/login.wxml</text>
+<view class="login-container">
+  <view class="login-form">
+    <view class="login-header">
+      <text class="login-title">管理员登录</text>
+      <text class="login-subtitle">请输入您的管理员账号和密码</text>
+    </view>
+
+    <view class="form-item">
+      <input
+        class="form-input"
+        placeholder="请输入管理员账号"
+        value="{{adminAccount}}"
+        bindinput="onAccountInput"
+        type="text"
+      />
+    </view>
+
+    <view class="form-item">
+      <input
+        class="form-input"
+        placeholder="请输入密码"
+        value="{{password}}"
+        bindinput="onPasswordInput"
+        type="password"
+        password
+      />
+    </view>
+
+    <view class="error-message" wx:if="{{errorMessage}}">
+      <text>{{errorMessage}}</text>
+    </view>
+
+    <button
+      class="login-btn"
+      type="primary"
+      loading="{{loading}}"
+      bindtap="onLogin"
+    >
+      {{loading ? '登录中...' : '登录'}}
+    </button>
+  </view>
+</view>

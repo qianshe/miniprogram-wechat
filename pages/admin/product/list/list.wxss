@@ -79,13 +79,16 @@
 }
 
 .filter-btn {
-  width: 80rpx;
+  min-width: 100rpx;
   height: 80rpx;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   border-radius: 40rpx;
   background-color: #fff;
+  padding: 0 20rpx;
+  gap: 8rpx;
 }
 
 .filter-btn .iconfont {

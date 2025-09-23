@@ -19,4 +19,6 @@ dataSources.local.xml
 # 忽略所有的 .DS_Store 文件
 .DS_Store
 project.config.json
+ClaudeCode使用指南.md
 config/cloud.config.js
+CLAUDE.md

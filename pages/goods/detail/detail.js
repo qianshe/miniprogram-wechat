@@ -6,13 +6,19 @@ Page({
     loading: true,
     goods: null,
     quantity: 1,
-    showSkuPopup: false
+    showSkuPopup: false,
+    systemType: 'white'
   },
 
   onLoad(options) {
-    const { id } = options;
+    const { id, systemType } = options;
+    const themeType = systemType || 'white';
+
     if (id) {
-      this.setData({ id });
+      this.setData({
+        id,
+        systemType: themeType
+      });
       this.loadGoodsDetail(id);
     }
   },
@@ -117,7 +123,8 @@ Page({
         name: this.data.goods.name,
         price: this.data.goods.price,
         image: this.data.goods.image,
-        quantity: this.data.quantity
+        quantity: this.data.quantity,
+        systemType: this.data.systemType
       });
     }
 

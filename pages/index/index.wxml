@@ -26,11 +26,11 @@
     <block wx:elif="{{processSteps.length > 0}}">
       <view class="process-section">
         <view class="section-title">{{systemType === 'red' ? '红事流程' : '白事流程'}}</view>
-        <view class="process-step" 
-              wx:for="{{processSteps}}" 
-              wx:key="id"
+        <view class="process-step"
+              wx:for="{{processSteps}}"
+              wx:key="_id"
               bindtap="onStepClick"
-              data-id="{{item.id}}">
+              data-id="{{item._id}}">
           <text class="step-name">{{item.title}}</text>
           <text class="step-desc">{{item.description}}</text>
           <view class="step-arrow"></view>

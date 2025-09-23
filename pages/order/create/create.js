@@ -1,5 +1,6 @@
 const { api } = require('../../../utils/api.js');
 const auth = require('../../../utils/auth.js');
+const validation = require('../../../utils/validation.js');
 
 Page({
   data: {
@@ -22,11 +23,17 @@ Page({
   },
 
   onCustomerNameChange(e) {
-    this.setData({ customerName: e.detail.value })
+    const customerName = e.detail.value;
+    this.setData({ customerName }, () => {
+      this.validateField('customerName', customerName);
+    });
   },
 
   onPhoneChange(e) {
-    this.setData({ phone: e.detail.value })
+    const phone = e.detail.value;
+    this.setData({ phone }, () => {
+      this.validateField('phone', phone);
+    });
   },
 
   // 隐藏商品选择器
@@ -140,9 +147,46 @@ Page({
   },
 
   async createOrder() {
-    if (!this.data.customerName || !this.data.phone) {
-      wx.showToast({ title: '请填写完整信息', icon: 'none' })
-      return
+    const validationRules = {
+      customerName: {
+        required: true,
+        label: '联系人姓名',
+        type: 'string',
+        minLength: 2,
+        maxLength: 20
+      },
+      phone: {
+        required: true,
+        label: '联系电话',
+        type: 'phone'
+      }
+    };
+
+    const formData = {
+      customerName: this.data.customerName,
+      phone: this.data.phone
+    };
+
+    const validationResult = validation.validateForm(formData, validationRules);
+
+    if (!validationResult.valid) {
+      const errorMessage = Object.values(validationResult.errors)[0];
+      wx.showToast({
+        title: errorMessage,
+        icon: 'none',
+        duration: 3000
+      });
+      return;
+    }
+
+    // 验证商品列表
+    if (!this.data.selectedProducts || this.data.selectedProducts.length === 0) {
+      wx.showToast({
+        title: '请至少选择一件商品',
+        icon: 'none',
+        duration: 3000
+      });
+      return;
     }
 
     if (!auth.checkAuth()) {
@@ -166,6 +210,18 @@ Page({
         remark: this.data.remark || ''
       };
 
+      // 使用统一的订单验证
+      const orderValidation = validation.validateOrderData(orderData);
+      if (!orderValidation.valid) {
+        wx.hideLoading();
+        wx.showToast({
+          title: orderValidation.errors[0],
+          icon: 'none',
+          duration: 3000
+        });
+        return;
+      }
+
       // 调用统一API创建订单
       const data = await api.createOrder(orderData);
 
@@ -174,16 +230,28 @@ Page({
 
       wx.hideLoading();
 
-      // 跳转到订单详情页，并传递订单信息
-      wx.navigateTo({
-        url: `/pages/order/detail/detail?orderNo=${orderNo}`
+      // 成功反馈
+      wx.showToast({
+        title: '订单创建成功',
+        icon: 'success',
+        duration: 2000
       });
+
+      // 延迟跳转，让用户看到成功提示
+      setTimeout(() => {
+        // 跳转到订单详情页，并传递订单信息
+        wx.navigateTo({
+          url: `/pages/order/detail/detail?orderNo=${orderNo}`
+        });
+      }, 1000);
     } catch (error) {
       console.error('创建订单失败:', error);
       wx.showToast({
         title: error.message || error.result?.message || '订单创建失败',
-        icon: 'none'
+        icon: 'none',
+        duration: 3000
       });
+    } finally {
       wx.hideLoading();
     }
   },
@@ -218,7 +286,7 @@ Page({
       this.setData({ productsLoading: true });
       const { page, size } = this.data.productsPagination;
 
-      const res = await request.get('/api/products', {
+      const res = await api.getProducts({
         page,
         size,
         // 如果有搜索关键词，添加搜索参数
@@ -288,5 +356,35 @@ Page({
 
   onShareAppMessage() {
 
+  },
+
+  /**
+   * 验证单个字段
+   */
+  validateField(fieldName, value) {
+    const fieldValidations = {
+      customerName: validation.validateUsername(value, 2, 20),
+      phone: validation.validatePhone(value)
+    };
+
+    const validation = fieldValidations[fieldName];
+    if (validation && !validation.valid) {
+      this.setData({
+        [`${fieldName}Error`]: validation.message
+      });
+    } else {
+      this.setData({
+        [`${fieldName}Error`]: ''
+      });
+    }
+  },
+
+  /**
+   * 清除字段错误
+   */
+  clearFieldError(fieldName) {
+    this.setData({
+      [`${fieldName}Error`]: ''
+    });
   }
 })

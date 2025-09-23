@@ -78,46 +78,175 @@ exports.main = async (event, context) => {
 };
 
 /**
+ * 检查集合是否存在
+ */
+async function checkCollectionExists(collectionName) {
+  try {
+    // 尝试获取集合信息
+    const result = await db.collection(collectionName).limit(1).get();
+    return true;
+  } catch (error) {
+    // 如果集合不存在，会抛出错误
+    if (error.errCode === -502001 || error.message.includes('collection not exist')) {
+      return false;
+    }
+    // 其他错误重新抛出
+    throw error;
+  }
+}
+
+/**
+ * 初始化数据库集合和默认数据
+ */
+async function initDatabase() {
+  console.log(`[${new Date().toISOString()}] 开始初始化数据库...`);
+
+  try {
+    // 检查processSteps集合是否存在
+    const collectionExists = await checkCollectionExists('processSteps');
+
+    if (!collectionExists) {
+      console.log(`[${new Date().toISOString()}] processSteps集合不存在，开始创建...`);
+
+      // 创建默认的流程步骤数据
+      const defaultSteps = [
+        // 白事流程步骤 (type: 0)
+        {
+          title: '接收逝者',
+          description: '专业团队接收逝者，进行初步处理',
+          content: '我们的专业团队将以最大的敬意接收逝者，进行必要的初步处理工作。',
+          type: 0,
+          order: 1,
+          imageUrl: '',
+          productList: [],
+          status: 1,
+          createTime: new Date(),
+          updateTime: new Date()
+        },
+        {
+          title: '遗体整理',
+          description: '专业遗体整理，恢复逝者尊严',
+          content: '由专业人员进行遗体整理工作，让逝者以最好的状态与家属告别。',
+          type: 0,
+          order: 2,
+          imageUrl: '',
+          productList: [],
+          status: 1,
+          createTime: new Date(),
+          updateTime: new Date()
+        },
+        {
+          title: '告别仪式',
+          description: '庄重的告别仪式，送逝者最后一程',
+          content: '举行庄重的告别仪式，让家属和朋友能够正式告别逝者。',
+          type: 0,
+          order: 3,
+          imageUrl: '',
+          productList: [],
+          status: 1,
+          createTime: new Date(),
+          updateTime: new Date()
+        },
+        // 红事流程步骤 (type: 1)
+        {
+          title: '婚礼策划',
+          description: '专业婚礼策划，打造完美婚礼',
+          content: '我们的专业策划团队将为您量身定制完美的婚礼方案。',
+          type: 1,
+          order: 1,
+          imageUrl: '',
+          productList: [],
+          status: 1,
+          createTime: new Date(),
+          updateTime: new Date()
+        },
+        {
+          title: '场地布置',
+          description: '精美场地布置，营造浪漫氛围',
+          content: '专业的场地布置团队将为您打造梦幻般的婚礼现场。',
+          type: 1,
+          order: 2,
+          imageUrl: '',
+          productList: [],
+          status: 1,
+          createTime: new Date(),
+          updateTime: new Date()
+        },
+        {
+          title: '婚礼仪式',
+          description: '神圣的婚礼仪式，见证爱情',
+          content: '在亲朋好友的见证下，举行神圣而浪漫的婚礼仪式。',
+          type: 1,
+          order: 3,
+          imageUrl: '',
+          productList: [],
+          status: 1,
+          createTime: new Date(),
+          updateTime: new Date()
+        }
+      ];
+
+      // 批量插入默认数据
+      for (const step of defaultSteps) {
+        await db.collection('processSteps').add({ data: step });
+      }
+
+      console.log(`[${new Date().toISOString()}] 数据库初始化完成，已创建${defaultSteps.length}条默认流程步骤`);
+    } else {
+      console.log(`[${new Date().toISOString()}] processSteps集合已存在，跳过初始化`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] 数据库初始化失败:`, error);
+    throw error;
+  }
+}
+
+/**
  * 获取流程步骤列表
  */
 async function getProcessSteps(data, context) {
   const startTime = Date.now();
   const { type = 0, page = 1, size = 20 } = data;
-  
+
   console.log(`[${new Date().toISOString()}] 开始获取流程步骤:`, {
     type, page, size
   });
-  
+
   try {
+    // 首先检查并初始化数据库
+    await initDatabase();
+
     // 构建查询条件
     let query = db.collection('processSteps');
     const conditions = [];
-    
+
     // 流程类型筛选 (0: 白事, 1: 红事)
     conditions.push({ type: parseInt(type) });
-    
+
     // 应用查询条件
     if (conditions.length > 0) {
       query = query.where(_.and(conditions));
     }
-    
+
     // 排序 - 按order字段升序
     query = query.orderBy('order', 'asc');
-    
+
     // 分页
     const skip = (page - 1) * size;
     query = query.skip(skip).limit(size);
-    
+
     // 执行查询
     const result = await query.get();
-    
+
     // 获取总数
     let countQuery = db.collection('processSteps');
     if (conditions.length > 0) {
       countQuery = countQuery.where(_.and(conditions));
     }
     const countResult = await countQuery.count();
-    
+
     const executionTime = Date.now() - startTime;
     console.log(`[${new Date().toISOString()}] 流程步骤获取成功:`, {
       type,
@@ -125,7 +254,7 @@ async function getProcessSteps(data, context) {
       total: countResult.total,
       executionTime: `${executionTime}ms`
     });
-    
+
     return {
       code: 200,
       message: '获取流程步骤成功',
@@ -165,24 +294,55 @@ async function getStepDetail(data, context) {
   }
   
   try {
-    // 查询步骤详情
-    const result = await db.collection('processSteps').doc(id).get();
-    
-    if (!result.data) {
+    // 首先尝试使用文档ID查询
+    let result;
+    try {
+      result = await db.collection('processSteps').doc(id).get();
+    } catch (docError) {
+      // 如果文档ID查询失败，尝试使用where条件查询
+      console.log(`[${new Date().toISOString()}] 文档ID查询失败，尝试条件查询:`, { stepId: id });
+
+      // 尝试按order字段查询（如果传入的是数字）
+      const numericId = parseInt(id);
+      if (!isNaN(numericId)) {
+        const orderResult = await db.collection('processSteps')
+          .where('order', '==', numericId)
+          .limit(1)
+          .get();
+
+        if (orderResult.data && orderResult.data.length > 0) {
+          result = { data: orderResult.data[0] };
+        }
+      }
+
+      // 如果按order查询也没有结果，尝试按title模糊查询
+      if (!result || !result.data) {
+        const titleResult = await db.collection('processSteps')
+          .where('title', '==', id)
+          .limit(1)
+          .get();
+
+        if (titleResult.data && titleResult.data.length > 0) {
+          result = { data: titleResult.data[0] };
+        }
+      }
+    }
+
+    if (!result || !result.data) {
       console.warn('步骤不存在:', { stepId: id });
       return {
         code: 404,
         message: '步骤不存在'
       };
     }
-    
+
     const executionTime = Date.now() - startTime;
     console.log(`[${new Date().toISOString()}] 步骤详情获取成功:`, {
       stepId: id,
       stepTitle: result.data.title,
       executionTime: `${executionTime}ms`
     });
-    
+
     return {
       code: 200,
       message: '获取步骤详情成功',

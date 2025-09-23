@@ -62,6 +62,39 @@
   border-radius: 40rpx;
 }
 
+.add-cart-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  color: #fff;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  border: none;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.add-cart-btn::after {
+  border: none;
+}
+
+.add-cart-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+}
+
+/* 白事系统按钮样式 */
+.white-theme .add-cart-btn {
+  background: linear-gradient(135deg, #07c160 0%, #05a050 100%);
+}
+
+/* 红事系统按钮样式 */
+.red-theme .add-cart-btn {
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+}
+
 .goods-detail {
   padding-bottom: 120rpx;
   background: #f8f8f8;

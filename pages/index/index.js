@@ -84,10 +84,12 @@ Page({
 
   async loadProcessSteps() {
     try {
-      const steps = await api.getProcessSteps({ 
-        type: this.data.systemType === 'red' ? 1 : 0 
+      const steps = await api.getProcessSteps({
+        type: this.data.systemType === 'red' ? 1 : 0
       });
-      
+
+
+
       this.setData({
         processSteps: steps || [],
         loading: false
@@ -96,7 +98,9 @@ Page({
       console.error('获取流程数据失败:', err);
       // 根据系统类型加载对应的模拟数据
       const mockSteps = this.data.systemType === 'red' ? mockData.redSteps : mockData.whiteSteps;
-      
+
+
+
       this.setData({
         processSteps: mockSteps,
         loading: false
@@ -150,7 +154,7 @@ Page({
   onStepClick(e) {
     const { id } = e.currentTarget.dataset;
     wx.navigateTo({
-      url: `/pages/process/detail/detail?id=${id}&systemType=${this.data.systemType}`,
+      url: `/pages/process/detail/detail?stepId=${id}&systemType=${this.data.systemType}`,
     });
   }
 });
