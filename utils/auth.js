@@ -5,6 +5,10 @@ const USER_INFO_KEY = 'userInfo';
 const SECURITY_KEY = 'auth_security'; // 安全配置键
 const LAST_ACTIVE_KEY = 'last_active_time'; // 最后活跃时间
 
+const AUTH_KEY = 'auth_token';
+const REFRESH_KEY = 'refresh_token';
+const EXPIRES_KEY = 'auth_expires';
+
 const app = getApp();
 
 // 安全配置
@@ -40,7 +44,7 @@ module.exports = {
     }
   },
 
-  
+
   /**
    * 保存用户信息（云函数简化版）
    */
@@ -297,9 +301,9 @@ module.exports = {
     try {
       // 清除认证相关存储
       const keysToRemove = [
-        AUTH_KEY,
-        REFRESH_KEY,
-        EXPIRES_KEY,
+        'auth_token',
+        'refresh_token',
+        'auth_expires',
         USER_INFO_KEY,
         LAST_ACTIVE_KEY,
         'auth_time',
@@ -366,18 +370,5 @@ module.exports = {
     });
   },
 
-  /**
-   * 检查管理员权限
-   */
-  checkAdminPermission() {
-    const isAdmin = this.isAdmin();
-    if (!isAdmin) {
-      wx.showToast({
-        title: '需要管理员权限',
-        icon: 'none'
-      });
-      return false;
-    }
-    return true;
-  }
+
 };

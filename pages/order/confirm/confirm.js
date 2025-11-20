@@ -26,12 +26,12 @@ Page({
     // 获取系统类型
     const systemType = options.systemType || 'white';
     const themeColor = systemType === 'red' ? '#d32f2f' : '#333333';
-    
+
     this.setData({
       systemType,
       themeColor
     });
-    
+
     const eventChannel = this.getOpenerEventChannel()
     eventChannel.on('acceptDataFromCart', (data) => {
       this.setData({
@@ -154,7 +154,7 @@ Page({
             wx.redirectTo({
               url: `../detail/detail?orderNo=${orderNo}`,
               success: () => {
-                // 返回上一页并刷新购物车
+                // 返回上一页并刷新清单
                 const pages = getCurrentPages()
                 const cartPage = pages[pages.length - 2]
                 if (cartPage && cartPage.loadCartItems) {

@@ -3,5 +3,5 @@
   src="../../assets/images/home.jpeg" 
   mode="aspectFill"></image>
   <view class="left" bindtap="navigateToWhiteSystem"></view>
-  <view class="right" bindtap="navigateToRedSystem"></view>
+  <!-- <view class="right" bindtap="navigateToRedSystem"></view> -->
 </view>

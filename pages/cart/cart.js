@@ -10,7 +10,7 @@ Page({
     loading: false,
     maxQuantity: 99,
     minQuantity: 1,
-    syncLoading: false 
+    syncLoading: false
   },
 
   onShow() {
@@ -20,10 +20,10 @@ Page({
 
   async loadCartItems() {
     try {
-      console.log('开始加载购物车数据');
+      console.log('开始加载清单数据');
       const cartList = await api.getCartList();
-      console.log('购物车数据:', cartList);
-      
+      console.log('清单数据:', cartList);
+
       const cartItems = cartList.map(item => ({
         id: item.id || item.productId,
         name: item.name || item.productName || '未知商品',
@@ -32,20 +32,20 @@ Page({
         quantity: item.quantity || 1,
         selected: false
       }));
-      
+
       this.setData({
         cartItems,
         loading: false
       });
       this.updateTotalAmount();
     } catch (error) {
-      console.error('加载购物车失败:', error);
-      this.setData({ 
+      console.error('加载清单失败:', error);
+      this.setData({
         loading: false,
-        cartItems: []  // 确保失败时清空购物车显示
+        cartItems: []  // 确保失败时清空清单显示
       });
       wx.showToast({
-        title: '加载购物车失败',
+        title: '加载清单失败',
         icon: 'none'
       });
     }
@@ -137,12 +137,12 @@ Page({
       quantity = parseInt(quantity) || 1;
       const cartItems = [...this.data.cartItems];
       const item = cartItems[index];
-      
+
       await api.updateCart({
         productId: item.id,
         quantity: quantity
       });
-      
+
       cartItems[index].quantity = quantity;
       this.setData({ cartItems }, () => {
         this.updateTotalAmount();
@@ -162,13 +162,13 @@ Page({
           try {
             const cartItems = [...this.data.cartItems];
             const item = cartItems[index];
-            
+
             await api.removeFromCart(item.id);
-            
+
             cartItems.splice(index, 1);
             this.setData({ cartItems });
             this.updateTotalAmount();
-            
+
             wx.showToast({
               title: '删除成功',
               icon: 'success'
@@ -210,18 +210,18 @@ Page({
       });
       return;
     }
-    
+
     wx.showLoading({
       title: '正在创建订单'
     });
-    
+
     const remainingItems = this.data.cartItems.filter(item => !item.selected);
     wx.setStorageSync('cartList', remainingItems);
-    
+
     wx.navigateTo({
       url: '../order/confirm/confirm',
       success: (res) => {
-        res.eventChannel.emit('acceptDataFromCart', { 
+        res.eventChannel.emit('acceptDataFromCart', {
           selectedItems,
           totalAmount: this.data.totalAmount
         });
@@ -241,7 +241,7 @@ Page({
   },
 
   handleError(error) {
-    console.error('购物车操作错误：', error);
+    console.error('清单操作错误：', error);
     wx.showToast({
       title: '操作失败，请重试',
       icon: 'none'
@@ -250,15 +250,15 @@ Page({
 
   async syncCartItemsWithServer(localCartItems) {
     if (this.data.syncLoading) return localCartItems;
-    
+
     try {
       this.setData({ syncLoading: true });
-      
+
       const productIds = localCartItems.map(item => item.id);
       if (productIds.length === 0) return [];
-      
+
       const res = await api.getProductsByIds(productIds);
-      
+
       if (res.code === 200 && res.data && res.data.records) {
         return localCartItems.map(cartItem => {
           const serverProduct = res.data.records.find(p => p.id === cartItem.id);
@@ -276,13 +276,13 @@ Page({
       }
       return localCartItems;
     } catch (error) {
-      console.error('同步购物车数据失败：', error);
+      console.error('同步清单数据失败：', error);
       return localCartItems;
     } finally {
       this.setData({ syncLoading: false });
     }
   },
-  
+
   async fetchCartFromServer() {
     try {
       const res = await api.getCartList();
@@ -298,49 +298,49 @@ Page({
       }
       return [];
     } catch (error) {
-      console.error('获取服务器购物车数据失败：', error);
+      console.error('获取服务器清单数据失败：', error);
       return [];
     }
   },
-  
+
   async syncCartToServer() {
     // 使用云开发认证检查用户登录状态
     if (!auth.checkAuth()) {
-      console.log('用户未登录，跳过购物车同步');
+      console.log('用户未登录，跳过清单同步');
       return;
     }
 
     const userInfo = auth.getUserInfo();
     if (!userInfo) {
-      console.log('无法获取用户信息，跳过购物车同步');
+      console.log('无法获取用户信息，跳过清单同步');
       return;
     }
-    
+
     try {
-      console.log('开始同步购物车到服务器');
+      console.log('开始同步清单到服务器');
       const cartItems = this.data.cartItems;
       if (cartItems.length === 0) {
-        console.log('购物车为空');
+        console.log('清单为空');
         return;
       }
-      
+
       const cartData = cartItems.map(item => ({
         productId: item.id,
         quantity: item.quantity
       }));
-      
-      console.log('同步的购物车数据:', cartData);
+
+      console.log('同步的清单数据:', cartData);
       await api.addToCart(cartData);
-      console.log('同步购物车成功');
+      console.log('同步清单成功');
     } catch (error) {
-      console.error('同步购物车失败:', error);
+      console.error('同步清单失败:', error);
     }
   },
-  
+
   onHide() {
     this.syncCartToServer();
   },
-  
+
   onUnload() {
     this.syncCartToServer();
   }

@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "购物车",
+  "navigationBarTitleText": "物品清单",
   "usingComponents": {
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-stepper": "tdesign-miniprogram/stepper/stepper",

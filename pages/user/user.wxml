@@ -17,7 +17,7 @@
   <view class="function-area" wx:if="{{hasUserInfo}}">
     <t-cell-group>
       <!-- 管理不展示购物车 -->
-      <t-cell wx:if="{{!isAdmin}}" title="我的购物车" hover arrow bindtap="toShoppingCart" />
+      <t-cell wx:if="{{!isAdmin}}" title="我的清单" hover arrow bindtap="toShoppingCart" />
       <t-cell wx:if="{{!isAdmin}}" title="我的订单" hover arrow bindtap="toOrders" />
 
       <t-cell title="意见反馈" hover arrow bindtap="toFeedback" />

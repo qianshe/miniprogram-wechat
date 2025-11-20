@@ -216,7 +216,7 @@ App({
       wx.removeStorageSync('token');
       wx.removeStorageSync('isAdmin');
 
-      // 清理购物车
+      // 清理清单
       wx.removeStorageSync('cartList');
 
       // 清除错误日志

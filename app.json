@@ -20,6 +20,8 @@
     "pages/admin/order/create/create",
     "pages/admin/product/scan/scan",
     "pages/admin/order/qr-code/qr-code",
+    "pages/admin/product/create/create",
+    "pages/admin/product/edit/edit",
     "pages/scan-result/scan-result"
   ],
   "window": {

@@ -49,28 +49,28 @@ Component({
         console.warn('systemType is undefined, using default "white"');
         systemType = 'white';
       }
-      
+
       const tabConfig = {
-          list: [
-            {
-              pagePath: "/pages/index/index",
-              text: "首页",
-              icon: "home"
-            },
-            {
-              pagePath: "/pages/goods/category/category",
-              text: "分类",
-              icon: "app"
-            },
-            {
-              pagePath: "/pages/user/user",
-              text: "个人中心",
-              icon: "user-circle"
-            }
-          ]
+        list: [
+          {
+            pagePath: "/pages/index/index",
+            text: "首页",
+            icon: "home"
+          },
+          {
+            pagePath: "/pages/goods/category/category",
+            text: "清单",
+            icon: "app"
+          },
+          {
+            pagePath: "/pages/user/user",
+            text: "个人中心",
+            icon: "user-circle"
+          }
+        ]
       };
       const app = getApp();
-      
+
       this.setData({
         list: tabConfig.list,
         index: app.globalData.currentTabIndex || 0

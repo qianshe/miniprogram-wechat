@@ -1,5 +1,6 @@
 page {
-  background-color: #f5f5f5;
+  background-color: var(--bg-color);
+  --sidebar-width: 180rpx;
 }
 
 page .round-image {
@@ -7,183 +8,179 @@ page .round-image {
 }
 
 /* 自定义侧边栏样式 */
+.side-bar-wrapper {
+  display: flex;
+  height: calc(100vh - 100rpx); /* 减去 TabBar 的高度 */
+  overflow: hidden;
+  background: #fff;
+  position: fixed;
+  left: 0;
+  right: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 .side-bar {
-  width: 200rpx;
-  background: #f5f5f5;
+  width: var(--sidebar-width);
+  background: #f7f8fa;
   height: 100%;
+  overflow-y: auto;
 }
 
 .side-bar-item {
-  padding: 30rpx 20rpx;
+  padding: 32rpx 20rpx;
   text-align: center;
-  font-size: 28rpx;
-  color: #666;
-  border-bottom: 1rpx solid #eee;
-  background: white;
-  margin-bottom: 2rpx;
+  font-size: 26rpx;
+  color: var(--text-main);
+  position: relative;
+  transition: all 0.3s;
 }
 
 .side-bar-item.active {
-  background: #07c160;
-  color: white;
+  background: #fff;
+  color: var(--primary-color);
+  font-weight: bold;
+  font-size: 28rpx;
+}
+
+.side-bar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6rpx;
+  height: 32rpx;
+  background-color: var(--primary-color);
+  border-radius: 0 4rpx 4rpx 0;
+}
+
+/* 内容区域 */
+.content {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  background: #fff;
+  position: relative;
+}
+
+.section {
+  padding: 20rpx 20rpx 120rpx;
+}
+
+.title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: var(--text-main);
+  margin-bottom: 20rpx;
+  padding-left: 10rpx;
 }
 
 /* 商品列表样式 */
 .product-list {
-  padding: 20rpx;
+  padding: 0;
 }
 
 .product-item {
   display: flex;
-  align-items: center;
   padding: 20rpx;
-  background: white;
+  background: #fff;
   border-radius: 12rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.1);
+  /* box-shadow: var(--shadow-sm); */ /* 列表模式下通常不需要阴影，保持简洁 */
 }
 
 .product-image {
-  width: 120rpx;
-  height: 120rpx;
+  width: 160rpx;
+  height: 160rpx;
   border-radius: 12rpx;
   margin-right: 20rpx;
+  background: #f8f8f8;
 }
 
 .product-info {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  padding: 4rpx 0;
 }
 
 .product-name {
-  font-size: 32rpx;
-  color: #333;
+  font-size: 28rpx;
+  color: var(--text-main);
+  font-weight: 500;
+  margin-bottom: 8rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.product-desc {
+  font-size: 22rpx;
+  color: var(--text-sub);
   margin-bottom: 10rpx;
 }
 
+.product-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
 .product-price {
-  font-size: 28rpx;
-  color: #ff4757;
+  font-size: 32rpx;
+  color: var(--danger-color);
   font-weight: bold;
 }
 
-/* 加载状态样式 */
-.loading-text {
-  font-size: 28rpx;
-  color: #666;
-  text-align: center;
-  padding: 20rpx;
-}
-
-.side-bar-wrapper {
-  display: flex;
-  height: calc(100vh - 100rpx); /* 减去 TabBar 的高度 */
-  overflow: hidden;
-  background: #fff;
-  /* 固定位置 */
-  position: fixed;
-  left: 0;
-  right: 0;
-
-  padding-bottom: env(safe-area-inset-bottom); /* 适配底部安全区域 */
-}
-
-.side-bar-wrapper .content {
-  flex: 1;
-  transition: transform 0.3s ease;
-  position: relative;
-  margin: 0;  /* 移除所有外边距 */
-  padding: 0;  /* 移除所有内边距 */
-  width: 100%;  /* 确保宽度填充 */
-}
-
-.side-bar-wrapper .section {
-  padding: 32rpx 0 120rpx; /* 增加底部padding */
-  box-sizing: border-box;
-  height: 100%;
-  overflow-y: auto;
-  margin: 0;  /* 移除所有外边距 */
-  width: 100%;  /* 确保宽度填充 */
-}
-
-.side-bar-wrapper .title {
-  padding-left: 40rpx;
-  margin-bottom: 8rpx;
-  font-size: 28rpx;
-  line-height: 44rpx;
-  color: #333;
-}
-
-.side-bar-wrapper .image {
-  width: 96rpx;
-  height: 96rpx;
-
-  position: relative;
-}
-
-.side-bar-wrapper .cell {
-  margin-right: 0 !important;
-  padding-right: 32rpx !important;
-}
-
-.side-bar-wrapper .image::before {
-  content: ' ';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 200%;
-  height: 200%;
-  border-radius: 24rpx;
-  border: 2rpx solid #ddd;
-  transform-origin: 0 0;
-  transform: scale(0.5);
-}
-
-.price {
-  color: #e34d59;
+.product-price::before {
+  content: '¥';
   font-size: 24rpx;
-  margin-top: 4rpx;
+  margin-right: 2rpx;
 }
 
-/* 底部加载状态样式 */
-.loading-more,
-.no-more {
-  text-align: center;
-  padding: 24rpx;
-  color: #999;
-  font-size: 24rpx;
-  margin-bottom: 100rpx; /* 底部留出足够空间 */
-}
-
-.loading-more {
+.add-btn {
+  width: 48rpx;
+  height: 48rpx;
+  background: var(--primary-color);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
+  color: #fff;
+  font-size: 32rpx;
+  box-shadow: 0 4rpx 10rpx rgba(7, 193, 96, 0.3);
 }
 
-/* 调整加载状态容器样式 */
+/* 加载状态样式 */
 .loading-status {
-  position: relative;
-  width: 100%;
-  padding: 24rpx 0;
+  padding: 30rpx 0;
   text-align: center;
-  background: #fff;
 }
 
-/* 确保滚动区域紧贴右边 */
+.loading-text, .no-more {
+  font-size: 24rpx;
+  color: var(--text-sub);
+}
+
+/* 覆盖 TDesign 样式 */
 .t-cell-group {
-  margin-right: 0;
-  padding-right: 0;
-}
-
-/* 确保单元格没有多余的边距 */
-.t-cell {
   margin: 0 !important;
-  padding-right: 0 !important;
 }
 
-.t-cell__title {
-  padding-right: 0 !important;
+.t-cell {
+  padding: 20rpx !important;
+}
+
+.t-cell::after {
+  left: 20rpx !important;
+  right: 20rpx !important;
+}
+
+/* 侧边栏图片 */
+.side-bar-wrapper .image {
+  width: 100%;
+  height: 100%;
+  border-radius: 8rpx;
 }

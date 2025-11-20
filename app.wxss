@@ -2,6 +2,25 @@
 
 /* 已迁移至 TDesign 组件内联字体，移除此处全局字体与覆盖，避免绝对路径加载 */
 
+page {
+  --primary-color: #07c160;
+  --danger-color: #ff4444;
+  --warning-color: #ff9800;
+  --bg-color: #f7f8fa;
+  --card-bg: #ffffff;
+  --text-main: #333333;
+  --text-sub: #999999;
+  --border-radius: 16rpx;
+  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 16rpx 48rpx rgba(0, 0, 0, 0.08);
+  
+  background-color: var(--bg-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
+    Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB', 'Microsoft Yahei',
+    sans-serif;
+}
+
 .tab-container {
   height: 100%;
   display: flex;

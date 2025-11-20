@@ -1,93 +1,78 @@
 .container {
-  padding-bottom: 120rpx;
-  background: #f8f8f8;
-}
-
-/* 白事系统主题 */
-.white-theme {
-  background-color: #f8f8f8;
-}
-
-/* 红事系统主题 */
-.red-theme {
-  background-color: #fff3e0;
+  padding-bottom: 140rpx;
+  background: var(--bg-color);
+  min-height: 100vh;
+  padding: 20rpx;
 }
 
 .address-section {
   background: #fff;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
   position: relative;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 /* 白事系统地址样式 */
-.white-address {
-  border-left: 4rpx solid #07c160;
+.white-theme .address-section {
+  border-left: 8rpx solid var(--primary-color);
 }
 
 /* 红事系统地址样式 */
-.red-address {
-  border-left: 4rpx solid #d32f2f;
+.red-theme .address-section {
+  border-left: 8rpx solid var(--danger-color);
 }
 
 .address-info {
-  padding-right: 40rpx;
+  flex: 1;
+  padding-right: 20rpx;
 }
 
 .user-info {
   display: flex;
-  justify-content: flex-start;
   align-items: center;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
 }
 
 .user-info text {
-  margin-right: 40rpx;
-  font-size: 32rpx;
-  font-weight: 500;
+  margin-right: 24rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: var(--text-main);
 }
 
 .address-detail {
-  color: #666;
-  font-size: 28rpx;
+  color: var(--text-sub);
+  font-size: 26rpx;
   line-height: 1.4;
 }
 
 .no-address {
-  color: #999;
+  color: var(--text-sub);
+  font-size: 28rpx;
 }
 
 .arrow {
-  position: absolute;
-  right: 30rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #999;
-  font-family: "宋体";
-  font-weight: bold;
+  color: #ccc;
+  font-size: 32rpx;
 }
 
 .goods-list {
   background: #fff;
-  padding: 0 30rpx;
+  padding: 0 32rpx;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24rpx;
 }
 
 .goods-item {
   display: flex;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #eee;
-}
-
-/* 白事系统商品项样式 */
-.white-goods-item {
-  border-bottom: 1rpx solid #e6f7ef;
-}
-
-/* 红事系统商品项样式 */
-.red-goods-item {
-  border-bottom: 1rpx solid #ffebee;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
 }
 
 .goods-item:last-child {
@@ -95,10 +80,11 @@
 }
 
 .goods-image {
-  width: 160rpx;
-  height: 160rpx;
-  margin-right: 20rpx;
-  border-radius: 8rpx;
+  width: 140rpx;
+  height: 140rpx;
+  margin-right: 24rpx;
+  border-radius: 12rpx;
+  background: #f8f8f8;
 }
 
 .goods-info {
@@ -106,11 +92,14 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  padding: 4rpx 0;
 }
 
 .goods-name {
   font-size: 28rpx;
-  color: #333;
+  color: var(--text-main);
+  font-weight: 500;
+  margin-bottom: 8rpx;
 }
 
 .goods-price-quantity {
@@ -121,42 +110,36 @@
 
 .goods-price {
   font-weight: bold;
-}
-
-/* 白事系统价格颜色 */
-.white-price {
-  color: #07c160;
-}
-
-/* 红事系统价格颜色 */
-.red-price {
-  color: #d32f2f;
+  font-size: 30rpx;
+  color: var(--text-main);
 }
 
 .goods-quantity {
-  color: #999;
+  color: var(--text-sub);
   font-size: 26rpx;
 }
 
 .remarks-section {
-  margin-top: 20rpx;
   background: #fff;
-  padding: 20rpx 30rpx;
+  padding: 32rpx;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
 }
 
-/* 白事系统备注样式 */
-.white-remarks {
-  border-top: 1rpx solid #e6f7ef;
-}
-
-/* 红事系统备注样式 */
-.red-remarks {
-  border-top: 1rpx solid #ffebee;
+.remarks-label {
+  font-size: 28rpx;
+  color: var(--text-main);
+  margin-right: 20rpx;
+  font-weight: 500;
 }
 
 .remarks-section input {
-  width: 100%;
+  flex: 1;
   height: 60rpx;
+  font-size: 28rpx;
+  color: var(--text-main);
 }
 
 .footer {
@@ -164,53 +147,61 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 100rpx;
+  height: 110rpx;
   background: #fff;
   display: flex;
   align-items: center;
   padding: 0 30rpx;
-  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.05);
-}
-
-/* 白事系统底部栏 */
-.white-footer {
-  border-top: 1rpx solid #e6f7ef;
-}
-
-/* 红事系统底部栏 */
-.red-footer {
-  border-top: 1rpx solid #ffebee;
+  box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.05);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
 }
 
 .total-amount {
   flex: 1;
+  font-size: 28rpx;
+  color: var(--text-main);
 }
 
 .amount {
   font-weight: bold;
-  font-size: 32rpx;
+  font-size: 36rpx;
+  color: var(--danger-color);
+  margin-left: 10rpx;
 }
 
 .submit-btn {
-  width: 200rpx;
+  width: 240rpx;
   height: 80rpx;
   line-height: 80rpx;
   text-align: center;
   color: #fff;
   border-radius: 40rpx;
   margin: 0;
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.15);
+  transition: all 0.3s;
+}
+
+.submit-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1);
 }
 
 /* 白事系统提交按钮 */
-.white-submit-btn {
-  background: #07c160;
+.white-theme .submit-btn {
+  background: var(--primary-color);
+  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
 }
 
 /* 红事系统提交按钮 */
-.red-submit-btn {
-  background: #d32f2f;
+.red-theme .submit-btn {
+  background: var(--danger-color);
+  box-shadow: 0 8rpx 20rpx rgba(244, 67, 54, 0.3);
 }
 
 .submit-btn[disabled] {
   background: #ccc;
+  box-shadow: none;
 }

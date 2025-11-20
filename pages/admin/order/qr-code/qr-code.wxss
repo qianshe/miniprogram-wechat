@@ -1,7 +1,7 @@
 .qr-container {
   padding: 30rpx;
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: var(--bg-color);
 }
 
 .page-header {
@@ -12,36 +12,37 @@
 .page-title {
   font-size: 36rpx;
   font-weight: bold;
-  color: #333;
+  color: var(--text-main);
   margin-bottom: 10rpx;
 }
 
 .order-no {
   font-size: 28rpx;
-  color: #666;
+  color: var(--text-sub);
 }
 
 .qr-section {
   background-color: #fff;
-  border-radius: 12rpx;
+  border-radius: var(--border-radius);
   padding: 40rpx;
   margin-bottom: 30rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-md);
 }
 
 .qr-code-container {
   width: 500rpx;
   height: 500rpx;
-  background-color: #f5f5f5;
+  background-color: #f9f9f9;
   margin-bottom: 30rpx;
   padding: 20rpx;
   border-radius: 12rpx;
   display: flex;
   justify-content: center;
   align-items: center;
+  border: 2rpx solid #f0f0f0;
 }
 
 .qr-code {
@@ -50,7 +51,7 @@
 }
 
 .tips {
-  color: #666;
+  color: var(--text-sub);
   font-size: 24rpx;
   margin-bottom: 30rpx;
 }
@@ -64,75 +65,87 @@
 
 .description text {
   font-size: 28rpx;
-  color: #333;
-  line-height: 1.5;
+  color: var(--text-main);
+  line-height: 1.6;
 }
 
 .action-buttons {
   display: flex;
   justify-content: space-between;
   margin-bottom: 30rpx;
+  gap: 20rpx;
 }
 
 .action-btn {
   flex: 1;
-  margin: 0 10rpx;
   font-size: 28rpx;
   height: 88rpx;
   line-height: 88rpx;
   text-align: center;
-  border-radius: 8rpx;
+  border-radius: 44rpx;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.action-btn:active {
+  transform: scale(0.98);
 }
 
 .action-btn.primary {
   background-color: #1989fa;
   color: #fff;
+  box-shadow: 0 6rpx 16rpx rgba(25, 137, 250, 0.3);
 }
 
 .action-btn.secondary {
-  background-color: #07c160;
+  background-color: var(--primary-color);
   color: #fff;
+  box-shadow: 0 6rpx 16rpx rgba(7, 193, 96, 0.3);
 }
 
 .action-btn.plain {
-  background-color: #f5f5f5;
-  color: #666;
+  background-color: #fff;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
 }
 
 .order-detail-section {
   background-color: #fff;
-  border-radius: 12rpx;
-  padding: 30rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.05);
+  border-radius: var(--border-radius);
+  padding: 32rpx;
+  box-shadow: var(--shadow-sm);
 }
 
 .section-title {
   font-size: 30rpx;
   font-weight: bold;
-  color: #333;
-  margin-bottom: 20rpx;
+  color: var(--text-main);
+  margin-bottom: 24rpx;
   border-left: 8rpx solid #1989fa;
   padding-left: 16rpx;
+  line-height: 1;
 }
 
 .info-item {
   display: flex;
-  margin-bottom: 15rpx;
+  margin-bottom: 20rpx;
+  line-height: 1.5;
 }
 
 .label {
   width: 160rpx;
-  color: #666;
+  color: var(--text-sub);
   font-size: 28rpx;
 }
 
 .value {
   flex: 1;
-  color: #333;
+  color: var(--text-main);
   font-size: 28rpx;
 }
 
 .value.amount {
-  color: #f44336;
+  color: var(--danger-color);
   font-weight: bold;
-} 
+  font-size: 32rpx;
+}

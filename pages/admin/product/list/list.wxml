@@ -1,10 +1,10 @@
 <view class="admin-products-container">
   <!-- 页面头部 -->
   <view class="page-header">
-    <view class="page-title">产品管理</view>
+    <view class="page-title">商品管理</view>
     <view class="action-buttons">
       <t-button theme="default" size="small" bindtap="scanProduct">扫描查价</t-button>
-      <t-button theme="primary" size="small" bindtap="createProduct">新增产品</t-button>
+      <t-button theme="primary" size="small" bindtap="createProduct">新增商品</t-button>
     </view>
   </view>
   
@@ -17,9 +17,10 @@
       bind:clear="onSearchClear"
       value="{{keyword}}"
     />
-    <view class="filter-btn" bindtap="toggleFilterPanel">
-      <t-icon name="filter" size="20" />
-      <text>筛选</text>
+    <view class="category-dropdown">
+      <t-dropdown-menu>
+        <t-dropdown-item options="{{categoryOptions}}" value="{{selectedCategoryId}}" bindchange="onCategoryChange" />
+      </t-dropdown-menu>
     </view>
   </view>
   
@@ -78,43 +79,4 @@
       </view>
     </block>
   </view>
-  
-  <!-- 筛选面板 -->
-  <t-popup
-    visible="{{showFilterPanel}}"
-    placement="bottom"
-    bind:visible-change="onFilterPopupChange"
-  >
-    <view class="filter-header">
-      <text>筛选</text>
-      <t-icon name="close" size="20" bindtap="toggleFilterPanel" />
-    </view>
-    <view class="filter-content">
-      <view class="filter-item">
-        <text class="filter-label">价格区间</text>
-        <view class="price-range">
-          <t-input type="number" placeholder="最低价" bind:change="onFilterPriceMinInput" value="{{filterParams.priceMin}}" />
-          <text class="price-separator">-</text>
-          <t-input type="number" placeholder="最高价" bind:change="onFilterPriceMaxInput" value="{{filterParams.priceMax}}" />
-        </view>
-      </view>
-      
-      <view class="filter-item">
-        <text class="filter-label">产品分类</text>
-        <view class="category-list">
-          <view class="category-item {{selectedCategoryId === '' ? 'active' : ''}}" bindtap="onCategoryChange" data-id="">
-            全部
-          </view>
-          <view class="category-item {{selectedCategoryId === item.id ? 'active' : ''}}" wx:for="{{categories}}" wx:key="id" bindtap="onCategoryChange" data-id="{{item.id}}">
-            {{item.name}}
-          </view>
-        </view>
-      </view>
-    </view>
-    
-    <view class="filter-footer">
-      <t-button theme="default" bindtap="resetFilter">重置</t-button>
-      <t-button theme="primary" bindtap="applyFilter">确定</t-button>
-    </view>
-  </t-popup>
-</view> 
+</view>

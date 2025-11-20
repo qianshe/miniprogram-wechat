@@ -1,6 +1,6 @@
 .admin-container {
   padding: 30rpx;
-  background-color: #f5f5f5;
+  background-color: var(--bg-color);
   min-height: 100vh;
 }
 
@@ -9,8 +9,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 0;
+  padding: 30rpx;
   margin-bottom: 30rpx;
+  background: #fff;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
 }
 
 .admin-info {
@@ -22,27 +25,36 @@
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
-  margin-right: 20rpx;
+  margin-right: 24rpx;
+  border: 4rpx solid #f0f0f0;
 }
 
 .admin-name {
   font-size: 32rpx;
   font-weight: bold;
-  color: #333;
-  margin-bottom: 6rpx;
+  color: var(--text-main);
+  margin-bottom: 8rpx;
 }
 
 .admin-role {
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-sub);
+  background: #f5f5f5;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
 }
 
 .logout-btn {
   font-size: 26rpx;
-  color: #666;
-  padding: 10rpx 20rpx;
-  background-color: #f0f0f0;
+  color: var(--text-sub);
+  padding: 12rpx 24rpx;
+  background-color: #f5f5f5;
   border-radius: 30rpx;
+  transition: all 0.3s;
+}
+
+.logout-btn:active {
+  background-color: #e0e0e0;
 }
 
 /* 功能模块导航 */
@@ -50,10 +62,11 @@
   display: flex;
   flex-wrap: wrap;
   background-color: #fff;
-  border-radius: 12rpx;
+  border-radius: var(--border-radius);
   margin-bottom: 30rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
+  padding: 10rpx 0;
 }
 
 .module-item {
@@ -61,9 +74,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 30rpx 0;
+  padding: 40rpx 0;
   box-sizing: border-box;
   position: relative;
+  transition: all 0.3s;
+}
+
+.module-item:active {
+  background-color: #f9f9f9;
 }
 
 .module-item::after {
@@ -73,7 +91,7 @@
   right: 0;
   width: 100%;
   height: 1rpx;
-  background-color: #f0f0f0;
+  background-color: #f5f5f5;
 }
 
 .module-item::before {
@@ -83,12 +101,13 @@
   right: 0;
   width: 1rpx;
   height: 100%;
-  background-color: #f0f0f0;
+  background-color: #f5f5f5;
 }
 
 .module-icon {
-  font-size: 60rpx;
-  margin-bottom: 10rpx;
+  font-size: 56rpx;
+  margin-bottom: 16rpx;
+  color: var(--primary-color);
 }
 
 .module-info {
@@ -97,24 +116,24 @@
 
 .module-name {
   font-size: 28rpx;
-  color: #333;
-  font-weight: bold;
-  margin-bottom: 5rpx;
+  color: var(--text-main);
+  font-weight: 500;
+  margin-bottom: 6rpx;
 }
 
 .module-desc {
   font-size: 22rpx;
-  color: #666;
+  color: var(--text-sub);
 }
 
 /* 通用的区块标题 */
 .section-title {
   font-size: 32rpx;
   font-weight: bold;
-  color: #333;
-  margin: 30rpx 0 20rpx;
+  color: var(--text-main);
+  margin: 40rpx 0 24rpx;
   padding-left: 20rpx;
-  border-left: 8rpx solid #07c160;
+  border-left: 8rpx solid var(--primary-color);
   line-height: 1;
 }
 
@@ -123,15 +142,15 @@
   display: flex;
   flex-wrap: wrap;
   background-color: #fff;
-  border-radius: 12rpx;
+  border-radius: var(--border-radius);
   margin-bottom: 30rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-item {
   width: 50%;
-  padding: 30rpx 0;
+  padding: 40rpx 0;
   text-align: center;
   position: relative;
 }
@@ -143,7 +162,7 @@
   right: 0;
   width: 100%;
   height: 1rpx;
-  background-color: #f0f0f0;
+  background-color: #f5f5f5;
 }
 
 .stat-item::before {
@@ -153,36 +172,41 @@
   right: 0;
   width: 1rpx;
   height: 100%;
-  background-color: #f0f0f0;
+  background-color: #f5f5f5;
 }
 
 .stat-value {
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: bold;
-  color: #333;
-  margin-bottom: 10rpx;
+  color: var(--text-main);
+  margin-bottom: 12rpx;
 }
 
 .stat-label {
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-sub);
 }
 
 /* 待处理事项列表 */
 .todo-list {
   background-color: #fff;
-  border-radius: 12rpx;
+  border-radius: var(--border-radius);
   margin-bottom: 30rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .todo-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 30rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+  transition: all 0.3s;
+}
+
+.todo-item:active {
+  background-color: #f9f9f9;
 }
 
 .todo-item:last-child {
@@ -195,41 +219,43 @@
 }
 
 .todo-icon {
-  width: 50rpx;
-  height: 50rpx;
-  margin-right: 20rpx;
+  width: 48rpx;
+  height: 48rpx;
+  margin-right: 24rpx;
+  opacity: 0.8;
 }
 
 .todo-name {
   font-size: 28rpx;
-  color: #333;
+  color: var(--text-main);
 }
 
 .todo-count {
-  background-color: #ff4d4f;
+  background-color: var(--danger-color);
   color: #fff;
   font-size: 24rpx;
-  min-width: 40rpx;
-  height: 40rpx;
-  line-height: 40rpx;
-  border-radius: 20rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  border-radius: 18rpx;
   text-align: center;
-  padding: 0 10rpx;
+  padding: 0 12rpx;
+  font-weight: bold;
 }
 
 /* 热销产品排行榜 */
 .product-rank-list {
   background-color: #fff;
-  border-radius: 12rpx;
+  border-radius: var(--border-radius);
   overflow: hidden;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .product-rank-item {
   display: flex;
   align-items: center;
-  padding: 20rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 24rpx;
+  border-bottom: 1rpx solid #f5f5f5;
 }
 
 .product-rank-item:last-child {
@@ -241,57 +267,59 @@
   height: 40rpx;
   line-height: 40rpx;
   text-align: center;
-  background-color: #f0f0f0;
-  color: #666;
+  background-color: #f5f5f5;
+  color: #999;
   font-size: 24rpx;
   border-radius: 8rpx;
-  margin-right: 20rpx;
+  margin-right: 24rpx;
+  font-weight: bold;
 }
 
 .product-rank-item:nth-child(1) .rank-number {
-  background-color: #ff4d4f;
-  color: #fff;
+  background-color: #ffebee;
+  color: #d32f2f;
 }
 
 .product-rank-item:nth-child(2) .rank-number {
-  background-color: #ffa940;
-  color: #fff;
+  background-color: #fff3e0;
+  color: #f57c00;
 }
 
 .product-rank-item:nth-child(3) .rank-number {
-  background-color: #faad14;
-  color: #fff;
+  background-color: #fff8e1;
+  color: #fbc02d;
 }
 
 .product-thumb {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 8rpx;
-  margin-right: 20rpx;
+  border-radius: 12rpx;
+  margin-right: 24rpx;
+  background-color: #f8f8f8;
 }
 
 .product-info {
   flex: 1;
+  overflow: hidden;
 }
 
 .product-name {
   font-size: 28rpx;
-  color: #333;
-  margin-bottom: 10rpx;
+  color: var(--text-main);
+  margin-bottom: 8rpx;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 300rpx;
 }
 
 .product-sales {
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-sub);
 }
 
 .product-amount {
   font-size: 30rpx;
-  color: #f44336;
+  color: var(--danger-color);
   font-weight: bold;
 }
 
@@ -305,5 +333,5 @@
 
 .loading-text {
   font-size: 28rpx;
-  color: #666;
+  color: var(--text-sub);
 }

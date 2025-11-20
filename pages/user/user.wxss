@@ -3,162 +3,157 @@ page {
   height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.button-example {
-  margin: 20rpx;
-  padding-bottom: 100rpx;
-  display: flex;
-  justify-content: space-between;
-}
-
-.button-example:after {
-  content: '';
-  flex: auto;
+  background: var(--bg-color);
 }
 
 .scrollarea {
   flex: 1;
   overflow-y: hidden;
   display: block; 
-  box-sizing: border-box
+  box-sizing: border-box;
 }
 
-/* 白事系统主题 */
-.white-theme {
-  background-color: #f8f8f8;
+.container {
+  padding: 0;
 }
 
-/* 红事系统主题 */
-.red-theme {
-  background-color: #fff3e0;
-}
-
+/* 用户信息区域优化 */
 .userinfo {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #aaa;
   width: 100%;
-  padding: 30rpx 0;
+  padding: 60rpx 0 80rpx;
+  background: #fff;
+  position: relative;
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 添加背景装饰 */
+.userinfo::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 24rpx;
+  background: linear-gradient(to bottom, rgba(255,255,255,0), var(--bg-color));
 }
 
 .userinfo-avatar {
   overflow: hidden;
-  width: 128rpx;
-  height: 128rpx;
+  width: 160rpx;
+  height: 160rpx;
   margin: 20rpx;
   border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  border: 6rpx solid #fff;
 }
 
-/* 白事系统头像样式 */
+.userinfo-nickname {
+  font-size: 36rpx;
+  font-weight: 600;
+  margin-top: 16rpx;
+}
+
+/* 白事系统主题 */
+.white-theme .userinfo {
+  background: linear-gradient(180deg, #f0f0f0 0%, #ffffff 100%);
+}
+
 .white-avatar {
-  border: 2px solid #333333;
+  border-color: #fff;
 }
 
-/* 红事系统头像样式 */
-.red-avatar {
-  border: 2px solid #d32f2f;
-}
-
-/* 白事系统文本样式 */
 .white-text {
   color: #333333;
 }
 
-/* 红事系统文本样式 */
+/* 红事系统主题 */
+.red-theme .userinfo {
+  background: linear-gradient(180deg, #fff3e0 0%, #ffffff 100%);
+}
+
+.red-avatar {
+  border-color: #fff;
+}
+
 .red-text {
   color: #d32f2f;
 }
 
-.usermotto {
-  margin-top: 200px;
-}
-
-.avatar-wrapper {
-  padding: 0;
-  width: 56px !important;
-  border-radius: 8px;
-  margin-top: 40px;
-  margin-bottom: 40px;
-}
-
-.avatar {
-  display: block;
-  width: 56px;
-  height: 56px;
-}
-
-.nickname-wrapper {
-  display: flex;
-  width: 100%;
-  padding: 16px;
-  box-sizing: border-box;
-  border-top: .5px solid rgba(0, 0, 0, 0.1);
-  border-bottom: .5px solid rgba(0, 0, 0, 0.1);
-  color: black;
-}
-
-.nickname-label {
-  width: 105px;
-}
-
-.nickname-input {
-  flex: 1;
-}
-
-.function-area {
-  margin-top: 20rpx;
-  width: 100%;
-  background: #fff;
-}
-
-.function-area .t-cell {
-  padding: 24rpx;
-  font-size: 28rpx;
-}
-
+/* 登录按钮优化 */
 .login-tip {
   font-size: 28rpx;
-  color: #999;
+  color: var(--text-sub);
   margin: 20rpx 0;
 }
 
 .login-btn {
-  width: 240rpx;
-  height: 80rpx;
-  line-height: 80rpx;
+  width: 320rpx;
+  height: 88rpx;
+  line-height: 88rpx;
   text-align: center;
   color: #fff;
-  border-radius: 40rpx;
-  margin: 20rpx 0;
-  font-size: 28rpx;  /* 添加字体大小 */
-  padding: 0;        /* 重置内边距 */
-  font-weight: normal; /* 重置字体粗细 */
-  border: none;      /* 移除边框 */
-}
-
-/* 白事系统按钮样式 */
-.white-btn {
-  background: #07c160;
-}
-
-/* 红事系统按钮样式 */
-.red-btn {
-  background: #d32f2f;
-}
-
-.login-btn::after {
-  border: none;      /* 移除点击后的边框 */
+  border-radius: 44rpx;
+  margin: 32rpx 0;
+  font-size: 30rpx;
+  padding: 0;
+  font-weight: 600;
+  border: none;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
 }
 
 .login-btn:active {
-  opacity: 0.8;      /* 点击效果 */
+  transform: scale(0.98);
+  opacity: 0.9;
+  box-shadow: var(--shadow-sm);
 }
 
+.white-btn {
+  background: var(--primary-color);
+}
+
+.red-btn {
+  background: var(--danger-color);
+}
+
+.login-btn::after {
+  border: none;
+}
+
+/* 功能列表区域优化 */
+.function-area {
+  width: 92%;
+  margin: 0 auto;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  background: #fff;
+}
+
+.function-area t-cell-group {
+  background: transparent;
+}
+
+.function-area .t-cell {
+  padding: 32rpx;
+  font-size: 30rpx;
+  color: var(--text-main);
+}
+
+.function-area .t-cell::after {
+  left: 32rpx;
+  right: 32rpx;
+  border-bottom-color: #f5f5f5;
+}
+
+/* 绑定手机号按钮 */
 .userinfo-phone {
   font-size: 26rpx;
-  color: #666;
+  color: var(--text-sub);
   margin: 10rpx 0;
 }
 
@@ -167,15 +162,15 @@ page {
   height: 60rpx;
   line-height: 60rpx;
   font-size: 24rpx;
-  margin-top: 10rpx;
-  background: #f8f8f8;
-  color: #07c160;
-  border: 1rpx solid #07c160;
+  margin-top: 16rpx;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(4px);
+  color: var(--primary-color);
+  border: 1rpx solid var(--primary-color);
   border-radius: 30rpx;
 }
 
-/* 红事系统绑定手机按钮 */
 .red-theme .bind-phone-btn {
-  color: #d32f2f;
-  border: 1rpx solid #d32f2f;
+  color: var(--danger-color);
+  border-color: var(--danger-color);
 }

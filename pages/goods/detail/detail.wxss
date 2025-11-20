@@ -1,45 +1,113 @@
 .container {
-  padding-bottom: 100rpx;
+  padding-bottom: 120rpx;
+  background: var(--bg-color);
+  min-height: 100vh;
 }
 
 .goods-swiper {
   width: 100%;
   height: 750rpx;
+  background: #fff;
 }
 
 .goods-swiper image {
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
 .goods-info {
-  padding: 20rpx;
+  background: #fff;
+  padding: 32rpx;
+  margin-bottom: 20rpx;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  box-shadow: var(--shadow-sm);
 }
 
-.goods-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  margin-bottom: 20rpx;
+.goods-price-row {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 16rpx;
 }
 
 .goods-price {
-  color: #e4393c;
-  font-size: 40rpx;
-  margin-bottom: 20rpx;
+  color: var(--danger-color);
+  font-size: 48rpx;
+  font-weight: bold;
+  margin-right: 16rpx;
+}
+
+.goods-price::before {
+  content: '¥';
+  font-size: 32rpx;
+  margin-right: 4rpx;
+}
+
+.goods-stock {
+  color: var(--text-sub);
+  font-size: 24rpx;
+}
+
+.goods-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: var(--text-main);
+  line-height: 1.4;
+  margin-bottom: 12rpx;
 }
 
 .goods-desc {
+  font-size: 26rpx;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+
+.section {
+  background: #fff;
+  padding: 32rpx;
+  margin-bottom: 20rpx;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: var(--text-main);
+  margin-bottom: 24rpx;
+  padding-left: 16rpx;
+  border-left: 6rpx solid var(--primary-color);
+  line-height: 1;
+}
+
+.info-item {
+  display: flex;
+  padding: 16rpx 0;
   font-size: 28rpx;
-  color: #666;
-  line-height: 1.6;
+  border-bottom: 1rpx solid #f5f5f5;
 }
 
-.promotion-section {
-  padding: 20rpx;
-  margin-top: 20rpx;
-  background: #f8f8f8;
+.info-item:last-child {
+  border-bottom: none;
 }
 
+.info-item .label {
+  color: var(--text-sub);
+  width: 160rpx;
+}
+
+.info-item .value {
+  color: var(--text-main);
+  flex: 1;
+}
+
+.description-content {
+  font-size: 28rpx;
+  color: var(--text-main);
+  line-height: 1.8;
+}
+
+/* 底部操作栏 */
 .bottom-bar {
   position: fixed;
   bottom: 0;
@@ -50,133 +118,73 @@
   display: flex;
   align-items: center;
   padding: 0 30rpx;
-  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.05);
+  box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.05);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
 }
 
-.add-cart {
-  flex: 1;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: #e4393c;
-  color: #fff;
-  border-radius: 40rpx;
+.action-icons {
+  display: flex;
+  margin-right: 30rpx;
+}
+
+.icon-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-right: 30rpx;
+  font-size: 20rpx;
+  color: var(--text-sub);
+  background: none;
+  padding: 0;
+  line-height: 1.2;
+}
+
+.icon-btn::after {
+  border: none;
+}
+
+.icon-btn .iconfont {
+  font-size: 40rpx;
+  margin-bottom: 4rpx;
 }
 
 .add-cart-btn {
   flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
+  height: 80rpx;
+  line-height: 80rpx;
   text-align: center;
   color: #fff;
-  border-radius: 44rpx;
-  font-size: 32rpx;
-  font-weight: 500;
+  border-radius: 40rpx;
+  font-size: 30rpx;
+  font-weight: 600;
   border: none;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-}
-
-.add-cart-btn::after {
-  border: none;
+  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
+  transition: all 0.3s;
 }
 
 .add-cart-btn:active {
-  transform: translateY(2rpx);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 10rpx rgba(7, 193, 96, 0.2);
 }
 
 /* 白事系统按钮样式 */
 .white-theme .add-cart-btn {
-  background: linear-gradient(135deg, #07c160 0%, #05a050 100%);
+  background: var(--primary-color);
 }
 
 /* 红事系统按钮样式 */
 .red-theme .add-cart-btn {
-  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+  background: var(--danger-color);
+  box-shadow: 0 8rpx 20rpx rgba(244, 67, 54, 0.3);
 }
 
-.goods-detail {
-  padding-bottom: 120rpx;
-  background: #f8f8f8;
+.red-theme .section-title {
+  border-left-color: var(--danger-color);
 }
 
-.goods-image {
-  width: 100%;
-  height: 750rpx;
-  background: #fff;
-}
-
-.goods-image image {
-  width: 100%;
-  height: 100%;
-}
-
-.goods-info {
-  background: #fff;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-}
-
-.goods-name {
-  font-size: 32rpx;
-  font-weight: bold;
-  margin-bottom: 20rpx;
-}
-
-.goods-price {
-  color: #e34d59;
-  font-size: 36rpx;
-  font-weight: bold;
-  margin-bottom: 16rpx;
-}
-
-.goods-stock {
-  color: #999;
-  font-size: 26rpx;
-}
-
-.goods-description, .goods-detail-info {
-  background: #fff;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-}
-
-.section-title {
-  font-size: 30rpx;
-  font-weight: bold;
-  margin-bottom: 20rpx;
-}
-
-.description-content {
-  font-size: 28rpx;
-  color: #666;
-  line-height: 1.6;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 16rpx 0;
-  font-size: 28rpx;
-}
-
-.info-item .label {
-  color: #999;
-}
-
-.info-item .value {
-  color: #333;
-}
-
-.loading {
-  text-align: center;
-  padding: 40rpx;
-  color: #999;
-  font-size: 28rpx;
-}
-
-
-
+/* SKU 弹窗 */
 .sku-popup {
   background: #fff;
   padding: 30rpx;
@@ -186,52 +194,72 @@
 .sku-header {
   display: flex;
   padding-bottom: 30rpx;
-  border-bottom: 1rpx solid #eee;
+  border-bottom: 1rpx solid #f5f5f5;
 }
 
 .sku-image {
-  width: 160rpx;
-  height: 160rpx;
+  width: 180rpx;
+  height: 180rpx;
   border-radius: 12rpx;
-  margin-right: 20rpx;
+  margin-right: 24rpx;
+  background: #f8f8f8;
 }
 
 .sku-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .sku-price {
-  color: #e34d59;
-  font-size: 36rpx;
+  color: var(--danger-color);
+  font-size: 40rpx;
   font-weight: bold;
   margin-bottom: 12rpx;
 }
 
-.sku-content {
-  padding: 30rpx 0;
+.sku-selected {
+  font-size: 24rpx;
+  color: var(--text-sub);
 }
 
-/* TDesign Popup组件已提供弹窗样式，移除自定义样式 */
+.sku-content {
+  padding: 30rpx 0;
+  max-height: 600rpx;
+  overflow-y: auto;
+}
 
 .quantity-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 20rpx;
+  margin-top: 30rpx;
+  padding-top: 30rpx;
+  border-top: 1rpx solid #f5f5f5;
 }
 
-/* TDesign Stepper组件已提供步进器样式，移除自定义样式 */
+.quantity-label {
+  font-size: 28rpx;
+  color: var(--text-main);
+}
 
 .sku-footer {
   margin-top: 30rpx;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .confirm-btn {
   width: 100%;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: #e34d59;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: var(--primary-color);
   color: #fff;
-  border-radius: 40rpx;
-  font-size: 28rpx;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.red-theme .confirm-btn {
+  background: var(--danger-color);
 }

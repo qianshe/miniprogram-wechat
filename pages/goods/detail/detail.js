@@ -94,10 +94,10 @@ Page({
     });
   },
 
-  // 加入购物车
+  // 加入清单
   addToCart() {
     if (!this.data.goods) return;
-    
+
     // 检查库存
     if (this.data.quantity > this.data.goods.stock) {
       wx.showToast({
@@ -107,12 +107,12 @@ Page({
       return;
     }
 
-    // 获取购物车数据
+    // 获取清单数据
     let cartList = wx.getStorageSync('cartList') || [];
-    
+
     // 查找是否已存在该商品
     const existingIndex = cartList.findIndex(item => item.id === this.data.goods.id);
-    
+
     if (existingIndex > -1) {
       // 已存在则更新数量
       cartList[existingIndex].quantity += this.data.quantity;
@@ -128,7 +128,7 @@ Page({
       });
     }
 
-    // 保存购物车数据
+    // 保存清单数据
     wx.setStorageSync('cartList', cartList);
 
     wx.showToast({

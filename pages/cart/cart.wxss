@@ -1,288 +1,190 @@
-.container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.cart-list {
-  flex: 1;
-  padding: 20rpx;
-}
-
-.cart-item {
-  display: flex;
-  align-items: center;
-  padding: 20rpx;
-  margin-bottom: 20rpx;
-  background: #fff;
-  border-radius: 10rpx;
-}
-
-.product-image {
-  width: 160rpx;
-  height: 160rpx;
-  margin: 0 20rpx;
-}
-
-.product-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.product-name {
-  font-size: 28rpx;
-  margin-bottom: 10rpx;
-}
-
-.product-price {
-  color: #e4393c;
-  font-size: 32rpx;
-  margin-bottom: 10rpx;
-}
-
-.quantity-control {
-  display: flex;
-  align-items: center;
-}
-
-.btn-minus, .btn-plus {
-  width: 60rpx;
-  height: 60rpx;
-  line-height: 60rpx;
-  text-align: center;
-  border: 1rpx solid #eee;
-}
-
-.quantity {
-  width: 80rpx;
-  text-align: center;
-}
-
-.btn-delete {
-  color: #e4393c;
-  padding: 20rpx;
-}
-
-.footer {
-  display: flex;
-  align-items: center;
-  padding: 20rpx;
-  background: #fff;
-  border-top: 1rpx solid #eee;
-}
-
-.select-all {
-  display: flex;
-  align-items: center;
-}
-
-.total {
-  flex: 1;
-  text-align: right;
-  margin-right: 20rpx;
-}
-
-.btn-checkout {
-  width: 200rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-  text-align: center;
-  background: #e4393c;
-  color: #fff;
-  border-radius: 40rpx;
-}
-
-.empty-cart {
-  text-align: center;
-  padding: 100rpx 0;
-  color: #999;
-}
-
 .cart-container {
   min-height: 100vh;
-  background: #f7f7f7;
-  padding-bottom: 100rpx;
-}
-
-.empty-cart {
+  background: var(--bg-color);
+  padding-bottom: 120rpx;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding-top: 200rpx;
-}
-
-.empty-cart image {
-  width: 200rpx;
-  height: 200rpx;
-  margin-bottom: 20rpx;
-}
-
-.empty-cart text {
-  color: #999;
-  font-size: 28rpx;
 }
 
 .cart-list {
   padding: 20rpx;
+  flex: 1;
 }
 
 .cart-item {
   display: flex;
   align-items: center;
-  padding: 20rpx;
+  padding: 24rpx;
   background: #fff;
-  border-radius: 12rpx;
-  margin-bottom: 20rpx;
+  border-radius: var(--border-radius);
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
 }
-
-/* TDesign checkbox组件已提供样式 */
 
 .item-image {
   width: 160rpx;
   height: 160rpx;
-  border-radius: 8rpx;
-  margin-right: 20rpx;
+  border-radius: 12rpx;
+  margin-right: 24rpx;
+  background: #f8f8f8;
 }
 
 .item-info {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  height: 160rpx;
+  padding: 4rpx 0;
 }
 
 .item-name {
   font-size: 28rpx;
-  margin-bottom: 10rpx;
+  color: var(--text-main);
+  margin-bottom: 12rpx;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.item-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .item-price {
-  color: #ff4444;
+  color: var(--danger-color);
   font-size: 32rpx;
   font-weight: bold;
-  margin-bottom: 20rpx;
 }
 
-/* TDesign步进器组件已提供样式，移除自定义数量控制样式 */
+.item-price::before {
+  content: '¥';
+  font-size: 24rpx;
+  margin-right: 2rpx;
+}
 
 .delete-btn {
   padding: 20rpx;
+  color: var(--text-sub);
+  font-size: 32rpx;
 }
 
+/* 底部结算栏 */
 .footer {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 100rpx;
+  height: 110rpx;
   display: flex;
   align-items: center;
-  padding: 0 20rpx;
+  padding: 0 30rpx;
   background: #fff;
-  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.05);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
 }
 
 .select-all {
   display: flex;
   align-items: center;
-  padding: 20rpx;
-  gap: 10rpx;
+  padding: 20rpx 0;
+  margin-right: 30rpx;
 }
 
 .select-all text {
   font-size: 28rpx;
+  color: var(--text-main);
+  margin-left: 12rpx;
 }
 
 .total-info {
   flex: 1;
   text-align: right;
-  padding-right: 20rpx;
+  padding-right: 30rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.total-label {
+  font-size: 24rpx;
+  color: var(--text-main);
 }
 
 .total-price {
-  color: #ff4444;
+  color: var(--danger-color);
   font-size: 36rpx;
   font-weight: bold;
 }
 
+.total-price::before {
+  content: '¥';
+  font-size: 26rpx;
+  margin-right: 2rpx;
+}
+
 .checkout-btn {
-  width: 200rpx;
+  width: 220rpx;
   height: 80rpx;
   line-height: 80rpx;
   text-align: center;
   background: #ddd;
   color: #fff;
   border-radius: 40rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  transition: all 0.3s;
 }
 
 .checkout-btn.active {
-  background: #07c160;
+  background: var(--primary-color);
+  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
 }
 
+.red-theme .checkout-btn.active {
+  background: var(--danger-color);
+  box-shadow: 0 8rpx 20rpx rgba(244, 67, 54, 0.3);
+}
+
+.checkout-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* 空状态 */
+.empty-cart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 200rpx;
+}
+
+.empty-cart image {
+  width: 240rpx;
+  height: 240rpx;
+  margin-bottom: 30rpx;
+  opacity: 0.8;
+}
+
+.empty-cart text {
+  color: var(--text-sub);
+  font-size: 28rpx;
+}
+
+/* 加载状态 */
 .loading-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100rpx;
-  background: #fff;
-}
-
-/* TDesign组件已提供交互样式 */
-
-.checkout-btn:active {
-  opacity: 0.9;
-}
-
-/* 白事系统主题 */
-.white-theme {
-  background-color: #f8f8f8;
-}
-
-/* 红事系统主题 */
-.red-theme {
-  background-color: #fff3e0;
-}
-
-/* 白事系统价格颜色 */
-.white-price {
-  color: #07c160 !important;
-}
-
-/* 红事系统价格颜色 */
-.red-price {
-  color: #d32f2f !important;
-}
-
-/* 白事系统按钮样式 */
-.white-btn {
-  background-color: #f0f0f0;
-  color: #333;
-}
-
-/* 红事系统按钮样式 */
-.red-btn {
-  background-color: #ffebee;
-  color: #d32f2f;
-}
-
-/* 白事系统底部栏 */
-.white-footer {
-  background-color: #fff;
-  border-top: 1px solid #f0f0f0;
-}
-
-/* 红事系统底部栏 */
-.red-footer {
-  background-color: #fff;
-  border-top: 1px solid #ffebee;
-}
-
-/* 白事系统结算按钮 */
-.white-checkout-btn.active {
-  background-color: #07c160;
-}
-
-/* 红事系统结算按钮 */
-.red-checkout-btn.active {
-  background-color: #d32f2f;
+  height: 100vh;
+  background: var(--bg-color);
 }

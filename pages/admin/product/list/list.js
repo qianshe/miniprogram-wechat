@@ -20,6 +20,7 @@ Page({
       categoryId: ''
     },
     categories: [],
+    categoryOptions: [],
     selectedCategoryId: '',
     orderBy: 'createTime', // createTime, sales, price
     orderDirection: 'desc' // asc, desc
@@ -44,7 +45,7 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
-    
+
   },
 
   /**
@@ -86,7 +87,7 @@ Page({
   },
 
   /**
-   * 加载产品分类
+   * 加载商品分类
    */
   loadCategories() {
     // 这里应该从API获取分类数据
@@ -97,13 +98,24 @@ Page({
       { id: 4, name: '家居日用' },
       { id: 5, name: '数码电子' }
     ]
+
+    // 转换为下拉菜单格式
+    const categoryOptions = [
+      { label: '全部分类', value: '' },
+      ...categories.map(item => ({
+        label: item.name,
+        value: item.id
+      }))
+    ]
+
     this.setData({
-      categories
+      categories,
+      categoryOptions
     })
   },
 
   /**
-   * 加载产品列表
+   * 加载商品列表
    */
   loadProducts(reset = false) {
     if (reset) {
@@ -129,10 +141,11 @@ Page({
       keyword: this.data.keyword,
       orderBy: this.data.orderBy,
       orderDirection: this.data.orderDirection,
+      categoryId: this.data.selectedCategoryId,
       ...this.data.filterParams
     }
 
-    // 调用统一API获取产品数据
+    // 调用统一API获取商品数据
     adminApi.getProducts({
       page: params.page,
       size: params.pageSize,
@@ -169,11 +182,10 @@ Page({
           total: 100 // 模拟总数
         });
       });
-    }, 1000)
   },
 
   /**
-   * 生成模拟产品数据
+   * 生成模拟商品数据
    */
   getMockProducts(params) {
     const products = []
@@ -184,11 +196,11 @@ Page({
       const id = startIndex + i + 1
       products.push({
         id,
-        name: `产品 ${id}`,
-        description: `这是产品 ${id} 的详细描述`,
+        name: `商品 ${id}`,
+        description: `这是商品 ${id} 的详细描述`,
         price: Math.floor(Math.random() * 1000) + 1,
         originalPrice: Math.floor(Math.random() * 2000) + 1000,
-        thumb: 'https://img.yzcdn.cn/vant/cat.jpeg',
+        thumb: 'https://tdesign.gtimg.com/mobile/demos/example1.png',
         stock: Math.floor(Math.random() * 100),
         sales: Math.floor(Math.random() * 1000),
         status: Math.random() > 0.3 ? 1 : 0, // 1: 上架, 0: 下架
@@ -219,7 +231,7 @@ Page({
   },
 
   /**
-   * 加载更多产品
+   * 加载更多商品
    */
   loadMore() {
     this.loadProducts()
@@ -257,64 +269,13 @@ Page({
   },
 
   /**
-   * TDesign弹窗显示状态变化
+   * 分类下拉框变化
    */
-  onFilterPopupChange(e) {
-    this.setData({
-      showFilterPanel: e.detail.visible
-    });
-  },
-
-  /**
-   * 显示/隐藏筛选面板
-   */
-  toggleFilterPanel() {
-    this.setData({
-      showFilterPanel: !this.data.showFilterPanel
-    })
-  },
-
-  /**
-   * 设置筛选参数
-   */
-  onFilterPriceMinInput(e) {
-    this.setData({
-      'filterParams.priceMin': e.detail.value
-    })
-  },
-
-  onFilterPriceMaxInput(e) {
-    this.setData({
-      'filterParams.priceMax': e.detail.value
-    })
-  },
-
   onCategoryChange(e) {
     this.setData({
-      'filterParams.categoryId': e.currentTarget.dataset.id,
-      selectedCategoryId: e.currentTarget.dataset.id
-    })
-  },
-
-  /**
-   * 应用筛选
-   */
-  applyFilter() {
-    this.toggleFilterPanel()
-    this.resetAndLoad()
-  },
-
-  /**
-   * 重置筛选
-   */
-  resetFilter() {
-    this.setData({
-      filterParams: {
-        priceMin: '',
-        priceMax: '',
-        categoryId: ''
-      },
-      selectedCategoryId: ''
+      selectedCategoryId: e.detail.value
+    }, () => {
+      this.resetAndLoad()
     })
   },
 
@@ -323,7 +284,7 @@ Page({
    */
   changeOrderBy(e) {
     const orderBy = e.currentTarget.dataset.orderby
-    
+
     // 如果点击相同排序字段，切换排序方向
     if (this.data.orderBy === orderBy) {
       this.setData({
@@ -341,16 +302,16 @@ Page({
   },
 
   /**
-   * 创建新产品
+   * 创建新商品
    */
   createProduct() {
     wx.navigateTo({
-      url: '/pages/admin/product/create/create',
+      url: '/pages/admin/product/edit/edit',
     })
   },
 
   /**
-   * 编辑产品
+   * 编辑商品
    */
   editProduct(e) {
     const id = e.currentTarget.dataset.id
@@ -360,7 +321,7 @@ Page({
   },
 
   /**
-   * 查看产品详情
+   * 查看商品详情
    */
   viewProduct(e) {
     const id = e.currentTarget.dataset.id
@@ -370,33 +331,33 @@ Page({
   },
 
   /**
-   * 上架/下架产品
+   * 上架/下架商品
    */
   toggleProductStatus(e) {
     const id = e.currentTarget.dataset.id
     const status = e.currentTarget.dataset.status
     const newStatus = status === 1 ? 0 : 1
-    
+
     wx.showModal({
       title: '确认操作',
-      content: newStatus === 1 ? '确定要上架该产品吗？' : '确定要下架该产品吗？',
+      content: newStatus === 1 ? '确定要上架该商品吗？' : '确定要下架该商品吗？',
       success: (res) => {
         if (res.confirm) {
-          // 这里应该调用API更新产品状态
+          // 这里应该调用API更新商品状态
           // 模拟API请求
           setTimeout(() => {
             // 更新本地数据
             const products = this.data.products.map(item => {
               if (item.id === id) {
-                return {...item, status: newStatus}
+                return { ...item, status: newStatus }
               }
               return item
             })
-            
+
             this.setData({
               products
             })
-            
+
             wx.showToast({
               title: newStatus === 1 ? '上架成功' : '下架成功',
               icon: 'success'
@@ -408,20 +369,20 @@ Page({
   },
 
   /**
-   * 删除产品
+   * 删除商品
    */
   async deleteProduct(e) {
     const id = e.currentTarget.dataset.id
 
     wx.showModal({
       title: '确认删除',
-      content: '确定要删除该产品吗？删除后无法恢复',
+      content: '确定要删除该商品吗？删除后无法恢复',
       success: async (res) => {
         if (res.confirm) {
           try {
             wx.showLoading({ title: '删除中...' });
 
-            // 调用统一API删除产品
+            // 调用统一API删除商品
             await adminApi.deleteProduct(id);
 
             wx.hideLoading();
@@ -430,11 +391,11 @@ Page({
               icon: 'success'
             });
 
-            // 重新加载产品列表
+            // 重新加载商品列表
             this.loadProducts();
           } catch (error) {
             wx.hideLoading();
-            console.error('删除产品失败:', error);
+            console.error('删除商品失败:', error);
             wx.showToast({
               title: error.message || '删除失败',
               icon: 'none'
@@ -453,4 +414,4 @@ Page({
       url: '/pages/admin/product/scan/scan'
     });
   }
-}) 
+})

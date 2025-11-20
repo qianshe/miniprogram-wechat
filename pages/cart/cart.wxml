@@ -10,7 +10,7 @@
       src="https://tdesign.gtimg.com/mobile/demos/example3.png" 
       mode="aspectFit">
     </image>
-    <text>购物车是空的</text>
+    <text>清单是空的</text>
   </view>
 
   <!-- 购物车列表 -->

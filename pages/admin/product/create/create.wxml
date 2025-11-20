@@ -1,0 +1,51 @@
+<view class="container">
+  <view class="page-header">
+    <view class="page-title">{{isEdit ? '编辑商品' : '新增商品'}}</view>
+  </view>
+
+  <view class="form-content">
+    <t-cell-group theme="card">
+      <t-input label="商品名称" placeholder="请输入商品名称" value="{{formData.name}}" bind:change="onNameChange" />
+      <t-input label="商品价格" placeholder="请输入价格" type="number" value="{{formData.price}}" bind:change="onPriceChange" suffix="元" />
+      <t-input label="原价" placeholder="请输入原价" type="number" value="{{formData.originalPrice}}" bind:change="onOriginalPriceChange" suffix="元" />
+      <t-input label="库存" placeholder="请输入库存数量" type="number" value="{{formData.stock}}" bind:change="onStockChange" />
+      
+      <t-cell title="商品分类" arrow hover note="{{selectedCategoryName || '请选择分类'}}" bind:click="onCategoryPicker" />
+      
+      <t-cell title="商品图片" bordered="{{false}}">
+        <view class="upload-container" slot="note">
+          <t-upload
+            mediaType="{{['image']}}"
+            max="{{1}}"
+            files="{{fileList}}"
+            bind:add="onAddImage"
+            bind:remove="onRemoveImage"
+          />
+        </view>
+      </t-cell>
+      
+      <t-textarea label="商品描述" placeholder="请输入商品详细描述" value="{{formData.description}}" bind:change="onDescriptionChange" autosize />
+      
+      <t-cell title="上架状态">
+        <t-switch value="{{formData.status === 1}}" bind:change="onStatusChange" slot="note" />
+      </t-cell>
+    </t-cell-group>
+
+    <view class="submit-btn">
+      <t-button theme="primary" size="large" block bind:tap="onSubmit">保存</t-button>
+    </view>
+  </view>
+
+  <t-picker
+    visible="{{categoryVisible}}"
+    value="{{[formData.categoryId]}}"
+    title="选择分类"
+    cancelBtn="取消"
+    confirmBtn="确认"
+    bindchange="onCategoryChange"
+    bindpick="onColumnChange"
+    bindcancel="onPickerCancel"
+  >
+    <t-picker-item options="{{categories}}" />
+  </t-picker>
+</view>
