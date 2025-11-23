@@ -1,63 +1,51 @@
-<view class="container {{systemType}}-theme">
-  <!-- 搜索框固定在顶部 -->
-  <view class="example-search">
-    <t-search placeholder="搜索商品" />
+<view class="container">
+  <view class="hero">
+    <image class="bg-image" src="../../assets/images/image-home.png" mode="aspectFill" />
+    <view class="hero-text">
+      <view class="title">专业服务，肃穆送别</view>
+      <view class="subtitle">我们在此，为您分担离别的繁杂，让爱与尊重延续。</view>
+    </view>
   </view>
 
-  <!-- 内容区包裹器 -->
-  <view class="content-wrapper">
-    <!-- 轮播图 -->
-    <t-swiper
-      wx:if="{{swiperList.length > 0}}"
-      current="{{current}}"
-      autoplay="{{autoplay}}"
-      duration="{{duration}}"
-      interval="{{interval}}"
-      list="{{swiperList}}"
-    />
-
-    <!-- 添加加载状态显示 -->
-    <t-loading wx:if="{{loading}}" theme="circular" size="40rpx" loading />
-
-    <!-- 无数据显示 -->
-    <t-empty wx:elif="{{!processSteps.length}}" description="暂无流程数据" />
-
-    <!-- 流程列表 -->
-    <block wx:elif="{{processSteps.length > 0}}">
-      <view class="process-section">
-        <view class="section-title">{{systemType === 'red' ? '红事流程' : '白事流程'}}</view>
-        <view class="process-step"
-              wx:for="{{processSteps}}"
-              wx:key="_id"
-              bindtap="onStepClick"
-              data-id="{{item._id}}">
-          <text class="step-name">{{item.title}}</text>
-          <text class="step-desc">{{item.description}}</text>
-          <view class="step-arrow"></view>
+  <view class="main-panel">
+    <view class="menu-grid">
+      <view class="menu-item main-item" bindtap="onTapPackage">
+        <view class="item-content">
+          <image class="item-icon" src="" mode="aspectFit" wx:if="{{false}}"/> 
+          <view class="icon-placeholder main-icon">🕯️</view>
+          <view class="text-group">
+            <view class="menu-title">一站式套餐</view>
+            <view class="menu-desc">省心之选</view>
+          </view>
         </view>
       </view>
-    </block>
-
-    <!-- 推荐商品 -->
-    <view class="products-section">
-      <view class="section-title">推荐商品</view>
-      <t-loading wx:if="{{productsLoading}}" theme="circular" size="40rpx" loading />
-      <view wx:elif="{{!recommendedProducts.length}}" class="no-data">暂无推荐商品</view>
-      <view wx:else class="products-grid">
-        <view wx:for="{{recommendedProducts}}"
-              wx:key="id"
-              class="product-item"
-              bindtap="onProductClick"
-              data-id="{{item._id || item.id}}">
-          <image src="{{item.imageUrl}}" mode="aspectFill" class="product-image"/>
-          <view class="product-info">
-            <view class="product-name">{{item.name}}</view>
-            <view class="product-price">¥{{item.price}}</view>
+      
+      <view class="right-column">
+        <view class="menu-item sub-item" bindtap="onTapGuide">
+          <view class="item-content horizontal">
+            <view class="icon-placeholder sub-icon">📜</view>
+            <view class="menu-title">治丧指南</view>
+          </view>
+        </view>
+        <view class="menu-item sub-item" bindtap="onTapService">
+          <view class="item-content horizontal">
+            <view class="icon-placeholder sub-icon">🎧</view>
+            <view class="menu-title">专业服务项</view>
           </view>
         </view>
       </view>
     </view>
+
+    <view class="service-tags">
+      <view class="tag-item">
+        <text class="iconfont">✔</text> 价格透明公示
+      </view>
+      <view class="tag-item">
+        <text class="iconfont">🕓</text> 24小时专业响应
+      </view>
+      <view class="tag-item">
+        <text class="iconfont">👥</text> 全程专业顾问
+      </view>
+    </view>
   </view>
 </view>
-
-<custom-tab-bar></custom-tab-bar>

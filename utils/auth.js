@@ -340,6 +340,7 @@ module.exports = {
 
       // 清除购物车数据（可选）
       wx.removeStorageSync('cartList');
+      wx.removeStorageSync('cartListLocal');
 
       return { success: true };
     } catch (error) {

@@ -55,14 +55,16 @@
         "text": "分类"
       },
       {
+        "pagePath": "pages/cart/cart",
+        "text": "治丧清单"
+      },
+      {
         "pagePath": "pages/user/user",
         "text": "个人中心"
       }
     ]
   },
-  "usingComponents": {
-    "custom-tab-bar": "Components/custom-tab-bar/index"
-  },
+  "usingComponents": {},
   "requiredPrivateInfos": [
     "chooseAddress"
   ]

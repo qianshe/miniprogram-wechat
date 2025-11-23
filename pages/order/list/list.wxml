@@ -15,64 +15,69 @@
   </view>
 
   <!-- 筛选面板 -->
-  <t-popup
-    visible="{{showFilterPanel}}"
-    placement="bottom"
-    bind:visible-change="onFilterPopupChange"
-  >
-    <view class="filter-header">
-      <text>筛选条件</text>
-      <t-icon name="close" size="20" bindtap="toggleFilterPanel" />
-    </view>
-    <view class="filter-content">
-      <view class="filter-item">
-        <text class="filter-label">订单时间</text>
-        <view class="date-range">
-          <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
-            <view class="date-picker">{{startDate || '开始日期'}}</view>
-          </picker>
-          <text class="date-separator">至</text>
-          <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
-            <view class="date-picker">{{endDate || '结束日期'}}</view>
-          </picker>
+  <view class="filter-mask" wx:if="{{showFilterPanel}}" catchtap="toggleFilterPanel"></view>
+  <view class="filter-drawer" wx:if="{{showFilterPanel}}" catchtouchmove="true">
+    <view class="filter-panel">
+      <view class="filter-header">
+        <text>筛选条件</text>
+        <t-icon name="close" size="20" bindtap="toggleFilterPanel" />
+      </view>
+      <view class="filter-content">
+        <view class="filter-item">
+          <text class="filter-label">订单时间</text>
+          <view class="date-range">
+            <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+              <view class="date-picker">{{startDate || '开始日期'}}</view>
+            </picker>
+            <text class="date-separator">至</text>
+            <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+              <view class="date-picker">{{endDate || '结束日期'}}</view>
+            </picker>
+          </view>
+        </view>
+        <view class="filter-item">
+          <text class="filter-label">价格区间</text>
+          <view class="price-range">
+            <t-input
+              type="number"
+              placeholder="最低价"
+              value="{{minPrice}}"
+              bind:change="onMinPriceChange"
+            />
+            <text class="price-separator">至</text>
+            <t-input
+              type="number"
+              placeholder="最高价"
+              value="{{maxPrice}}"
+              bind:change="onMaxPriceChange"
+            />
+          </view>
         </view>
       </view>
-      <view class="filter-item">
-        <text class="filter-label">价格区间</text>
-        <view class="price-range">
-          <t-input
-            type="number"
-            placeholder="最低价"
-            value="{{minPrice}}"
-            bind:change="onMinPriceChange"
-          />
-          <text class="price-separator">至</text>
-          <t-input
-            type="number"
-            placeholder="最高价"
-            value="{{maxPrice}}"
-            bind:change="onMaxPriceChange"
-          />
-        </view>
+      <view class="filter-footer">
+        <t-button theme="default" bindtap="resetFilter">重置</t-button>
+        <t-button theme="primary" bindtap="applyFilter">确定</t-button>
       </view>
     </view>
-    <view class="filter-footer">
-      <t-button theme="default" bindtap="resetFilter">重置</t-button>
-      <t-button theme="primary" bindtap="applyFilter">确定</t-button>
-    </view>
-  </t-popup>
+  </view>
 
-  <t-tabs
-    value="{{activeTab}}"
-    bind:change="onTabChange"
-    sticky
-  >
-    <t-tab-panel label="全部" value="0" />
-    <t-tab-panel label="待支付" value="1" />
-    <t-tab-panel label="已支付" value="2" />
-    <t-tab-panel label="已取消" value="3" />
-    <t-tab-panel label="已退款" value="4" />
-  </t-tabs>
+  <!-- 原生标签页 -->
+  <view class="status-tabs">
+    <scroll-view class="tabs-scroll" scroll-x enable-flex>
+      <view class="tabs-container">
+        <view 
+          wx:for="{{statusTabs}}" 
+          wx:key="value"
+          class="tab-item {{activeTab === item.value ? 'active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onTabClick"
+        >
+          <text class="tab-label">{{item.label}}</text>
+          <view class="tab-underline" wx:if="{{activeTab === item.value}}"></view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
 
   <view class="order-list">
     <t-loading wx:if="{{loading}}" text="加载中..." />
@@ -82,7 +87,7 @@
             wx:for="{{orders}}"
             wx:key="_id"
             bindtap="onOrderClick"
-            data-orderid="{{item._id}}">
+            data-orderid="{{item.orderNo}}">
         <view class="order-header">
           <text class="order-no">订单号：{{item.orderNo}}</text>
           <text class="order-status status-{{item.status}}">{{item.statusText}}</text>

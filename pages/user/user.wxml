@@ -1,36 +1,68 @@
-<!--index.wxml-->
 <scroll-view class="scrollarea {{systemType}}-theme" scroll-y type="list">
-  <view class="container">
-    <view class="userinfo">
-      <block wx:if="{{!hasUserInfo}}">
-        <!-- <image class="userinfo-avatar" src="/images/default-avatar.png"></image> -->
-        <text class="login-tip">您还未登录</text>
-        <button class="login-btn {{systemType}}-btn" bindtap="login">微信一键登录</button>
-      </block>
-      <block wx:else>
-        <image class="userinfo-avatar {{systemType}}-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
-        <text class="userinfo-nickname {{systemType}}-text">{{userInfo.nickName}}</text>
-      </block>
+  <view class="page-body">
+    <view class="hero-card">
+      <view class="hero-text">
+        <view class="hero-title">我的账户</view>
+        <view class="hero-subtitle">信息安全，专属服务</view>
+      </view>
+      <view class="userinfo">
+        <block wx:if="{{!hasUserInfo}}">
+          <text class="login-tip">您尚未登录</text>
+          <button class="login-btn {{systemType}}-btn" bindtap="login">微信一键登录</button>
+        </block>
+        <block wx:else>
+          <image class="userinfo-avatar {{systemType}}-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
+          <text class="userinfo-nickname {{systemType}}-text">{{userInfo.nickName}}</text>
+        </block>
+      </view>
+    </view>
+
+    <view class="card-list" wx:if="{{hasUserInfo}}">
+      <view class="list-item" wx:if="{{!isAdmin}}" bindtap="toOrders">
+        <view class="item-left">
+          <view class="item-icon">🧾</view>
+          <view class="item-title">我的订单</view>
+        </view>
+        <view class="item-arrow">›</view>
+      </view>
+      <view class="list-item" bindtap="toFeedback">
+        <view class="item-left">
+          <view class="item-icon">💬</view>
+          <view class="item-title">意见反馈</view>
+        </view>
+        <view class="item-arrow">›</view>
+      </view>
+      <view class="list-item" bindtap="toCreateOrder">
+        <view class="item-left">
+          <view class="item-icon">➕</view>
+          <view class="item-title">创建订单（admin）</view>
+        </view>
+        <view class="item-arrow">›</view>
+      </view>
+      <view class="list-item" bindtap="toManagePage">
+        <view class="item-left">
+          <view class="item-icon">🗂</view>
+          <view class="item-title">管理页面（admin）</view>
+        </view>
+        <view class="item-arrow">›</view>
+      </view>
+      <view class="list-item" bindtap="toIndexHome">
+        <view class="item-left">
+          <view class="item-icon">🏠</view>
+          <view class="item-title">返回首页</view>
+        </view>
+        <view class="item-arrow">›</view>
+      </view>
+    </view>
+
+    <view class="card-list" wx:if="{{!hasUserInfo}}">
+      <view class="list-item" bindtap="toIndexHome">
+        <view class="item-left">
+          <view class="item-icon">🏠</view>
+          <view class="item-title">返回首页</view>
+        </view>
+        <view class="item-arrow">›</view>
+      </view>
     </view>
   </view>
-
-  <view class="function-area" wx:if="{{hasUserInfo}}">
-    <t-cell-group>
-      <!-- 管理不展示购物车 -->
-      <t-cell wx:if="{{!isAdmin}}" title="我的清单" hover arrow bindtap="toShoppingCart" />
-      <t-cell wx:if="{{!isAdmin}}" title="我的订单" hover arrow bindtap="toOrders" />
-
-      <t-cell title="意见反馈" hover arrow bindtap="toFeedback" />
-<!-- 
-      <t-cell wx:if="{{isAdmin}}" title="生成订单" hover arrow bindtap="toCreateOrder" />
-      <t-cell wx:if="{{isAdmin}}" title="管理订单" hover arrow bindtap="toCreateOrder" />
-       -->
-       
-      <t-cell title="生成订单(admin)" hover arrow bindtap="toCreateOrder" />
-      <t-cell title="管理页面(admin)" hover arrow bindtap="toManagePage" />  
-
-      <t-cell title="返回首页" hover arrow bindtap="toIndexHome"/>
-    </t-cell-group>
-  </view>
 </scroll-view>
-<custom-tab-bar></custom-tab-bar>

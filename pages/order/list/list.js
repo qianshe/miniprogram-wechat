@@ -10,7 +10,14 @@ Page({
       total: 0
     },
     hasMore: true,
-    activeTab: '0', // 当前激活的标签页
+    activeTab: '0', // 当前选中的标签页
+    statusTabs: [
+      { value: '0', label: '全部' },
+      { value: '1', label: '待支付' },
+      { value: '2', label: '已支付' },
+      { value: '3', label: '已完成' },
+      { value: '4', label: '已取消' }
+    ],
     // 搜索和筛选相关数据
     searchKeyword: '',
     showFilterPanel: false,
@@ -18,7 +25,8 @@ Page({
     endDate: '',
     minPrice: '',
     maxPrice: '',
-    filterApplied: false
+    filterApplied: false,
+    systemType: 'white'
   },
 
   onLoad() {
@@ -162,12 +170,12 @@ Page({
     try {
       const { page, size } = this.data.pagination;
       // 根据标签页状态过滤订单
-      const orderStatus = this.getStatusByTab(this.data.activeTab);
-      
+      const status = this.getStatusByTab(this.data.activeTab);
+
       const params = {
         page,
         size,
-        ...(orderStatus !== undefined ? { orderStatus } : {})  // 使用新的 orderStatus 参数
+        ...(status !== undefined ? { status } : {})  // 使用新的 orderStatus 参数
       };
 
       // 添加搜索关键词
@@ -198,31 +206,35 @@ Page({
         size
       });
 
+      if (!data || !data.records) {
+        throw new Error('订单数据为空');
+      }
+
       const { records, total } = data;
 
-        // 如果云数据库没有数据，显示空状态
-        if (records.length === 0 && page === 1) {
-          this.setData({
-            orders: [],
-            loading: false
-          });
-          return;
-        }
-
-        const formattedOrders = records.map(order => ({
-          ...order,
-          statusText: this.getStatusText(order.status),
-          createdTime: this.formatDate(order.createTime),
-          serviceTime: this.formatDate(order.serviceTime),
-          totalAmount: order.totalAmount.toFixed(2) // 云函数已转换为元
-        }));
-
+      // 如果云数据库没有数据，显示空状态
+      if (records.length === 0 && page === 1) {
         this.setData({
-          orders: isLoadMore ? [...this.data.orders, ...formattedOrders] : formattedOrders,
-          'pagination.total': total,
-          hasMore: page * size < total,
+          orders: [],
           loading: false
         });
+        return;
+      }
+
+      const formattedOrders = records.map(order => ({
+        ...order,
+        statusText: this.getStatusText(order.status),
+        createdTime: this.formatDate(order.createTime),
+        serviceTime: this.formatDate(order.serviceTime),
+        totalAmount: order.totalAmount.toFixed(2) // 云函数已转换为元
+      }));
+
+      this.setData({
+        orders: isLoadMore ? [...this.data.orders, ...formattedOrders] : formattedOrders,
+        'pagination.total': total,
+        hasMore: page * size < total,
+        loading: false
+      });
     } catch (err) {
       console.error('云函数调用失败:', err);
       // 云函数调用失败时，显示错误提示
@@ -239,10 +251,11 @@ Page({
 
   getStatusText(status) {
     const statusMap = {
-      0: '待支付',
-      1: '已支付',
-      2: '已取消',
-      3: '已退款'
+      '0': '全部',
+      '1': '待支付',
+      '2': '已支付',
+      '3': '已完成',
+      '4': '已取消'
     };
     return statusMap[status] || '未知状态';
   },
@@ -252,8 +265,8 @@ Page({
       '0': undefined, // 全部
       '1': 0,        // 待支付
       '2': 1,        // 已支付
-      '3': 2,        // 已取消
-      '4': 3         // 已退款
+      '3': 3,        // 已完成
+      '4': 4         // 已取消
     };
     return statusMap[tab];
   },
@@ -293,10 +306,11 @@ Page({
 
   onOrderClick(e) {
     const { orderid } = e.currentTarget.dataset;
+    
+    // 普通模式下跳转详情
     wx.navigateTo({
       url: `/pages/order/detail/detail?orderNo=${orderid}`
     });
   },
-
 
 });

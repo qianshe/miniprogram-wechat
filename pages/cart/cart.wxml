@@ -1,60 +1,67 @@
 <view class="cart-container {{systemType}}-theme">
   <!-- 加载状态 -->
   <view class="loading-container" wx:if="{{loading || syncLoading}}">
-    <loading>{{syncLoading ? '同步购物车数据中...' : '加载中...'}}</loading>
+    <view class="loading-text">{{syncLoading ? '同步清单数据中...' : '加载中...'}}</view>
   </view>
 
-  <!-- 空购物车提示 -->
+  <!-- 空清单显示 -->
   <view class="empty-cart" wx:if="{{!cartItems.length && !loading}}">
     <image 
+      class="empty-cart-image"
       src="https://tdesign.gtimg.com/mobile/demos/example3.png" 
       mode="aspectFit">
     </image>
-    <text>清单是空的</text>
+    <text class="empty-cart-text">清单为空</text>
   </view>
 
-  <!-- 购物车列表 -->
+  <!-- 清单列表 -->
   <view class="cart-list" wx:elif="{{cartItems.length}}">
-    <view class="cart-item" wx:for="{{cartItems}}" wx:key="id">
-      <t-checkbox
-        checked="{{item.selected}}"
-        bind:change="onCheckboxChange"
+    <view class="cart-item-wrapper" wx:for="{{cartItems}}" wx:key="id">
+      <view 
+        class="cart-item {{item.isTouchMove ? 'touch-move' : ''}}" 
+        style="transform: translateX({{item.translateX || 0}}rpx)"
         data-index="{{index}}"
-      />
-      <image 
-        class="item-image" 
-        src="{{item.image}}" 
-        mode="aspectFill">
-      </image>
-      <view class="item-info">
-        <text class="item-name">{{item.name}}</text>
-        <text class="item-price {{systemType}}-price">¥{{item.price}}</text>
-        <t-stepper
-          value="{{item.quantity}}"
-          min="{{minQuantity}}"
-          max="{{maxQuantity}}"
-          bind:change="onQuantityChange"
-          data-index="{{index}}"
-        />
+        bindtouchstart="touchStart"
+        bindtouchmove="touchMove"
+        bindtouchend="touchEnd"
+      >
+        <label class="checkbox-label" data-index="{{index}}" bindtap="toggleSelect">
+          <checkbox checked="{{item.selected}}" color="#b8865c"/>
+        </label>
+        <image 
+          class="item-image" 
+          src="{{item.image}}" 
+          mode="aspectFill">
+        </image>
+        <view class="item-info">
+          <view class="item-name">{{item.name}}</view>
+          <view class="item-row">
+            <view class="price-block">
+              <text class="item-price {{systemType}}-price">{{item.displayPrice}}</text>
+            </view>
+            <view class="quantity-stepper">
+              <view class="step-btn" data-index="{{index}}" bindtap="decreaseQuantity">-</view>
+              <view class="step-value">{{item.quantity}}</view>
+              <view class="step-btn" data-index="{{index}}" bindtap="increaseQuantity">+</view>
+            </view>
+          </view>
+        </view>
       </view>
-      <view class="delete-btn" bindtap="deleteItem" data-index="{{index}}">
-        <t-icon name="close" size="20" color="#999"/>
+      <view class="item-delete" bindtap="deleteItem" data-index="{{index}}">
+        删除
       </view>
     </view>
   </view>
 
   <!-- 底部结算栏 -->
-  <view class="footer {{systemType}}-footer" wx:if="{{cartItems.length}}">
-    <view class="select-all">
-      <t-checkbox
-        checked="{{allSelected}}"
-        bind:change="onSelectAllChange"
-      />
-      <text>全选</text>
-    </view>
+  <view class="footer {{systemType}}-footer {{cartItems.length ? '' : 'empty'}}">
+    <label class="select-all" bindtap="toggleSelectAll">
+      <checkbox checked="{{allSelected}}" color="#b8865c"/>
+      <text class="select-all-text">全选</text>
+    </label>
     <view class="total-info">
-      <text>合计：</text>
-      <text class="total-price {{systemType}}-price">¥{{totalAmount}}</text>
+      <text>小计：</text>
+      <text class="total-price {{systemType}}-price">{{totalAmount}}</text>
     </view>
     <t-button
       theme="primary"
@@ -62,7 +69,7 @@
       disabled="{{!selectedCount}}"
       bindtap="checkout"
     >
-      结算({{selectedCount}})
+      确认下单({{selectedCount}})
     </t-button>
   </view>
 </view>

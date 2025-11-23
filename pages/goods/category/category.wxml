@@ -33,22 +33,20 @@
           <image class="product-image" src="{{cargo.image}}" mode="aspectFill" binderror="onImageError" data-index="{{index}}" />
           <view class="product-info">
             <text class="product-name">{{cargo.label}}</text>
-            <text class="product-price">¥{{cargo.price}}</text>
+            <text class="product-price">{{cargo.displayPrice}}</text>
           </view>
         </view>
       </view>
       
-      <!-- 将加载状态移到商品列表后面 -->
+      <!-- 加载状态覆盖商品列表区域 -->
       <view class="loading-status">
         <view class="loading-more" wx:if="{{loading}}">
           <text class="loading-text">加载中...</text>
         </view>
         <view class="no-more" wx:elif="{{!item.hasMore}}">
-          <text>没有更多商品了</text>
+          <text>没有更多商品</text>
         </view>
       </view>
     </scroll-view>
   </view>
 </view>
-
-<custom-tab-bar></custom-tab-bar>

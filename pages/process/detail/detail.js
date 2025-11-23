@@ -18,7 +18,6 @@ Page({
     const stepId = options.stepId || '';
 
 
-
     this.setData({
       systemType,
       themeColor,
@@ -194,7 +193,7 @@ Page({
     
     try {
       // 直接更新本地购物车数据
-      let cartList = wx.getStorageSync('cartList') || [];
+      let cartList = wx.getStorageSync('cartListLocal') || [];
       const existingIndex = cartList.findIndex(item => item.id === product.id);
 
       if (existingIndex > -1) {
@@ -211,7 +210,7 @@ Page({
       }
 
       // 更新本地存储
-      wx.setStorageSync('cartList', cartList);
+      wx.setStorageSync('cartListLocal', cartList);
 
       // 调用API同步到服务器
       api.addToCart({

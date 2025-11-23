@@ -1,210 +1,175 @@
-/* pages/white_system/white_system.wxss */
-.page {
-  padding: 20px;
-  height: 100%;
-  box-sizing: border-box; 
-  display: block;
-  overflow-y: auto;
-  padding-bottom: calc(20px + 48px);
-}
-
+/** pages/index/index.wxss */
 .container {
   min-height: 100vh;
-  background: var(--bg-color);
-  padding-bottom: calc(20rpx + 120rpx);
+  background-color: #f6f0e7;
+  font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
-/* 搜索框样式优化 */
-.example-search {
-  position: fixed;
+.hero {
+  position: relative;
+  height: 520rpx;
+  overflow: hidden;
+}
+
+.bg-image {
+  position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  z-index: 100;
-  padding: 20rpx 24rpx;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-sm);
-}
-
-/* 内容区域布局 */
-.content-wrapper {
-  margin-top: 100rpx;
-  padding: 24rpx;
-}
-
-/* 轮播图优化 */
-t-swiper {
-  border-radius: var(--border-radius);
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
-  margin-bottom: 32rpx;
-}
-
-/* 流程和商品区块通用样式 */
-.process-section,
-.products-section {
-  position: relative;
-  background: var(--card-bg);
-  border-radius: var(--border-radius);
-  padding: 32rpx;
-  margin-bottom: 32rpx;
-  box-shadow: var(--shadow-sm);
-}
-
-/* 标题样式优化 */
-.section-title {
-  display: flex;
-  align-items: center;
-  font-size: 34rpx;
-  font-weight: 600;
-  color: var(--theme-color);
-  margin-bottom: 32rpx;
-  position: relative;
-  padding-left: 24rpx;
-}
-
-.section-title::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8rpx;
-  height: 32rpx;
-  background: var(--theme-color);
-  border-radius: 4rpx;
-}
-
-/* 流程步骤样式优化 */
-.process-step {
-  display: flex;
-  align-items: center;
-  padding: 32rpx;
-  background: var(--step-color);
-  border-radius: var(--border-radius);
-  margin-bottom: 20rpx;
-  transition: all 0.3s ease;
-  border: 1rpx solid transparent;
-}
-
-.process-step:active {
-  transform: scale(0.99);
-  border-color: var(--theme-color);
-}
-
-.step-name {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: var(--theme-color);
-  min-width: 160rpx;
-}
-
-.step-desc {
-  flex: 1;
-  font-size: 26rpx;
-  color: var(--text-main);
-  margin: 0 24rpx;
-  opacity: 0.8;
-}
-
-.step-arrow {
-  width: 16rpx;
-  height: 16rpx;
-  border-top: 4rpx solid var(--theme-color);
-  border-right: 4rpx solid var(--theme-color);
-  transform: rotate(45deg);
-  opacity: 0.3;
-}
-
-/* 商品网格优化 */
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24rpx;
-}
-
-.product-item {
-  background: #fff;
-  border-radius: var(--border-radius);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-}
-
-.product-item:active {
-  transform: translateY(4rpx);
-  box-shadow: none;
-}
-
-.product-image {
   width: 100%;
-  height: 320rpx;
-  background: #f8f8f8;
+  height: 100%;
+  z-index: 0;
 }
 
-.product-info {
-  padding: 20rpx;
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.14) 100%);
+  z-index: 0;
 }
 
-.product-name {
-  font-size: 28rpx;
-  color: var(--text-main);
-  margin-bottom: 12rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.5;
-  height: 84rpx;
-}
-
-.product-price {
-  font-size: 36rpx;
-  color: var(--price-color);
-  font-weight: bold;
-  display: flex;
-  align-items: baseline;
-}
-
-.product-price::before {
-  content: '¥';
-  font-size: 24rpx;
-  margin-right: 4rpx;
-}
-
-/* 主题变量 */
-.red-theme {
-  --theme-color: #d32f2f;
-  --text-color: #333;
-  --step-color: #fff5f5;
-  --border-color: #ffebee;
-  --price-color: #ff4444;
-}
-
-.white-theme {
-  --theme-color: #333333;
-  --text-color: #666;
-  --step-color: #f8f9fa;
-  --border-color: #e0e0e0;
-  --price-color: #ff4444;
-}
-
-/* 加载状态和空态优化 */
-.no-data {
-  text-align: center;
-  color: var(--text-sub);
-  font-size: 28rpx;
-  padding: 64rpx 0;
-}
-
-.loading-container {
+.hero-text {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40rpx 0;
+  padding: 0 48rpx;
+  text-align: center;
+  color: #f6f8fb;
+  text-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
 }
 
+.title {
+  font-size: 44rpx;
+  font-weight: 600;
+  letter-spacing: 4rpx;
+  margin-bottom: 16rpx;
+}
 
+.subtitle {
+  font-size: 24rpx;
+  color: #e3e7ed;
+  opacity: 0.95;
+  line-height: 1.5;
+}
+
+.main-panel {
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
+  padding: 32rpx;
+  padding-bottom: calc(70rpx + env(safe-area-inset-bottom));
+  background: #f9f6f2;
+  border-radius: 28rpx 28rpx 0 0;
+  box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.menu-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 24rpx;
+  align-items: stretch;
+}
+
+.menu-item {
+  background: #fcfbf8;
+  border-radius: 24rpx;
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  border: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.menu-item:active {
+  transform: scale(0.98);
+}
+
+.main-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 44rpx 24rpx;
+  min-height: 420rpx;
+  box-sizing: border-box;
+}
+
+.right-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.sub-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24rpx;
+  min-height: 190rpx;
+  box-sizing: border-box;
+}
+
+.item-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.icon-placeholder {
+  font-size: 48rpx;
+  margin-bottom: 16rpx;
+}
+
+.sub-icon {
+  font-size: 36rpx;
+  margin-bottom: 8rpx;
+}
+
+.menu-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6rpx;
+}
+
+.menu-desc {
+  font-size: 20rpx;
+  color: #888;
+}
+
+.service-tags {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 12rpx 0 4rpx;
+  border-top: 1rpx solid rgba(0, 0, 0, 0.05);
+  color: #555;
+  font-size: 22rpx;
+  flex-wrap: wrap;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.iconfont {
+  font-size: 24rpx;
+}

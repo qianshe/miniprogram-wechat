@@ -3,17 +3,17 @@
 /* 已迁移至 TDesign 组件内联字体，移除此处全局字体与覆盖，避免绝对路径加载 */
 
 page {
-  --primary-color: #07c160;
-  --danger-color: #ff4444;
-  --warning-color: #ff9800;
-  --bg-color: #f7f8fa;
-  --card-bg: #ffffff;
-  --text-main: #333333;
-  --text-sub: #999999;
-  --border-radius: 16rpx;
-  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.02);
-  --shadow-md: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 16rpx 48rpx rgba(0, 0, 0, 0.08);
+  --primary-color: #b8865c;
+  --danger-color: #d24b41;
+  --warning-color: #e6a15e;
+  --bg-color: #f6f0e7;
+  --card-bg: #fcfbf8;
+  --text-main: #2c3e50;
+  --text-sub: #6b6b6b;
+  --border-radius: 20rpx;
+  --shadow-sm: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 10rpx 28rpx rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16rpx 48rpx rgba(0, 0, 0, 0.12);
   
   background-color: var(--bg-color);
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
@@ -29,4 +29,17 @@ page {
   justify-content: space-between;
   padding: 200rpx 0;
   box-sizing: border-box;
+}
+
+.soft-card {
+  background: var(--card-bg);
+  border-radius: 24rpx;
+  box-shadow: var(--shadow-sm);
+  border: 1rpx solid rgba(0, 0, 0, 0.04);
+}
+
+.soft-section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--text-main);
 }

@@ -55,17 +55,22 @@ Component({
           {
             pagePath: "/pages/index/index",
             text: "首页",
-            icon: "home"
+            emoji: "🏠"
           },
           {
             pagePath: "/pages/goods/category/category",
-            text: "清单",
-            icon: "app"
+            text: "服务/产品分类",
+            emoji: "📦"
+          },
+          {
+            pagePath: "/pages/cart/cart",
+            text: "治丧清单",
+            emoji: "📋"
           },
           {
             pagePath: "/pages/user/user",
-            text: "个人中心",
-            icon: "user-circle"
+            text: "我的",
+            emoji: "👤"
           }
         ]
       };
@@ -77,25 +82,22 @@ Component({
       });
     },
 
-    onChange(e) {
-      const { value } = e.detail;
+    switchTab(e) {
+      const { path, index } = e.currentTarget.dataset;
       const app = getApp();
 
       // 更新全局状态
-      app.globalData.currentTabIndex = value;
+      app.globalData.currentTabIndex = index;
 
       // 更新当前组件状态
       this.setData({
-        index: value
+        index: index
       });
 
       // 跳转到对应页面
-      const targetPage = this.data.list[value];
-      if (targetPage) {
-        wx.switchTab({
-          url: targetPage.pagePath
-        });
-      }
+      wx.switchTab({
+        url: path
+      });
     }
   }
 })

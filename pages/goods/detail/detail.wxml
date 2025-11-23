@@ -1,4 +1,3 @@
-
 <view class="goods-detail" wx:if="{{!loading && goods}}">
   <swiper class="goods-swiper" indicator-dots autoplay interval="3000" duration="500">
     <swiper-item wx:for="{{goods.images}}" wx:key="*this">
@@ -13,8 +12,8 @@
 
   <view class="goods-info">
     <view class="goods-name">{{goods.name}}</view>
-    <view class="goods-price">¥{{goods.price}}</view>
-    <view class="goods-stock">库存: {{goods.stock}}</view>
+    <view class="goods-price">{{goods.displayPrice}}</view>
+    <view class="goods-stock">库存：{{goods.stock}}</view>
   </view>
 
   <view class="goods-description">
@@ -34,7 +33,7 @@
     </view>
     <view class="info-item">
       <text class="label">分类</text>
-      <text class="value">{{goods.category === 0 ? '白事用品' : '红事用品'}}</text>
+      <text class="value">{{goods.category === 0 ? '自营用品' : '自营用品'}}</text>
     </view>
   </view>
 
@@ -43,36 +42,34 @@
     <button class="add-cart-btn" bindtap="showSkuPopup">加入清单</button>
   </view>
 
-  <!-- SKU选择弹窗 -->
-  <t-popup visible="{{showSkuPopup}}" placement="bottom" bind:visible-change="onPopupChange">
-    <view class="popup-content">
-      <view class="sku-popup">
-        <view class="sku-header">
-          <image src="{{goods.image}}" mode="aspectFill" class="sku-image" />
-          <view class="sku-info">
-            <view class="sku-price">¥{{goods.price}}</view>
-            <view class="sku-stock">库存: {{goods.stock}}</view>
-          </view>
-        </view>
-
-        <view class="sku-content">
-          <view class="quantity-section">
-            <text>购买数量</text>
-            <t-stepper
-              value="{{quantity}}"
-              min="1"
-              max="{{goods.stock}}"
-              bind:change="onQuantityChange"
-            />
-          </view>
-        </view>
-
-        <view class="sku-footer">
-          <button class="confirm-btn" bindtap="addToCart">确定</button>
+  <!-- 自定义弹窗 -->
+  <view class="sku-mask" wx:if="{{showSkuPopup}}" catchtap="closeSkuPopup"></view>
+  <view class="sku-drawer" wx:if="{{showSkuPopup}}" catchtouchmove="true">
+    <view class="sku-popup">
+      <view class="sku-header">
+        <image src="{{goods.image}}" mode="aspectFill" class="sku-image" />
+        <view class="sku-info">
+          <view class="sku-price">{{goods.displayPrice}}</view>
+          <view class="sku-stock">库存：{{goods.stock}}</view>
         </view>
       </view>
+
+      <view class="sku-content">
+        <view class="quantity-section">
+          <text class="quantity-label">购买数量</text>
+          <view class="quantity-stepper">
+            <view class="step-btn" bindtap="decreaseQuantity">-</view>
+            <view class="step-value">{{quantity}}</view>
+            <view class="step-btn" bindtap="increaseQuantity">+</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="sku-footer">
+        <button class="confirm-btn" bindtap="addToCart">加入清单</button>
+      </view>
     </view>
-  </t-popup>
+  </view>
 </view>
 
 <view class="loading" wx:if="{{loading}}">加载中...</view>

@@ -1,4 +1,4 @@
-const { api } = require('../../utils/api.js');  // 修改引入方式
+const { api } = require('../../utils/api.js');
 const auth = require('../../utils/auth.js');
 
 Page({
@@ -10,182 +10,253 @@ Page({
     loading: false,
     maxQuantity: 99,
     minQuantity: 1,
-    syncLoading: false
+    syncLoading: false,
+    systemType: 'white',
+    startX: 0,
+    startY: 0,
+    resetTimer: null
   },
 
   onShow() {
-    this.setData({ loading: true })
-    this.loadCartItems()
+    console.log('[页面生命周期] onShow触发，从本地缓存加载购物车');
+    this.setData({ loading: true });
+    this.loadCartItems();
   },
 
   async loadCartItems() {
     try {
-      console.log('开始加载清单数据');
-      const cartList = await api.getCartList();
-      console.log('清单数据:', cartList);
+      // 只从本地缓存加载
+      // 数据迁移：将旧的 cartList 迁移到 cartListLocal
+      const oldCart = wx.getStorageSync('cartList');
+      if (oldCart && oldCart.length > 0) {
+        const existingCart = wx.getStorageSync('cartListLocal') || [];
+        if (existingCart.length === 0) {
+          // 只在 cartListLocal 为空时迁移
+          wx.setStorageSync('cartListLocal', oldCart);
+          wx.removeStorageSync('cartList'); // 迁移完成后删除旧数据
+        }
+      }
+      const localList = wx.getStorageSync('cartListLocal') || [];
+      
+      // 过滤掉无效数据（null、undefined、或缺少必要字段的对象）
+      const validList = localList.filter(item => 
+        item && 
+        item.id && 
+        item.name && 
+        item.price != null && 
+        typeof item.quantity === 'number' && 
+        item.quantity > 0
+      );
 
-      const cartItems = cartList.map(item => ({
-        id: item.id || item.productId,
-        name: item.name || item.productName || '未知商品',
-        image: item.image || item.productImage || item.imageUrl || 'https://tdesign.gtimg.com/mobile/demos/default_goods.png',
-        price: item.price || item.productPrice || '0.00',
-        quantity: item.quantity || 1,
-        selected: false
+      const cartItems = validList.map(item => ({
+        ...item,
+        displayPrice: Number(item.price || 0).toFixed(2),
+        selected: item.selected || false
       }));
 
       this.setData({
         cartItems,
         loading: false
-      });
-      this.updateTotalAmount();
-    } catch (error) {
-      console.error('加载清单失败:', error);
-      this.setData({
-        loading: false,
-        cartItems: []  // 确保失败时清空清单显示
-      });
-      wx.showToast({
-        title: '加载清单失败',
-        icon: 'none'
-      });
-    }
-  },
-
-  // TDesign checkbox事件处理
-  onCheckboxChange(e) {
-    const index = e.currentTarget.dataset.index
-    const selected = e.detail.checked
-    this.setData({
-      [`cartItems[${index}].selected`]: selected
-    })
-    this.updateTotalAmount()
-  },
-
-  // 保留原方法以兼容其他调用
-  toggleSelect(e) {
-    const index = e.currentTarget.dataset.index
-    const selected = !this.data.cartItems[index].selected
-    this.setData({
-      [`cartItems[${index}].selected`]: selected
-    })
-    this.updateTotalAmount()
-  },
-
-  // TDesign全选checkbox事件处理
-  onSelectAllChange(e) {
-    const allSelected = e.detail.checked
-    const cartItems = this.data.cartItems.map(item => ({
-      ...item,
-      selected: allSelected
-    }))
-    this.setData({
-      allSelected,
-      cartItems
-    })
-    this.updateTotalAmount()
-  },
-
-  // 保留原方法以兼容其他调用
-  toggleSelectAll() {
-    const allSelected = !this.data.allSelected
-    const cartItems = this.data.cartItems.map(item => ({
-      ...item,
-      selected: allSelected
-    }))
-    this.setData({
-      allSelected,
-      cartItems
-    })
-    this.updateTotalAmount()
-  },
-
-  // TDesign步进器事件处理
-  onQuantityChange(e) {
-    const index = e.currentTarget.dataset.index
-    const quantity = e.detail.value
-    this.updateQuantity(index, quantity)
-  },
-
-  increaseQuantity(e) {
-    const { index } = e.currentTarget.dataset
-    const item = this.data.cartItems[index]
-    if (item.quantity >= this.data.maxQuantity) {
-      wx.showToast({
-        title: `最多只能购买${this.data.maxQuantity}件`,
-        icon: 'none'
-      })
-      return
-    }
-    this.updateQuantity(index, item.quantity + 1)
-  },
-
-  decreaseQuantity(e) {
-    const { index } = e.currentTarget.dataset
-    const item = this.data.cartItems[index]
-    if (item.quantity <= this.data.minQuantity) {
-      wx.showToast({
-        title: `最少需要购买${this.data.minQuantity}件`,
-        icon: 'none'
-      })
-      return
-    }
-    this.updateQuantity(index, item.quantity - 1)
-  },
-
-  async updateQuantity(index, quantity) {
-    try {
-      quantity = parseInt(quantity) || 1;
-      const cartItems = [...this.data.cartItems];
-      const item = cartItems[index];
-
-      await api.updateCart({
-        productId: item.id,
-        quantity: quantity
-      });
-
-      cartItems[index].quantity = quantity;
-      this.setData({ cartItems }, () => {
+      }, () => {
         this.updateTotalAmount();
       });
     } catch (error) {
-      console.error('更新数量失败:', error);
+      console.error('加载清单失败:', error);
+      this.setData({ loading: false, cartItems: [] });
     }
+  },
+
+  onCheckboxChange(e) {
+    const index = e.currentTarget.dataset.index;
+    const selected = e.detail.value.length > 0;
+    this.setData({
+      [`cartItems[${index}].selected`]: selected
+    });
+    this.updateTotalAmount();
+  },
+
+  toggleSelect(e) {
+    const index = e.currentTarget.dataset.index;
+    const selected = !this.data.cartItems[index].selected;
+    this.setData({
+      [`cartItems[${index}].selected`]: selected
+    });
+    this.updateTotalAmount();
+  },
+
+  onSelectAllChange(e) {
+    const allSelected = e.detail.value.length > 0;
+    const cartItems = this.data.cartItems.map(item => ({
+      ...item,
+      selected: allSelected
+    }));
+    this.setData({
+      allSelected,
+      cartItems
+    });
+    this.updateTotalAmount();
+  },
+
+  toggleSelectAll() {
+    const allSelected = !this.data.allSelected;
+    const cartItems = this.data.cartItems.map(item => ({
+      ...item,
+      selected: allSelected
+    }));
+    this.setData({
+      allSelected,
+      cartItems
+    });
+    this.updateTotalAmount();
+  },
+
+  onQuantityChange(e) {
+    const index = e.currentTarget.dataset.index;
+    const quantity = Number(e.detail.value) || 1;
+    this.updateQuantity(index, quantity);
+  },
+
+  increaseQuantity(e) {
+    const { index } = e.currentTarget.dataset;
+    const item = this.data.cartItems[index];
+    if (!item) return;
+    if (item.quantity >= this.data.maxQuantity) {
+      wx.showToast({
+        title: `单件最多可选${this.data.maxQuantity}件`,
+        icon: 'none'
+      });
+      return;
+    }
+    this.updateQuantity(index, item.quantity + 1);
+  },
+
+  decreaseQuantity(e) {
+    const { index } = e.currentTarget.dataset;
+    const item = this.data.cartItems[index];
+    if (!item) return;
+    if (item.quantity <= this.data.minQuantity) {
+      wx.showToast({
+        title: `至少选择${this.data.minQuantity}件`,
+        icon: 'none'
+      });
+      return;
+    }
+    this.updateQuantity(index, item.quantity - 1);
+  },
+
+  async updateQuantity(index, quantity) {
+    const cartItems = [...this.data.cartItems];
+    const item = cartItems[index];
+    if (!item) return;
+
+    const safeQuantity = Math.max(this.data.minQuantity, Math.min(quantity, this.data.maxQuantity));
+
+    // 直接更新本地数据，不调用API
+    cartItems[index].quantity = safeQuantity;
+    this.setData({ cartItems }, () => {
+      this.updateTotalAmount();
+      console.log('[缓存更新] 更新数量后准备更新缓存，商品ID:', item.id, '新数量:', safeQuantity);
+      wx.setStorageSync('cartListLocal', this.data.cartItems);
+      console.log('[缓存更新] 缓存更新成功');
+    });
   },
 
   async deleteItem(e) {
     const { index } = e.currentTarget.dataset;
+    const cartItems = [...this.data.cartItems];
+    const item = cartItems[index];
+    if (!item) return;
+
     wx.showModal({
       title: '提示',
-      content: '确定要删除这个商品吗？',
+      content: '确认要删除该商品吗？',
       success: async (res) => {
         if (res.confirm) {
-          try {
-            const cartItems = [...this.data.cartItems];
-            const item = cartItems[index];
-
-            await api.removeFromCart(item.id);
-
-            cartItems.splice(index, 1);
-            this.setData({ cartItems });
+          // 直接删除本地数据，不调用API
+          cartItems.splice(index, 1);
+          this.setData({ cartItems }, () => {
             this.updateTotalAmount();
+            console.log('[缓存更新] 删除商品后准备更新缓存，剩余商品数:', this.data.cartItems.length);
+            wx.setStorageSync('cartListLocal', this.data.cartItems);
+            console.log('[缓存更新] 缓存更新成功');
+          });
 
-            wx.showToast({
-              title: '删除成功',
-              icon: 'success'
-            });
-          } catch (error) {
-            console.error('删除商品失败:', error);
-          }
+          wx.showToast({
+            title: '删除成功',
+            icon: 'success'
+          });
+        } else {
+          this.resetTouchState(index);
         }
       }
+    });
+  },
+
+  touchStart(e) {
+    if (this.data.resetTimer) {
+      clearTimeout(this.data.resetTimer);
+      this.setData({ resetTimer: null });
+    }
+    this.setData({
+      startX: e.touches[0].clientX,
+      startY: e.touches[0].clientY
+    });
+  },
+
+  touchMove(e) {
+    const { index } = e.currentTarget.dataset;
+    const moveX = e.touches[0].clientX;
+    const moveY = e.touches[0].clientY;
+    const disX = this.data.startX - moveX;
+    const disY = this.data.startY - moveY;
+
+    if (Math.abs(disX) > Math.abs(disY) && disX > 10) {
+      const translateX = Math.min(0, -disX);
+      const maxTranslate = -150;
+      this.setData({
+        [`cartItems[${index}].translateX`]: Math.max(maxTranslate, translateX),
+        [`cartItems[${index}].isTouchMove`]: true
+      });
+    }
+  },
+
+  touchEnd(e) {
+    const { index } = e.currentTarget.dataset;
+    const item = this.data.cartItems[index];
+    if (!item) return;
+
+    const translateX = item.translateX || 0;
+    if (translateX < -75) {
+      this.setData({
+        [`cartItems[${index}].translateX`]: -150
+      });
+      
+      const timer = setTimeout(() => {
+        this.resetTouchState(index);
+      }, 2000);
+      
+      this.setData({ resetTimer: timer });
+    } else {
+      this.resetTouchState(index);
+    }
+  },
+
+  resetTouchState(index) {
+    if (this.data.resetTimer) {
+      clearTimeout(this.data.resetTimer);
+      this.setData({ resetTimer: null });
+    }
+    this.setData({
+      [`cartItems[${index}].translateX`]: 0,
+      [`cartItems[${index}].isTouchMove`]: false
     });
   },
 
   updateTotalAmount() {
     const selectedItems = this.data.cartItems.filter(item => item.selected);
     const total = selectedItems.reduce((sum, item) => {
-      const price = parseFloat(item.price) || 0;
-      const quantity = parseInt(item.quantity) || 0;
+      const price = Number(item.price) || 0;
+      const quantity = Number(item.quantity) || 0;
       return sum + (price * quantity);
     }, 0);
 
@@ -212,11 +283,11 @@ Page({
     }
 
     wx.showLoading({
-      title: '正在创建订单'
+      title: '正在处理订单'
     });
 
     const remainingItems = this.data.cartItems.filter(item => !item.selected);
-    wx.setStorageSync('cartList', remainingItems);
+    wx.setStorageSync('cartListLocal', remainingItems);
 
     wx.navigateTo({
       url: '../order/confirm/confirm',
@@ -236,112 +307,34 @@ Page({
           title: '页面跳转失败',
           icon: 'none'
         });
+      },
+      complete: () => {
+        wx.hideLoading();
       }
     });
   },
 
   handleError(error) {
-    console.error('清单操作错误：', error);
+    console.error('清单操作异常', error);
     wx.showToast({
-      title: '操作失败，请重试',
+      title: '操作失败，请稍后重试',
       icon: 'none'
     });
   },
 
-  async syncCartItemsWithServer(localCartItems) {
-    if (this.data.syncLoading) return localCartItems;
-
-    try {
-      this.setData({ syncLoading: true });
-
-      const productIds = localCartItems.map(item => item.id);
-      if (productIds.length === 0) return [];
-
-      const res = await api.getProductsByIds(productIds);
-
-      if (res.code === 200 && res.data && res.data.records) {
-        return localCartItems.map(cartItem => {
-          const serverProduct = res.data.records.find(p => p.id === cartItem.id);
-          if (serverProduct) {
-            return {
-              ...cartItem,
-              price: serverProduct.price,
-              name: serverProduct.name,
-              image: serverProduct.imageUrl || cartItem.image,
-              stock: serverProduct.stock
-            };
-          }
-          return cartItem;
-        });
-      }
-      return localCartItems;
-    } catch (error) {
-      console.error('同步清单数据失败：', error);
-      return localCartItems;
-    } finally {
-      this.setData({ syncLoading: false });
-    }
-  },
-
-  async fetchCartFromServer() {
-    try {
-      const res = await api.getCartList();
-      if (res.code === 200 && res.data) {
-        return res.data.map(item => ({
-          id: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-          name: item.productName,
-          image: item.productImage,
-          stock: item.stock || 999
-        }));
-      }
-      return [];
-    } catch (error) {
-      console.error('获取服务器清单数据失败：', error);
-      return [];
-    }
-  },
-
-  async syncCartToServer() {
-    // 使用云开发认证检查用户登录状态
-    if (!auth.checkAuth()) {
-      console.log('用户未登录，跳过清单同步');
-      return;
-    }
-
-    const userInfo = auth.getUserInfo();
-    if (!userInfo) {
-      console.log('无法获取用户信息，跳过清单同步');
-      return;
-    }
-
-    try {
-      console.log('开始同步清单到服务器');
-      const cartItems = this.data.cartItems;
-      if (cartItems.length === 0) {
-        console.log('清单为空');
-        return;
-      }
-
-      const cartData = cartItems.map(item => ({
-        productId: item.id,
-        quantity: item.quantity
-      }));
-
-      console.log('同步的清单数据:', cartData);
-      await api.addToCart(cartData);
-      console.log('同步清单成功');
-    } catch (error) {
-      console.error('同步清单失败:', error);
-    }
-  },
-
   onHide() {
-    this.syncCartToServer();
+    console.log('[页面生命周期] onHide触发');
+    // 保存购物车数据到本地
+    wx.setStorageSync('cartListLocal', this.data.cartItems);
+    // 删除这行日志：console.log('[缓存更新] onHide时缓存已更新');
   },
 
   onUnload() {
-    this.syncCartToServer();
+    console.log('[页面生命周期] onUnload触发');
+    // 卸载时也保存一次
+    if (this.data.cartItems && this.data.cartItems.length > 0) {
+      wx.setStorageSync('cartListLocal', this.data.cartItems);
+      // 删除这行日志：console.log('[缓存更新] onUnload时缓存已更新');
+    }
   }
-})
+});
