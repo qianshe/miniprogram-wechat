@@ -44,7 +44,7 @@
 /* 时间线 */
 .timeline {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   padding: 40rpx 30rpx;
   background: #fff;
   border-radius: var(--border-radius);
@@ -62,7 +62,12 @@
 }
 
 .timeline-item.active {
-  color: var(--text-main);
+  color: #07c160;
+  font-weight: 500;
+}
+
+.timeline-item.current {
+  color: #fa8c16;
   font-weight: 500;
 }
 
@@ -77,13 +82,13 @@
 }
 
 .timeline-item.active .timeline-dot {
-  background: var(--primary-color);
-  box-shadow: 0 0 0 2rpx var(--primary-color);
+  background: #07c160;
+  box-shadow: 0 0 0 2rpx #07c160;
 }
 
-.red-theme .timeline-item.active .timeline-dot {
-  background: var(--danger-color);
-  box-shadow: 0 0 0 2rpx var(--danger-color);
+.timeline-item.current .timeline-dot {
+  background: #fa8c16;
+  box-shadow: 0 0 0 2rpx #fa8c16;
 }
 
 .timeline-text {
@@ -95,6 +100,8 @@
   font-size: 20rpx;
   color: var(--text-sub);
   font-weight: normal;
+  min-height: 28rpx;
+  line-height: 28rpx;
 }
 
 .timeline-line {
@@ -102,16 +109,12 @@
   height: 4rpx;
   background: #e0e0e0;
   margin: 0 4rpx;
-  margin-bottom: 56rpx; /* 对齐圆点 */
+  margin-top: 14rpx;
   border-radius: 2rpx;
 }
 
 .timeline-line.active {
-  background: var(--primary-color);
-}
-
-.red-theme .timeline-line.active {
-  background: var(--danger-color);
+  background: #07c160;
 }
 
 /* 信息区块 */

@@ -15,18 +15,26 @@
     "pages/order/detail/detail",
     "pages/order/confirm/confirm",
     "pages/order/create/create",
-    "pages/admin/order/list/list",
-    "pages/admin/product/list/list",
-    "pages/admin/index/index",
-    "pages/admin/login/login",
-    "pages/admin/order/create/create",
-    "pages/admin/product/scan/scan",
-    "pages/admin/order/qr-code/qr-code",
-    "pages/admin/product/create/create",
-    "pages/admin/product/edit/edit",
-    "pages/admin/category/list/list",
-    "pages/admin/category/edit/edit",
     "pages/scan-result/scan-result"
+  ],
+  "subpackages": [
+    {
+      "root": "pages/admin",
+      "name": "admin",
+      "pages": [
+        "index/index",
+        "login/login",
+        "category/list/list",
+        "category/edit/edit",
+        "product/list/list",
+        "product/create/create",
+        "product/edit/edit",
+        "product/scan/scan",
+        "order/list/list",
+        "order/create/create",
+        "order/qr-code/qr-code"
+      ]
+    }
   ],
   "window": {
     "navigationBarTextStyle": "black",

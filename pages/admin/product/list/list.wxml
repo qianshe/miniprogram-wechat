@@ -3,19 +3,20 @@
   <view class="page-header">
     <view class="page-title">商品管理</view>
     <view class="action-buttons">
-      <t-button theme="default" size="small" bindtap="scanProduct">扫描查价</t-button>
-      <t-button theme="primary" size="small" bindtap="createProduct">新增商品</t-button>
+      <t-button theme="default" size="small" icon="scan" bindtap="scanProduct">扫码</t-button>
+      <t-button theme="primary" size="small" icon="add" bindtap="createProduct">新增</t-button>
     </view>
   </view>
   
   <!-- 搜索框 -->
   <view class="search-container">
     <t-search
-      placeholder="搜索产品名称"
+      placeholder="搜索商品名称"
       bind:change="onSearchInput"
       bind:submit="onSearchConfirm"
       bind:clear="onSearchClear"
       value="{{keyword}}"
+      shape="round"
     />
     <view class="category-dropdown">
       <t-dropdown-menu>
@@ -27,7 +28,7 @@
   <!-- 排序选项 -->
   <view class="sort-options">
     <view class="sort-item {{orderBy === 'createTime' ? 'active' : ''}}" bindtap="changeOrderBy" data-orderby="createTime">
-      上架时间
+      最新上架
       <view class="sort-icon {{orderBy === 'createTime' ? (orderDirection === 'desc' ? 'desc' : 'asc') : ''}}"></view>
     </view>
     <view class="sort-item {{orderBy === 'price' ? 'active' : ''}}" bindtap="changeOrderBy" data-orderby="price">
@@ -40,42 +41,73 @@
     </view>
   </view>
   
+  <!-- 骨架屏加载状态 -->
+  <view class="skeleton-list" wx:if="{{isLoading && page === 1}}">
+    <view class="skeleton-item" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+      <view class="skeleton-thumb"></view>
+      <view class="skeleton-content">
+        <view>
+          <view class="skeleton-row long"></view>
+          <view class="skeleton-row medium"></view>
+        </view>
+        <view>
+          <view class="skeleton-row short"></view>
+          <view class="skeleton-row short"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 产品列表 -->
-  <view class="product-list">
-    <t-loading wx:if="{{isLoading && page === 1}}" text="加载中..." />
-    <t-empty wx:elif="{{products.length === 0 && !isLoading}}" description="暂无产品" />
+  <view class="product-list" wx:else>
+    <t-empty wx:if="{{products.length === 0 && !isLoading}}" description="暂无相关商品" icon="info-circle-filled" />
+    
     <block wx:else>
-      <view class="product-item" wx:for="{{products}}" wx:key="id">
-        <view class="product-thumb" bindtap="viewProduct" data-id="{{item.id}}">
-          <image src="{{item.thumb}}" mode="aspectFill"></image>
+      <view class="product-item" wx:for="{{products}}" wx:key="id" bindtap="viewProduct" data-id="{{item.id}}">
+        <view class="product-thumb">
+          <image src="{{item.thumb}}" mode="aspectFill" lazy-load></image>
           <view class="product-status {{item.status === 1 ? 'status-on' : 'status-off'}}">
             {{item.status === 1 ? '已上架' : '已下架'}}
           </view>
         </view>
+        
         <view class="product-info">
-          <view class="product-name" bindtap="viewProduct" data-id="{{item.id}}">{{item.name}}</view>
-          <view class="product-category">分类：{{item.categoryName || '未分类'}}</view>
-          <view class="product-price">
-            <text class="price">¥{{item.price}}</text>
+          <view class="product-header">
+            <view class="product-name">{{item.name}}</view>
+            <view class="product-tags">
+              <view class="product-category">{{item.categoryName || '未分类'}}</view>
+            </view>
+          </view>
+          
+          <view class="product-meta">
+            <view class="product-price">
+              <text class="currency">¥</text>{{item.price}}
+            </view>
             <text class="original-price" wx:if="{{item.originalPrice > item.price}}">¥{{item.originalPrice}}</text>
           </view>
-          <view class="product-sales">销量: {{item.sales}} | 库存: {{item.stock}}</view>
-          <view class="product-actions">
-            <t-button size="small" theme="default" bindtap="editProduct" data-id="{{item.id}}">编辑</t-button>
-            <t-button size="small" theme="{{item.status === 1 ? 'danger' : 'primary'}}" bindtap="toggleProductStatus" data-id="{{item.id}}" data-status="{{item.status}}">
+          
+          <view class="product-stats">
+            <text>销量 {{item.sales}}</text>
+            <text>库存 {{item.stock}}</text>
+          </view>
+          
+          <view class="product-actions" catchtap="return">
+            <t-button size="small" theme="default" variant="outline" shape="round" catchtap="editProduct" data-id="{{item.id}}">编辑</t-button>
+            <t-button size="small" theme="{{item.status === 1 ? 'danger' : 'primary'}}" variant="outline" shape="round" catchtap="toggleProductStatus" data-id="{{item.id}}" data-status="{{item.status}}">
               {{item.status === 1 ? '下架' : '上架'}}
             </t-button>
-            <t-button size="small" theme="danger" bindtap="deleteProduct" data-id="{{item.id}}">删除</t-button>
+            <t-button size="small" theme="danger" variant="text" catchtap="deleteProduct" data-id="{{item.id}}">删除</t-button>
           </view>
         </view>
       </view>
       
       <!-- 加载更多 -->
       <view class="load-more" wx:if="{{isLoading && page > 1}}">
-        <view class="loading">加载中...</view>
+        <view class="loading-spinner"></view>
+        <text>正在加载更多...</text>
       </view>
-      <view class="no-more" wx:if="{{!hasMore && !isLoading && products.length > 0}}">
-        没有更多产品了
+      <view class="no-more" wx:if="{{!hasMore && products.length > 0}}">
+        - 到底了 -
       </view>
     </block>
   </view>

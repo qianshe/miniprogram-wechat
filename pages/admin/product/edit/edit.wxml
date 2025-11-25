@@ -3,16 +3,31 @@
     <view class="page-title">{{isEdit ? '编辑商品' : '新增商品'}}</view>
   </view>
 
-  <view class="form-content">
+  <!-- 基本信息 -->
+  <view class="form-section">
+    <view class="section-title">基本信息</view>
     <t-cell-group theme="card">
       <t-input label="商品名称" placeholder="请输入商品名称" value="{{formData.name}}" bind:change="onNameChange" />
-      <t-input label="商品价格" placeholder="请输入价格" type="number" value="{{formData.price}}" bind:change="onPriceChange" suffix="元" />
-      <t-input label="原价" placeholder="请输入原价" type="number" value="{{formData.originalPrice}}" bind:change="onOriginalPriceChange" suffix="元" />
-      <t-input label="库存" placeholder="请输入库存数量" type="number" value="{{formData.stock}}" bind:change="onStockChange" />
-      
       <t-cell title="商品分类" arrow hover note="{{selectedCategoryName || '请选择分类'}}" bind:click="onCategoryPicker" />
-      
-      <t-cell title="商品图片" bordered="{{false}}">
+      <t-textarea label="商品描述" placeholder="请输入商品详细描述" value="{{formData.description}}" bind:change="onDescriptionChange" autosize />
+    </t-cell-group>
+  </view>
+
+  <!-- 价格与库存 -->
+  <view class="form-section">
+    <view class="section-title">价格与库存</view>
+    <t-cell-group theme="card">
+      <t-input label="商品价格" placeholder="0.00" type="number" value="{{formData.price}}" bind:change="onPriceChange" suffix="元" />
+      <t-input label="市场原价" placeholder="0.00" type="number" value="{{formData.originalPrice}}" bind:change="onOriginalPriceChange" suffix="元" />
+      <t-input label="库存数量" placeholder="0" type="number" value="{{formData.stock}}" bind:change="onStockChange" />
+    </t-cell-group>
+  </view>
+
+  <!-- 商品图片 -->
+  <view class="form-section">
+    <view class="section-title">商品图片</view>
+    <t-cell-group theme="card">
+      <t-cell title="主图上传" description="建议尺寸 800x800" bordered="{{false}}">
         <view class="upload-container" slot="note">
           <t-upload
             mediaType="{{['image']}}"
@@ -23,17 +38,22 @@
           />
         </view>
       </t-cell>
-      
-      <t-textarea label="商品描述" placeholder="请输入商品详细描述" value="{{formData.description}}" bind:change="onDescriptionChange" autosize />
-      
-      <t-cell title="上架状态">
+    </t-cell-group>
+  </view>
+
+  <!-- 上架设置 -->
+  <view class="form-section">
+    <view class="section-title">上架设置</view>
+    <t-cell-group theme="card">
+      <t-cell title="立即上架" description="关闭后商品将存入仓库">
         <t-switch value="{{formData.status === 1}}" bind:change="onStatusChange" slot="note" />
       </t-cell>
     </t-cell-group>
+  </view>
 
-    <view class="submit-btn">
-      <t-button theme="primary" size="large" block bind:tap="onSubmit">保存</t-button>
-    </view>
+  <!-- 底部按钮 -->
+  <view class="bottom-bar">
+    <t-button class="submit-btn" theme="primary" size="large" block bind:tap="onSubmit">保存商品</t-button>
   </view>
 
   <t-picker

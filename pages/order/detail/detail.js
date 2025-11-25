@@ -77,6 +77,13 @@ Page({
         createdTime: this.formatDate(orderData.createTime),
         serviceTime: this.formatDate(orderData.serviceTime),
         payTime: orderData.payTime ? this.formatDate(orderData.payTime) : '',
+        processTime: orderData.processTime ? this.formatDate(orderData.processTime) : '',
+        completeTime: orderData.completeTime ? this.formatDate(orderData.completeTime) : '',
+        // 时间线专用的短格式时间 (MM-DD)
+        timelineCreatedTime: this.formatShortDate(orderData.createTime),
+        timelinePayTime: orderData.payTime ? this.formatShortDate(orderData.payTime) : '',
+        timelineProcessTime: orderData.processTime ? this.formatShortDate(orderData.processTime) : '',
+        timelineCompleteTime: orderData.completeTime ? this.formatShortDate(orderData.completeTime) : '',
         totalAmount: totalAmount.toFixed(2), // 云函数已转换为元
         items: items.map((item) => {
           return {
@@ -155,6 +162,13 @@ Page({
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  },
+
+  // 短格式日期，用于时间线显示 (MM-DD)
+  formatShortDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   },
 
   // 复制订单号

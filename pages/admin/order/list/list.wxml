@@ -8,66 +8,67 @@
 
   <!-- 搜索框 -->
   <view class="search-container">
-    <t-search
-      placeholder="搜索订单号或联系人"
-      value="{{searchKeyword}}"
-      bind:change="onSearchChange"
-      bind:submit="onSearchConfirm"
-      bind:clear="onSearchClear"
-    />
+    <view class="search-wrapper">
+      <t-search
+        placeholder="搜索订单号或联系人"
+        value="{{searchKeyword}}"
+        bind:change="onSearchChange"
+        bind:submit="onSearchConfirm"
+        bind:clear="onSearchClear"
+      ></t-search>
+    </view>
     <view class="filter-btn" bindtap="toggleFilterPanel">
-      <t-icon name="filter" size="20" />
+      <t-icon name="filter" size="20"></t-icon>
       <text>筛选</text>
     </view>
   </view>
 
   <!-- 筛选面板 -->
-  <t-popup
-    visible="{{showFilterPanel}}"
-    placement="bottom"
-    bind:visible-change="onFilterPopupChange"
-  >
-    <view class="filter-header">
-      <text>筛选条件</text>
-      <t-icon name="close" size="20" bindtap="toggleFilterPanel" />
-    </view>
-    <view class="filter-content">
-      <view class="filter-item">
-        <text class="filter-label">订单时间</text>
-        <view class="date-range">
-          <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
-            <view class="date-picker">{{startDate || '开始日期'}}</view>
-          </picker>
-          <text class="date-separator">至</text>
-          <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
-            <view class="date-picker">{{endDate || '结束日期'}}</view>
-          </picker>
+  <view class="filter-mask" wx:if="{{showFilterPanel}}" catchtap="toggleFilterPanel"></view>
+  <view class="filter-drawer" wx:if="{{showFilterPanel}}" catchtouchmove="true">
+    <view class="filter-panel">
+      <view class="filter-header">
+        <text>筛选条件</text>
+        <t-icon name="close" size="20" bindtap="toggleFilterPanel"></t-icon>
+      </view>
+      <view class="filter-content">
+        <view class="filter-item">
+          <text class="filter-label">订单时间</text>
+          <view class="date-range">
+            <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+              <view class="date-picker">{{startDate || '开始日期'}}</view>
+            </picker>
+            <text class="date-separator">至</text>
+            <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+              <view class="date-picker">{{endDate || '结束日期'}}</view>
+            </picker>
+          </view>
+        </view>
+        <view class="filter-item">
+          <text class="filter-label">价格区间</text>
+          <view class="price-range">
+            <t-input
+              type="number"
+              placeholder="最低价"
+              value="{{minPrice}}"
+              bind:change="onMinPriceChange"
+            ></t-input>
+            <text class="price-separator">至</text>
+            <t-input
+              type="number"
+              placeholder="最高价"
+              value="{{maxPrice}}"
+              bind:change="onMaxPriceChange"
+            ></t-input>
+          </view>
         </view>
       </view>
-      <view class="filter-item">
-        <text class="filter-label">价格区间</text>
-        <view class="price-range">
-          <t-input
-            type="number"
-            placeholder="最低价"
-            value="{{minPrice}}"
-            bind:change="onMinPriceChange"
-          />
-          <text class="price-separator">至</text>
-          <t-input
-            type="number"
-            placeholder="最高价"
-            value="{{maxPrice}}"
-            bind:change="onMaxPriceChange"
-          />
-        </view>
+      <view class="filter-footer">
+        <t-button theme="default" bindtap="resetFilter">重置</t-button>
+        <t-button theme="primary" bindtap="applyFilter">确定</t-button>
       </view>
     </view>
-    <view class="filter-footer">
-      <t-button theme="default" bindtap="resetFilter">重置</t-button>
-      <t-button theme="primary" bindtap="applyFilter">确定</t-button>
-    </view>
-  </t-popup>
+  </view>
 
   <view class="tabs">
     <view 
@@ -83,26 +84,24 @@
       data-value="2" 
       bindtap="onTabClick">已支付</view>
     <view 
-      class="tab-item {{activeTab === '5' ? 'active' : ''}}" 
-      data-value="5" 
-      bindtap="onTabClick">待确认</view>
-    <view 
-      class="tab-item {{activeTab === '6' ? 'active' : ''}}" 
-      data-value="6" 
-      bindtap="onTabClick">已完成</view>
-    <view 
       class="tab-item {{activeTab === '3' ? 'active' : ''}}" 
       data-value="3" 
-      bindtap="onTabClick">已取消</view>
+      bindtap="onTabClick">处理中</view>
     <view 
       class="tab-item {{activeTab === '4' ? 'active' : ''}}" 
       data-value="4" 
-      bindtap="onTabClick">已退款</view>
+      bindtap="onTabClick">已完成</view>
+    <view 
+      class="tab-item {{activeTab === '5' ? 'active' : ''}}" 
+      data-value="5" 
+      bindtap="onTabClick">已取消</view>
   </view>
 
   <view class="order-list">
-    <t-loading wx:if="{{loading}}" text="加载中..." />
-    <t-empty wx:elif="{{!orders.length}}" description="暂无订单" />
+    <view class="loading-wrapper" wx:if="{{loading}}">
+      <view class="loading-text">加载中...</view>
+    </view>
+    <t-empty wx:elif="{{!orders.length}}" description="暂无订单"></t-empty>
     <view class="orders" wx:else>
       <view class="order-item" wx:for="{{orders}}" wx:key="orderNo">
         <view class="order-header">
@@ -134,39 +133,44 @@
         <view class="order-actions">
           <!-- 订单动作按钮 - 根据订单状态显示不同的按钮 -->
           <block wx:if="{{item.status === 0}}">
-            <button
-              class="action-btn confirm-btn"
+            <t-button
+              size="small"
+              theme="primary"
               data-orderid="{{item._id}}"
               data-status="1"
-              bindtap="updateOrderStatus">确认支付</button>
+              bindtap="updateOrderStatus">确认支付</t-button>
           </block>
           <block wx:elif="{{item.status === 1}}">
-            <button
-              class="action-btn process-btn"
-              data-orderid="{{item._id}}"
-              data-status="4"
-              bindtap="updateOrderStatus">进入处理</button>
-          </block>
-          <block wx:elif="{{item.status === 4}}">
-            <button
-              class="action-btn complete-btn"
-              data-orderid="{{item._id}}"
-              data-status="5"
-              bindtap="updateOrderStatus">标记完成</button>
-          </block>
-          <block wx:if="{{item.status !== 2 && item.status !== 3}}">
-            <button
-              class="action-btn cancel-btn"
+            <t-button
+              size="small"
+              theme="primary"
               data-orderid="{{item._id}}"
               data-status="2"
-              bindtap="updateOrderStatus">取消订单</button>
+              bindtap="updateOrderStatus">进入处理</t-button>
           </block>
-          <button 
-            class="action-btn detail-btn" 
-            data-orderno="{{item.orderNo}}" 
-            bindtap="onOrderClick">查看详情</button>
+          <block wx:elif="{{item.status === 2}}">
+            <t-button
+              size="small"
+              theme="primary"
+              data-orderid="{{item._id}}"
+              data-status="3"
+              bindtap="updateOrderStatus">标记完成</t-button>
+          </block>
+          <block wx:if="{{item.status !== 3 && item.status !== 4}}">
+            <t-button
+              size="small"
+              theme="danger"
+              data-orderid="{{item._id}}"
+              data-status="4"
+              bindtap="updateOrderStatus">取消订单</t-button>
+          </block>
+          <t-button 
+            size="small"
+            theme="default"
+            data-orderid="{{item._id}}"
+            bindtap="onOrderClick">查看详情</t-button>
         </view>
       </view>
     </view>
   </view>
-</view> 
+</view>

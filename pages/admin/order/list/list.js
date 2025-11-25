@@ -262,10 +262,9 @@ Page({
     const statusMap = {
       0: '待支付',
       1: '已支付',
-      2: '已取消',
-      3: '已退款',
-      4: '待确认',
-      5: '已完成'
+      2: '处理中',
+      3: '已完成',
+      4: '已取消'
     };
     return statusMap[status] || '未知状态';
   },
@@ -275,10 +274,9 @@ Page({
       '0': undefined, // 全部
       '1': 0,        // 待支付
       '2': 1,        // 已支付
-      '3': 2,        // 已取消
-      '4': 3,        // 已退款
-      '5': 4,        // 待确认
-      '6': 5         // 已完成
+      '3': 2,        // 处理中
+      '4': 3,        // 已完成
+      '5': 4         // 已取消
     };
     return statusMap[tab];
   },
@@ -300,8 +298,6 @@ Page({
       url: `/pages/order/detail/detail?orderNo=${orderid}&isAdmin=true`
     });
   },
-
-
 
 
 
@@ -341,4 +337,4 @@ Page({
       url: '/pages/admin/order/create/create'
     });
   }
-}); 
+});

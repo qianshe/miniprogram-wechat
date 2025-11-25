@@ -1,49 +1,53 @@
 <view class="admin-container">
-  <!-- 顶部个人信息 -->
-  <view class="admin-header">
-    <view class="admin-info">
-      <image class="admin-avatar" src="{{adminInfo.avatar}}" mode="aspectFill"></image>
-      <view class="admin-detail">
-        <view class="admin-name">{{adminInfo.name}}</view>
-        <view class="admin-role">{{adminInfo.role}}</view>
-      </view>
+  <!-- 今日数据统计 -->
+  <view class="section-header">
+    <view class="section-title">今日数据概览</view>
+  </view>
+  <view class="stat-card-grid">
+    <view class="stat-card" bindtap="onStatsTap" data-type="orders" hover-class="stat-card-hover">
+      <view class="stat-card-value">{{todayStats.orders}}</view>
+      <view class="stat-card-label">订单数</view>
     </view>
-    <t-button size="small" theme="default" bindtap="logout">退出登录</t-button>
+    <view class="stat-card" bindtap="onStatsTap" data-type="products" hover-class="stat-card-hover">
+      <view class="stat-card-value">{{todayStats.products}}</view>
+      <view class="stat-card-label">商品数</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-card-value stat-card-value-highlight">{{todayStats.sales}}</view>
+      <view class="stat-card-label">销售额</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-card-value stat-card-value-highlight">{{todayStats.revenue}}</view>
+      <view class="stat-card-label">总收入</view>
+    </view>
   </view>
   
-  <!-- 功能模块导航 -->
-  <t-cell-group title="功能模块">
-    <t-cell
+  <!-- 功能模块导航 - 卡片样式 -->
+  <view class="section-header">
+    <view class="section-title">功能模块</view>
+  </view>
+  <view class="module-card-grid">
+    <view 
+      class="module-card"
       wx:for="{{modules}}"
       wx:key="id"
-      title="{{item.name}}"
-      description="{{item.desc}}"
-      arrow
       bindtap="onModuleTap"
       data-path="{{item.path}}"
+      hover-class="module-card-hover"
     >
-      <view slot="left-icon" class="module-icon">{{item.icon}}</view>
-    </t-cell>
-  </t-cell-group>
-  
-  <!-- 今日数据统计 -->
-  <t-cell-group title="今日数据概览">
-    <t-cell title="订单数" bindtap="onStatsTap" data-type="orders" arrow>
-      <view slot="note" class="stat-value">{{todayStats.orders}}</view>
-    </t-cell>
-    <t-cell title="商品数" bindtap="onStatsTap" data-type="products" arrow>
-      <view slot="note" class="stat-value">{{todayStats.products}}</view>
-    </t-cell>
-    <t-cell title="销售额">
-      <view slot="note" class="stat-value">¥{{todayStats.sales}}</view>
-    </t-cell>
-    <t-cell title="总收入">
-      <view slot="note" class="stat-value">¥{{todayStats.revenue}}</view>
-    </t-cell>
-  </t-cell-group>
+      <view class="module-card-icon">{{item.icon}}</view>
+      <view class="module-card-content">
+        <view class="module-card-name">{{item.name}}</view>
+        <view class="module-card-desc">{{item.desc}}</view>
+      </view>
+      <view class="module-card-arrow">
+        <t-icon name="chevron-right" size="40rpx" color="#999" />
+      </view>
+    </view>
+  </view>
   
   <!-- 加载状态 -->
   <view class="loading-container" wx:if="{{loading}}">
     <text class="loading-text">加载中...</text>
   </view>
-</view> 
+</view>

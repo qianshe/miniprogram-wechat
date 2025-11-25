@@ -1,6 +1,6 @@
 <view class="container">
   <view class="hero">
-    <image class="bg-image" src="../../assets/images/image-home.png" mode="aspectFill" />
+    <image class="bg-image" src="cloud://cloud1-5gudbe4m8263c9dc.636c-cloud1-5gudbe4m8263c9dc-1379027289/assets/images/image-home.png" mode="aspectFill" />
     <view class="hero-text">
       <view class="title">专业服务，肃穆送别</view>
       <view class="subtitle">我们在此，为您分担离别的繁杂，让爱与尊重延续。</view>

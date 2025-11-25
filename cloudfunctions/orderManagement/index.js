@@ -555,6 +555,16 @@ async function updateOrderStatus(data, context) {
     if (targetStatus === ORDER_STATUS.PAID) {
       updateData.payTime = new Date();
     }
+    
+    // 如果是进入处理状态，添加处理开始时间
+    if (targetStatus === ORDER_STATUS.PROCESSING) {
+      updateData.processTime = new Date();
+    }
+    
+    // 如果是完成状态，添加完成时间
+    if (targetStatus === ORDER_STATUS.COMPLETED) {
+      updateData.completeTime = new Date();
+    }
 
     const result = await db.collection('orders')
       .where(whereCondition)

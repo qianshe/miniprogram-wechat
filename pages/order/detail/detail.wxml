@@ -9,26 +9,28 @@
 
     <!-- 状态时间线 -->
     <view class="timeline">
-      <view class="timeline-item {{orderInfo.status >= 0 ? 'active' : ''}}">
+      <view class="timeline-item {{orderInfo.status >= 0 ? (orderInfo.status === 0 ? 'current' : 'active') : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">下单</text>
-        <text class="timeline-time">{{orderInfo.createdTime}}</text>
+        <text class="timeline-time">{{orderInfo.timelineCreatedTime || ''}}</text>
       </view>
       <view class="timeline-line {{orderInfo.status >= 1 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.status >= 1 ? 'active' : ''}}">
+      <view class="timeline-item {{orderInfo.status >= 1 ? (orderInfo.status === 1 ? 'current' : 'active') : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">支付</text>
-        <text class="timeline-time" wx:if="{{orderInfo.status >= 1}}">{{orderInfo.payTime || '-'}}</text>
+        <text class="timeline-time">{{orderInfo.status >= 1 ? (orderInfo.timelinePayTime || '-') : ''}}</text>
       </view>
       <view class="timeline-line {{orderInfo.status >= 2 && orderInfo.status !== 4 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.status >= 2 && orderInfo.status !== 4 ? 'active' : ''}}">
+      <view class="timeline-item {{orderInfo.status >= 2 && orderInfo.status !== 4 ? (orderInfo.status === 2 ? 'current' : 'active') : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">服务中</text>
+        <text class="timeline-time">{{orderInfo.status >= 2 && orderInfo.status !== 4 ? (orderInfo.timelineProcessTime || '-') : ''}}</text>
       </view>
       <view class="timeline-line {{orderInfo.status >= 3 && orderInfo.status !== 4 ? 'active' : ''}}"></view>
       <view class="timeline-item {{orderInfo.status >= 3 && orderInfo.status !== 4 ? 'active' : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">完成</text>
+        <text class="timeline-time">{{orderInfo.status >= 3 && orderInfo.status !== 4 ? (orderInfo.timelineCompleteTime || '-') : ''}}</text>
       </view>
     </view>
 

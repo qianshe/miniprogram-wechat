@@ -1,6 +1,6 @@
 <view class="page">
   <image class="background"
-  src="../../assets/images/home.jpeg" 
+  src="cloud://cloud1-5gudbe4m8263c9dc.636c-cloud1-5gudbe4m8263c9dc-1379027289/assets/images/home.jpeg"
   mode="aspectFill"></image>
   <view class="left" bindtap="navigateToWhiteSystem"></view>
   <!-- <view class="right" bindtap="navigateToRedSystem"></view> -->
