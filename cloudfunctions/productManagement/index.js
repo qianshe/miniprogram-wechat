@@ -96,9 +96,9 @@ async function getProducts(data, context) {
     let query = db.collection('products');
     const conditions = [];
     
-    // 分类筛选
+    // 分类筛选 - category现在是分类_id字符串
     if (category !== undefined && category !== '') {
-      conditions.push({ category: parseInt(category) });
+      conditions.push({ category: category });
     }
     
     // 关键词搜索

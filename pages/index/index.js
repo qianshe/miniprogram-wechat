@@ -48,12 +48,9 @@ Page({
 
   // 治丧指南
   onTapGuide() {
-    // 跳转到指南列表或详情页
-    // 假设有一个指南列表页，如果没有则暂时跳转到分类或保留为空
-    // wx.navigateTo({ url: '/pages/guide/list/list' });
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
+    // 跳转到治丧指南流程列表页
+    wx.navigateTo({
+      url: '/pages/process/list/list'
     });
   },
 

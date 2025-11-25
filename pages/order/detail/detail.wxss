@@ -159,6 +159,23 @@
   flex: 1;
 }
 
+.value-with-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.value-with-action .value {
+  flex: 1;
+  margin-right: 16rpx;
+}
+
+.value-with-action t-button {
+  flex-shrink: 0;
+  min-width: 120rpx;
+}
+
 .value.address {
   word-break: break-all;
 }

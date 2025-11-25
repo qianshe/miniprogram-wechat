@@ -5,6 +5,7 @@
       <view class="user-info">
         <text>{{address.userName}}</text>
         <text>{{address.telNumber}}</text>
+        <text class="default-tag" wx:if="{{address.isDefault}}">默认</text>
       </view>
       <view class="address-detail">{{address.fullAddress}}</view>
     </view>
@@ -51,5 +52,47 @@
     >
       提交订单
     </button>
+  </view>
+</view>
+
+<!-- 地址选择弹窗 - 放在根级别确保层级正确 -->
+<view class="address-modal-mask" wx:if="{{showAddressModal}}" bindtap="hideAddressModal"></view>
+<view class="address-modal" wx:if="{{showAddressModal}}" catchtap="preventBubble">
+  <view class="modal-header">
+    <text class="modal-title">选择收货地址</text>
+    <view class="modal-close" bindtap="hideAddressModal">X</view>
+  </view>
+  
+  <view class="modal-body">
+    <!-- 已保存的地址列表 -->
+    <view wx:if="{{addressList.length > 0}}" class="saved-address-list">
+      <view 
+        class="saved-address-item {{address.id === item.id ? 'selected' : ''}}" 
+        wx:for="{{addressList}}" 
+        wx:key="id"
+        bindtap="onSelectAddress"
+        data-index="{{index}}"
+      >
+        <view class="address-item-info">
+          <view class="address-item-header">
+            <text class="address-item-name">{{item.userName}}</text>
+            <text class="address-item-phone">{{item.telNumber}}</text>
+            <text class="address-item-tag" wx:if="{{item.isDefault}}">默认</text>
+          </view>
+          <view class="address-item-detail">{{item.fullAddress}}</view>
+        </view>
+        <view class="address-item-check" wx:if="{{address.id === item.id}}">V</view>
+      </view>
+    </view>
+    
+    <!-- 无地址提示 -->
+    <view wx:else class="no-saved-address">
+      <text>暂无保存的收货地址</text>
+    </view>
+  </view>
+  
+  <view class="modal-footer">
+    <view class="modal-btn wechat-btn" bindtap="useWechatAddress">使用微信地址</view>
+    <view class="modal-btn manage-btn" bindtap="goToAddressManage">管理地址</view>
   </view>
 </view>

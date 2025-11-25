@@ -356,8 +356,8 @@ module.exports = {
       cancelText: '取消',
       success(res) {
         if (res.confirm) {
-          wx.navigateTo({
-            url: '/pages/login/login'
+          wx.switchTab({
+            url: '/pages/user/user'
           });
           if (callback) callback(true);
         } else {

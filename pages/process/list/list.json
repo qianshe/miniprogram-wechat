@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "治丧指南",
+  "usingComponents": {
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-empty": "tdesign-miniprogram/empty/empty"
+  }
+}

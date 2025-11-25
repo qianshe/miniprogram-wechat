@@ -204,7 +204,8 @@ Page({
           productId: p.id,
           productName: p.name,
           price: p.price,
-          quantity: p.quantity
+          quantity: p.quantity,
+          productImage: p.image || ''
         })),
         totalAmount: this.data.totalAmount,
         remark: this.data.remark || ''
@@ -298,7 +299,8 @@ Page({
           id: product.id,
           name: product.name,
           price: (product.price / 100).toFixed(2),
-          stock: product.stock
+          stock: product.stock,
+          image: product.imageUrl || ''
         }));
 
         this.setData({

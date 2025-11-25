@@ -7,17 +7,20 @@ Page({
     goods: null,
     quantity: 1,
     showSkuPopup: false,
-    systemType: 'white'
+    systemType: 'white',
+    categoryName: ''
   },
 
   onLoad(options) {
-    const { id, systemType } = options;
+    const { id, systemType, categoryName } = options;
     const themeType = systemType || 'white';
+    const decodedCategoryName = categoryName ? decodeURIComponent(categoryName) : '';
 
     if (id) {
       this.setData({
         id,
-        systemType: themeType
+        systemType: themeType,
+        categoryName: decodedCategoryName
       });
       this.loadGoodsDetail(id);
     }

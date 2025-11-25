@@ -1,6 +1,8 @@
 const { api } = require('../../../utils/api.js');
 const validation = require('../../../utils/validation.js');
 
+const ADDRESS_STORAGE_KEY = 'addressList';
+
 Page({
   data: {
     orderItems: [],
@@ -9,21 +11,15 @@ Page({
     remarks: '',
     loading: false,
     errors: {},
-    systemType: 'white', // 默认为白事系统
-    themeColor: '#333333', // 默认主题色
-    defaultAddress: {
-      userName: '张三',
-      telNumber: '13800138000',
-      provinceName: '广东省',
-      cityName: '深圳市',
-      countyName: '南山区',
-      detailInfo: '科技园路888号',
-      fullAddress: '广东省深圳市南山区科技园路888号'
-    }
+    systemType: 'white',
+    themeColor: '#333333',
+    // 地址选择相关
+    showAddressModal: false,
+    addressList: [],
+    defaultAddress: null
   },
 
   onLoad(options) {
-    // 获取系统类型
     const systemType = options.systemType || 'white';
     const themeColor = systemType === 'red' ? '#d32f2f' : '#333333';
 
@@ -40,15 +36,70 @@ Page({
         systemType: data.systemType || systemType
       })
     })
-    // 设置默认地址
-    if (!this.data.address) {
-      this.setData({
-        address: this.data.defaultAddress
-      })
+    
+    // 加载地址列表并设置默认地址
+    this.loadAddressList();
+  },
+
+  onShow() {
+    // 非 tabBar 页面，隐藏 custom-tab-bar
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ show: false });
+    }
+    
+    // 每次显示页面时重新加载地址列表（用户可能在地址管理页面新增了地址）
+    this.loadAddressList();
+  },
+
+  // 加载本地存储的地址列表
+  loadAddressList() {
+    const addressList = wx.getStorageSync(ADDRESS_STORAGE_KEY) || [];
+    
+    // 转换地址格式（地址管理页面格式 -> 订单页面格式）
+    const formattedList = addressList.map(addr => ({
+      id: addr.id,
+      userName: addr.name,
+      telNumber: addr.phone,
+      provinceName: addr.province,
+      cityName: addr.city,
+      countyName: addr.district,
+      detailInfo: addr.detail,
+      fullAddress: `${addr.province}${addr.city}${addr.district}${addr.detail}`,
+      isDefault: addr.isDefault
+    }));
+    
+    this.setData({ addressList: formattedList });
+    
+    // 如果当前没有选中地址，自动选择默认地址或第一个地址
+    if (!this.data.address && formattedList.length > 0) {
+      const defaultAddr = formattedList.find(addr => addr.isDefault) || formattedList[0];
+      this.setData({ address: defaultAddr });
     }
   },
 
+  // 点击地址区域，显示地址选择弹窗
   selectAddress() {
+    this.setData({ showAddressModal: true });
+  },
+
+  // 关闭地址选择弹窗
+  hideAddressModal() {
+    this.setData({ showAddressModal: false });
+  },
+
+  // 选择地址项
+  onSelectAddress(e) {
+    const { index } = e.currentTarget.dataset;
+    const selectedAddress = this.data.addressList[index];
+    
+    this.setData({
+      address: selectedAddress,
+      showAddressModal: false
+    });
+  },
+
+  // 使用微信地址
+  useWechatAddress() {
     wx.chooseAddress({
       success: (res) => {
         this.setData({
@@ -60,13 +111,27 @@ Page({
             countyName: res.countyName,
             detailInfo: res.detailInfo,
             fullAddress: `${res.provinceName}${res.cityName}${res.countyName}${res.detailInfo}`
-          }
+          },
+          showAddressModal: false
         })
       },
       fail: (err) => {
-        console.error('选择地址失败：', err)
+        console.error('选择微信地址失败：', err)
       }
     })
+  },
+
+  // 跳转到地址管理页面
+  goToAddressManage() {
+    this.setData({ showAddressModal: false });
+    wx.navigateTo({
+      url: '/pages/address/address'
+    });
+  },
+
+  // 阻止弹窗点击事件冒泡
+  preventBubble() {
+    // 空方法，用于阻止事件冒泡
   },
 
   onRemarksChange(e) {
@@ -129,7 +194,8 @@ Page({
         productId: item.id,
         productName: item.name,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        productImage: item.image || ''
       })),
       totalAmount: this.data.totalAmount,
       address: this.data.address,

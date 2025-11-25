@@ -5,48 +5,56 @@
 <view class="side-bar-wrapper" style="height: calc(100vh - {{navbarHeight}}px)">
   <view class="side-bar">
     <view
-      class="side-bar-item {{sideBarIndex === (item.value || index) ? 'active' : ''}}"
+      class="side-bar-item {{sideBarIndex === index ? 'active' : ''}}"
       wx:for="{{categories}}"
-      wx:key="label"
+      wx:key="id"
       bindtap="onSideBarChange"
-      data-value="{{item.value || index}}"
+      data-index="{{index}}"
     >
       {{item.label}}
     </view>
   </view>
-  <view class="content" style="transform: translateY(-{{sideBarIndex * 100}}%)">
-    <scroll-view
-      wx:for="{{categories}}"
-      wx:key="label"
-      class="section"
-      scroll-y
-      scroll-top="{{scrollTop}}"
-      scroll-with-animation
-      show-scrollbar="{{true}}"
-      bindscrolltolower="onScrollToLower"
-      enable-flex
-      enhanced
-    >
-      <view class="title">{{item.title || item.label}}</view>
+  
+  <scroll-view
+    class="content"
+    scroll-y
+    scroll-top="{{scrollTop}}"
+    scroll-with-animation
+    show-scrollbar="{{true}}"
+    bindscrolltolower="onScrollToLower"
+    enable-flex
+    enhanced
+  >
+    <view class="section">
+      <view class="title">{{currentCategory.title || currentCategory.label}}</view>
       <view class="product-list">
-        <view class="product-item" wx:for="{{item.items}}" wx:key="index" wx:for-item="cargo" bindtap="onGoodsClick" data-id="{{cargo.id}}">
-          <image class="product-image" src="{{cargo.image}}" mode="aspectFill" binderror="onImageError" data-index="{{index}}" />
+        <view 
+          class="product-item" 
+          wx:for="{{products}}" 
+          wx:key="id" 
+          bindtap="onGoodsClick" 
+          data-id="{{item.id}}"
+        >
+          <image class="product-image" src="{{item.image}}" mode="aspectFill" binderror="onImageError" data-index="{{index}}" />
           <view class="product-info">
-            <text class="product-name">{{cargo.label}}</text>
-            <text class="product-price">{{cargo.displayPrice}}</text>
+            <text class="product-name">{{item.label}}</text>
+            <text class="product-price">{{item.displayPrice}}</text>
           </view>
         </view>
       </view>
       
-      <!-- 加载状态覆盖商品列表区域 -->
+      <!-- 加载状态 -->
       <view class="loading-status">
         <view class="loading-more" wx:if="{{loading}}">
           <text class="loading-text">加载中...</text>
         </view>
-        <view class="no-more" wx:elif="{{!item.hasMore}}">
+        <view class="no-more" wx:elif="{{!hasMore && products.length > 0}}">
           <text>没有更多商品</text>
         </view>
+        <view class="empty-tip" wx:elif="{{!loading && products.length === 0}}">
+          <text>暂无商品</text>
+        </view>
       </view>
-    </scroll-view>
-  </view>
+    </view>
+  </scroll-view>
 </view>

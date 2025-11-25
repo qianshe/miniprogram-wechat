@@ -99,17 +99,38 @@ const api = {
   
   getCategories: async (params) => {
     try {
-      // 暂时返回模拟分类数据
-      const mockCategories = [
-        { id: 0, name: '白事用品', sort: 1 },
-        { id: 1, name: '红事用品', sort: 2 }
-      ];
-      return mockCategories.filter(cat =>
-        params?.type === undefined || cat.id === params.type
-      );
+      // 调用分类管理云函数获取分类列表
+      const data = await callCloudFunction('categoryManagement', 'getCategories', {
+        type: params?.type,
+        page: params?.page || 1,
+        size: params?.size || 20,
+        status: params?.status !== undefined ? params.status : 1, // 默认只获取启用的分类
+        includeProductCount: params?.includeProductCount !== false // 默认统计商品数
+      });
+      return data.records; // 返回分类列表
     } catch (err) {
       console.error('获取分类失败:', err);
-      return [];
+      // 降级到模拟数据
+      const mockCategories = [
+        { id: 0, name: '白事用品', sort: 1, type: 'white' },
+        { id: 1, name: '红事用品', sort: 2, type: 'red' }
+      ];
+      return mockCategories.filter(cat =>
+        params?.type === undefined || cat.type === params.type
+      );
+    }
+  },
+
+  // 获取分类详情
+  getCategoryDetail: async (id) => {
+    try {
+      return await callCloudFunction('categoryManagement', 'getCategoryDetail', { 
+        id,
+        includeProductCount: true 
+      });
+    } catch (err) {
+      console.error('获取分类详情失败:', err);
+      return null;
     }
   },
 
@@ -359,6 +380,38 @@ const adminApi = {
 
   updateStock: async (productId, stock) => {
     return await callCloudFunction('productManagement', 'updateStock', { id: productId, stock, isAdmin: true });
+  },
+
+  // 分类管理 - 统一云函数调用
+  getCategories: async (params) => {
+    return await callCloudFunction('categoryManagement', 'getCategories', {
+      ...params,
+      includeProductCount: true
+    });
+  },
+
+  getCategoryDetail: async (id) => {
+    return await callCloudFunction('categoryManagement', 'getCategoryDetail', { 
+      id, 
+      includeProductCount: true 
+    });
+  },
+
+  createCategory: async (data) => {
+    return await callCloudFunction('categoryManagement', 'createCategory', { ...data, isAdmin: true });
+  },
+
+  updateCategory: async (id, data) => {
+    return await callCloudFunction('categoryManagement', 'updateCategory', { id, ...data, isAdmin: true });
+  },
+
+  deleteCategory: async (id) => {
+    return await callCloudFunction('categoryManagement', 'deleteCategory', { id, isAdmin: true });
+  },
+
+  // 分类数据迁移 - 将模拟数据迁移到数据库
+  migrateCategories: async () => {
+    return await callCloudFunction('categoryManagement', 'migrateCategories', { isAdmin: true });
   },
   
   // 订单管理 - 统一云函数调用

@@ -9,7 +9,7 @@ Page({
             price: '',
             originalPrice: '',
             stock: '',
-            categoryId: '',
+            category: '',  // 改为category，存储分类_id
             description: '',
             status: 1,
             thumb: ''
@@ -31,16 +31,19 @@ Page({
         }
     },
 
-    loadCategories() {
-        // 模拟分类数据，实际应从API获取
-        const categories = [
-            { label: '食品饮料', value: 1 },
-            { label: '服装鞋包', value: 2 },
-            { label: '美妆护肤', value: 3 },
-            { label: '家居日用', value: 4 },
-            { label: '数码电子', value: 5 }
-        ];
-        this.setData({ categories });
+    async loadCategories() {
+        try {
+            // 从云函数获取分类列表
+            const result = await adminApi.getCategories({ page: 1, size: 100 });
+            const categories = (result.records || []).map(cat => ({
+                label: cat.name,
+                value: cat._id  // 使用_id作为value
+            }));
+            this.setData({ categories });
+        } catch (error) {
+            console.error('加载分类失败:', error);
+            wx.showToast({ title: '加载分类失败', icon: 'none' });
+        }
     },
 
     async loadProductDetail(id) {
@@ -54,7 +57,7 @@ Page({
                     price: product.price,
                     originalPrice: product.originalPrice,
                     stock: product.stock,
-                    categoryId: product.categoryId,
+                    category: product.category,  // 使用category字段
                     description: product.description,
                     status: product.status,
                     thumb: product.thumb
@@ -63,7 +66,7 @@ Page({
             });
 
             // 设置选中的分类名称
-            const category = this.data.categories.find(c => c.value == product.categoryId);
+            const category = this.data.categories.find(c => c.value === product.category);
             if (category) {
                 this.setData({ selectedCategoryName: category.label });
             }
@@ -107,7 +110,7 @@ Page({
     onCategoryChange(e) {
         const { value, label } = e.detail;
         this.setData({
-            'formData.categoryId': value[0],
+            'formData.category': value[0],  // 改为category
             selectedCategoryName: label[0],
             categoryVisible: false
         });

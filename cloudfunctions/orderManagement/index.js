@@ -138,6 +138,33 @@ async function createOrder(data, context) {
     }
   }
   
+  // 从地址对象中提取联系信息
+  const addressObj = data.address || {};
+  let contactName = data.contactName || '';
+  let contactPhone = data.contactPhone || '';
+  let addressStr = data.addressString || '';
+  
+  // 如果地址是对象格式（来自地址选择弹窗），则提取信息
+  if (typeof addressObj === 'object' && addressObj !== null) {
+    // 提取联系人信息
+    contactName = contactName || addressObj.userName || addressObj.name || '';
+    contactPhone = contactPhone || addressObj.telNumber || addressObj.phone || '';
+    
+    // 格式化地址字符串
+    if (addressObj.fullAddress) {
+      addressStr = addressObj.fullAddress;
+    } else if (addressObj.provinceName || addressObj.province) {
+      const province = addressObj.provinceName || addressObj.province || '';
+      const city = addressObj.cityName || addressObj.city || '';
+      const county = addressObj.countyName || addressObj.district || '';
+      const detail = addressObj.detailInfo || addressObj.detail || '';
+      addressStr = `${province}${city}${county}${detail}`;
+    }
+  } else if (typeof addressObj === 'string') {
+    // 如果地址已经是字符串，直接使用
+    addressStr = addressObj;
+  }
+  
   // 构建订单数据
   const orderData = {
     orderNo,
@@ -151,17 +178,25 @@ async function createOrder(data, context) {
       productName: item.productName || item.name,
       price: Math.round((item.price || 0) * 100), // 转换为分
       quantity: item.quantity,
-      subtotal: Math.round((item.price || 0) * item.quantity * 100)
+      subtotal: Math.round((item.price || 0) * item.quantity * 100),
+      productImage: item.productImage || ''
     })),
-    contactName: data.contactName || '',
-    contactPhone: data.contactPhone || '',
+    contactName: contactName,
+    contactPhone: contactPhone,
     serviceTime: data.serviceTime || null,
-    address: data.address || '',
+    address: addressStr,
     remark: data.remark || '',
     waitForBind: data.waitForBind || false, // 是否等待用户绑定
     createTime: new Date(),
     updateTime: new Date()
   };
+  
+  console.log('订单数据准备完成:', {
+    orderNo,
+    contactName: orderData.contactName,
+    contactPhone: orderData.contactPhone,
+    address: orderData.address
+  });
   
   try {
     // 保存订单到数据库
@@ -277,7 +312,8 @@ async function getOrders(data, context) {
         records: orders,
         total: countResult.total,
         page,
-        size
+        size,
+        hasMore: orders.length === size
       }
     };
   } catch (error) {

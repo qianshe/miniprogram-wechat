@@ -7,6 +7,7 @@
     "pages/address/address",
     "pages/logs/logs",
     "pages/goods/detail/detail",
+    "pages/process/list/list",
     "pages/process/detail/detail",
     "pages/cart/cart",
     "pages/feedback/feedback",
@@ -23,6 +24,8 @@
     "pages/admin/order/qr-code/qr-code",
     "pages/admin/product/create/create",
     "pages/admin/product/edit/edit",
+    "pages/admin/category/list/list",
+    "pages/admin/category/edit/edit",
     "pages/scan-result/scan-result"
   ],
   "window": {

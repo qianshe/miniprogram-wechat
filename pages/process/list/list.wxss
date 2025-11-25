@@ -1,0 +1,123 @@
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
+  padding-bottom: 40rpx;
+}
+
+/* 页面头部 */
+.page-header {
+  background: linear-gradient(135deg, #333333 0%, #555555 100%);
+  padding: 60rpx 40rpx;
+  color: #ffffff;
+}
+
+.header-title {
+  font-size: 48rpx;
+  font-weight: bold;
+  margin-bottom: 16rpx;
+}
+
+.header-desc {
+  font-size: 28rpx;
+  opacity: 0.8;
+}
+
+/* 加载状态 */
+.loading-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 100rpx 0;
+}
+
+/* 步骤列表容器 */
+.steps-container {
+  padding: 30rpx;
+}
+
+/* 步骤卡片 */
+.step-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.step-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 步骤序号 */
+.step-index {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #333333 0%, #555555 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-right: 24rpx;
+}
+
+/* 步骤内容 */
+.step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 8rpx;
+}
+
+.step-desc {
+  font-size: 26rpx;
+  color: #888888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 箭头 */
+.step-arrow {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.arrow-icon {
+  font-size: 32rpx;
+  color: #cccccc;
+}
+
+/* 底部 */
+.page-footer {
+  text-align: center;
+  padding: 40rpx 30rpx;
+}
+
+.footer-text {
+  font-size: 26rpx;
+  color: #888888;
+  margin-bottom: 16rpx;
+}
+
+.footer-phone {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.footer-phone:active {
+  opacity: 0.7;
+}

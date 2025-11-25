@@ -35,8 +35,42 @@ Page({
       // 格式化数据
       const items = Array.isArray(orderData.items) ? orderData.items : [];
       const totalAmount = Number(orderData.totalAmount || 0);
+      
+      // 处理联系信息和地址的向后兼容
+      let contactName = orderData.contactName || '';
+      let contactPhone = orderData.contactPhone || '';
+      let addressStr = '';
+      
+      // 如果contactName为空，尝试从address对象中提取
+      const addressObj = orderData.address;
+      if (typeof addressObj === 'object' && addressObj !== null) {
+        // 从address对象中提取联系信息
+        if (!contactName) {
+          contactName = addressObj.userName || addressObj.name || '';
+        }
+        if (!contactPhone) {
+          contactPhone = addressObj.telNumber || addressObj.phone || '';
+        }
+        // 格式化地址字符串
+        if (addressObj.fullAddress) {
+          addressStr = addressObj.fullAddress;
+        } else if (addressObj.provinceName || addressObj.province) {
+          const province = addressObj.provinceName || addressObj.province || '';
+          const city = addressObj.cityName || addressObj.city || '';
+          const county = addressObj.countyName || addressObj.district || '';
+          const detail = addressObj.detailInfo || addressObj.detail || '';
+          addressStr = `${province}${city}${county}${detail}`;
+        }
+      } else if (typeof addressObj === 'string') {
+        // 地址已经是字符串格式
+        addressStr = addressObj;
+      }
+      
       const orderInfo = {
         ...orderData,
+        contactName: contactName,
+        contactPhone: contactPhone,
+        address: addressStr,
         statusText: statusInfo.text,
         statusDesc: statusInfo.desc,
         statusClass: statusInfo.class,
@@ -244,33 +278,35 @@ Page({
     // 获取订单中的商品信息
     const items = this.data.orderInfo.items;
     if (items && items.length > 0) {
-      // 将商品添加到购物车
-      const cart = wx.getStorageSync('cart') || [];
+      // 将商品添加到购物车（使用正确的缓存key: cartListLocal）
+      const cart = wx.getStorageSync('cartListLocal') || [];
       items.forEach(item => {
-        const existingItem = cart.find(i => i.productId === item.productId);
+        // 使用正确的字段名 id 来查找已存在的商品
+        const existingItem = cart.find(i => i.id === item.productId);
         if (existingItem) {
           existingItem.quantity += item.quantity;
         } else {
+          // 使用购物车期望的数据格式：id, name, price(数字), image, quantity
           cart.push({
-            productId: item.productId,
-            productName: item.productName,
-            productPrice: item.productPrice,
-            productImage: item.productImage,
+            id: item.productId,
+            name: item.productName,
+            price: Number(item.productPrice) || item.price || 0,
+            image: item.productImage,
             quantity: item.quantity
           });
         }
       });
-      wx.setStorageSync('cart', cart);
+      wx.setStorageSync('cartListLocal', cart);
       
       wx.showToast({
         title: '已添加到购物车',
         icon: 'success'
       });
       
-      // 跳转到购物车页面
+      // 跳转到购物车页面（修正路径）
       setTimeout(() => {
         wx.switchTab({
-          url: '/pages/cart/index'
+          url: '/pages/cart/cart'
         });
       }, 1500);
     }

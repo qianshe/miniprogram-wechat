@@ -1,0 +1,81 @@
+<view class="category-edit-container">
+  <t-cell-group>
+    <!-- 分类名称 -->
+    <t-cell title="分类名称" required>
+      <t-input
+        slot="note"
+        placeholder="请输入分类名称"
+        value="{{formData.name}}"
+        bind:change="onNameChange"
+        maxlength="20"
+      />
+    </t-cell>
+
+    <!-- 分类类型（新增时可选，编辑时不可修改） -->
+    <t-cell title="分类类型" required wx:if="{{!isEdit}}">
+      <view slot="note" class="type-radio">
+        <t-radio-group value="{{formData.type}}" bind:change="onTypeChange">
+          <t-radio value="white" label="白事" />
+          <t-radio value="red" label="红事" />
+        </t-radio-group>
+      </view>
+    </t-cell>
+    <t-cell title="分类类型" wx:else>
+      <text slot="note" class="type-text">{{formData.type === 'white' ? '白事' : '红事'}}（不可修改）</text>
+    </t-cell>
+
+    <!-- 排序 -->
+    <t-cell title="排序" description="数值越小越靠前">
+      <t-stepper
+        slot="note"
+        value="{{formData.sort}}"
+        min="1"
+        max="999"
+        bind:change="onSortChange"
+      />
+    </t-cell>
+
+    <!-- 分类描述 -->
+    <t-cell title="分类描述" bordered="{{false}}">
+      <t-textarea
+        slot="note"
+        placeholder="请输入分类描述（选填）"
+        value="{{formData.description}}"
+        bind:change="onDescriptionChange"
+        maxlength="200"
+        autosize
+      />
+    </t-cell>
+  </t-cell-group>
+
+  <!-- 分类状态（仅编辑时显示） -->
+  <t-cell-group wx:if="{{isEdit}}" class="status-group">
+    <t-cell title="分类状态">
+      <view slot="note" class="status-radio">
+        <t-radio-group value="{{formData.status}}" bind:change="onStatusChange">
+          <t-radio value="{{1}}" label="启用" />
+          <t-radio value="{{0}}" label="禁用" />
+        </t-radio-group>
+      </view>
+    </t-cell>
+  </t-cell-group>
+
+  <!-- 商品数量提示（仅编辑时显示） -->
+  <view class="product-count-tip" wx:if="{{isEdit && formData.productCount > 0}}">
+    该分类下有 {{formData.productCount}} 个商品
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-area">
+    <t-button
+      theme="primary"
+      size="large"
+      block
+      loading="{{isSubmitting}}"
+      disabled="{{isSubmitting}}"
+      bindtap="submitForm"
+    >
+      {{isEdit ? '保存修改' : '创建分类'}}
+    </t-button>
+  </view>
+</view>

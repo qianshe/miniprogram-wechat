@@ -1,0 +1,171 @@
+.admin-category-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding-bottom: 40rpx;
+}
+
+/* 页面头部 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  background-color: #fff;
+}
+
+.page-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16rpx;
+}
+
+/* 搜索框 */
+.search-container {
+  padding: 16rpx 32rpx;
+  background-color: #fff;
+  border-bottom: 1rpx solid #eee;
+}
+
+/* 类型筛选 */
+.type-filter {
+  display: flex;
+  padding: 20rpx 32rpx;
+  background-color: #fff;
+  border-bottom: 1rpx solid #eee;
+  gap: 24rpx;
+}
+
+.filter-item {
+  padding: 12rpx 32rpx;
+  font-size: 28rpx;
+  color: #666;
+  background-color: #f5f5f5;
+  border-radius: 32rpx;
+  transition: all 0.3s;
+}
+
+.filter-item.active {
+  color: #fff;
+  background-color: #0052d9;
+}
+
+/* 分类列表 */
+.category-list {
+  padding: 20rpx 32rpx;
+}
+
+.category-item {
+  margin-bottom: 20rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.category-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+}
+
+.category-main {
+  flex: 1;
+}
+
+.category-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.category-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.product-count {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.category-extra {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+}
+
+.category-sort {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.category-status {
+  font-size: 24rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.category-status.status-on {
+  color: #00a870;
+  background-color: rgba(0, 168, 112, 0.1);
+}
+
+.category-status.status-off {
+  color: #e34d59;
+  background-color: rgba(227, 77, 89, 0.1);
+}
+
+/* 滑动操作按钮 */
+.swipe-actions {
+  display: flex;
+  height: 100%;
+}
+
+.swipe-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160rpx;
+  height: 100%;
+  font-size: 28rpx;
+  color: #fff;
+}
+
+.edit-btn {
+  background-color: #0052d9;
+}
+
+.toggle-btn {
+  background-color: #fa9550;
+}
+
+.delete-btn {
+  background-color: #e34d59;
+}
+
+/* 加载更多 */
+.load-more {
+  padding: 32rpx;
+  text-align: center;
+}
+
+.loading {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.no-more {
+  padding: 32rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #999;
+}

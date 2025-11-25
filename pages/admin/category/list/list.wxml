@@ -1,0 +1,82 @@
+<view class="admin-category-container">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <view class="page-title">分类管理</view>
+    <view class="action-buttons">
+      <t-button theme="primary" size="small" bindtap="createCategory">新增分类</t-button>
+    </view>
+  </view>
+  
+  <!-- 搜索框 -->
+  <view class="search-container">
+    <t-search
+      placeholder="搜索分类名称"
+      bind:change="onSearchInput"
+      bind:submit="onSearchConfirm"
+      bind:clear="onSearchClear"
+      value="{{keyword}}"
+    />
+  </view>
+
+  <!-- 类型筛选 -->
+  <view class="type-filter">
+    <view class="filter-item {{currentType === '' ? 'active' : ''}}" bindtap="onTypeChange" data-type="">全部</view>
+    <view class="filter-item {{currentType === 'white' ? 'active' : ''}}" bindtap="onTypeChange" data-type="white">白事</view>
+    <view class="filter-item {{currentType === 'red' ? 'active' : ''}}" bindtap="onTypeChange" data-type="red">红事</view>
+  </view>
+  
+  <!-- 分类列表 -->
+  <view class="category-list">
+    <t-loading wx:if="{{isLoading && page === 1}}" text="加载中..." />
+    <t-empty wx:elif="{{categories.length === 0 && !isLoading}}" description="暂无分类数据" />
+    <block wx:else>
+      <view class="category-item" wx:for="{{categories}}" wx:key="_id">
+        <t-swipe-cell right="{{swipeActions}}">
+          <view class="category-content" bindtap="editCategory" data-id="{{item._id}}">
+            <view class="category-main">
+              <view class="category-name">{{item.name}}</view>
+              <view class="category-meta">
+                <t-tag size="small" theme="{{item.type === 'white' ? 'default' : 'danger'}}" variant="light">
+                  {{item.type === 'white' ? '白事' : '红事'}}
+                </t-tag>
+                <text class="product-count">商品数量: {{item.productCount || 0}}</text>
+              </view>
+            </view>
+            <view class="category-extra">
+              <view class="category-sort">排序: {{item.sort}}</view>
+              <view class="category-status {{item.status === 1 ? 'status-on' : 'status-off'}}">
+                {{item.status === 1 ? '启用' : '禁用'}}
+              </view>
+            </view>
+          </view>
+          <view slot="right" class="swipe-actions">
+            <view class="swipe-btn edit-btn" bindtap="editCategory" data-id="{{item._id}}">编辑</view>
+            <view class="swipe-btn toggle-btn" bindtap="toggleStatus" data-id="{{item._id}}" data-status="{{item.status}}">
+              {{item.status === 1 ? '禁用' : '启用'}}
+            </view>
+            <view class="swipe-btn delete-btn" bindtap="deleteCategory" data-id="{{item._id}}" data-name="{{item.name}}">删除</view>
+          </view>
+        </t-swipe-cell>
+      </view>
+      
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{isLoading && page > 1}}">
+        <view class="loading">加载中...</view>
+      </view>
+      <view class="no-more" wx:if="{{!hasMore && !isLoading && categories.length > 0}}">
+        没有更多分类了
+      </view>
+    </block>
+  </view>
+
+  <!-- 删除确认弹窗 -->
+  <t-dialog
+    visible="{{showDeleteDialog}}"
+    title="确认删除"
+    content="确定要删除分类「{{deleteCategoryName}}」吗？删除后该分类将被禁用。"
+    confirm-btn="确定"
+    cancel-btn="取消"
+    bind:confirm="confirmDelete"
+    bind:cancel="cancelDelete"
+  />
+</view>

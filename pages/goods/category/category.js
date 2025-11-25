@@ -1,16 +1,17 @@
 const { api, priceToYuan } = require('../../../utils/api.js');
-const mockData = require('../../../config/mock.js');
 const PAGE_SIZE = 15;
 
 Page({
-  offsetTopList: [],
   data: {
     sideBarIndex: 0,
     scrollTop: 0,
     categories: [],
-    navbarHeight: 0,
+    products: [],
+    currentCategory: null,
+    hasMore: true,
     currentPage: 1,
-    loading: false
+    loading: false,
+    navbarHeight: 0
   },
 
   onLoad() {
@@ -34,7 +35,10 @@ Page({
         sideBarIndex: 0,
         scrollTop: 0,
         currentPage: 1,
-        categories: []
+        categories: [],
+        products: [],
+        currentCategory: null,
+        hasMore: true
       }, () => {
         this.loadCategories();
       });
@@ -43,7 +47,7 @@ Page({
 
   async loadCategories() {
     try {
-      const type = this.data.systemType === 'red' ? 1 : 0;
+      const type = this.data.systemType || 'white';
       const categories = await api.getCategories({ type });
       
       const sortedCategories = categories
@@ -51,104 +55,55 @@ Page({
         .map(category => ({
           label: category.name,
           title: category.name,
-          id: category.id,
-          badgeProps: {},
-          items: [],
+          id: category._id
         }));
 
-      this.setData({ 
-        categories: sortedCategories,
-        loading: false
-      }, () => {
-        this.loadBatchProducts(0);
-      });
-    } catch (err) {
-      console.error("加载分类失败，使用mock数据:", err);
-      
-      const mockCategories = (this.data.systemType === 'red' ? 
-        mockData.redCategories : 
-        mockData.whiteCategories)
-        .map(category => ({
-          label: category.name,
-          title: category.name,
-          id: category.id,
-          badgeProps: {},
-          hasMore: false,
-          items: category.products.map(product => {
-            const parsedPrice = Number(priceToYuan(product.price) || 0);
-            return {
-              id: product.id,
-              label: product.name,
-              image: product.image,
-              price: parsedPrice,
-              displayPrice: parsedPrice.toFixed(2)
-            };
-          }),
-        }));
-
-      this.setData({ 
-        categories: mockCategories,
-        loading: false
-      });
-
-      wx.showToast({
-        title: '加载失败',
-        icon: 'none'
-      });
-      this.setData({ loading: false });
-    }
-  },
-
-  async loadBatchProducts(categoryIndex) {
-    if (this.data.loading) return;
-    this.setData({ loading: true });
-
-    const category = this.data.categories[categoryIndex];
-    try {
-      const products = await this.loadCategoryProductsAsync(
-        category.id,
-        this.data.currentPage,
-        PAGE_SIZE
-      );
-
-      if (products && products.length > 0) {
-        const newCategories = [...this.data.categories];
-        newCategories[categoryIndex].items = [
-          ...(newCategories[categoryIndex].items || []),
-          ...products
-        ];        
-
-        this.setData({
-          categories: newCategories,
-          currentPage: this.data.currentPage + 1,
+      if (sortedCategories.length > 0) {
+        this.setData({ 
+          categories: sortedCategories,
+          currentCategory: sortedCategories[0],
+          sideBarIndex: 0
+        }, () => {
+          this.loadProducts(true);
+        });
+      } else {
+        this.setData({ 
+          categories: [],
+          currentCategory: null,
+          products: [],
+          loading: false
         });
       }
-    } catch (error) {
-      console.error('加载商品失败:', error);
-    } finally {
-      this.setData({ loading: false });
+    } catch (err) {
+      console.error("加载分类失败:", err);
+      wx.showToast({
+        title: '加载分类失败',
+        icon: 'none'
+      });
+      this.setData({ 
+        categories: [],
+        products: [],
+        loading: false 
+      });
     }
   },
 
-  async loadCategoryProductsAsync(categoryId, page = 1, size = PAGE_SIZE) {
+  async loadProducts(isRefresh = false) {
+    if (this.data.loading) return;
+    if (!this.data.currentCategory) return;
+
+    const page = isRefresh ? 1 : this.data.currentPage;
+    
+    this.setData({ loading: true });
+
     try {
       const result = await api.getProducts({
         page,
-        size,
-        category: categoryId
+        size: PAGE_SIZE,
+        category: this.data.currentCategory.id
       });
 
-      const categoryIndex = this.data.categories.findIndex(cat => cat.id === categoryId);
-      if (categoryIndex !== -1 && this.data.categories[categoryIndex]) {
-        const currentItems = this.data.categories[categoryIndex].items || [];
-        const hasMore = result.total > currentItems.length + result.records.length;
-
-        const updatedCategories = [...this.data.categories];
-        updatedCategories[categoryIndex].hasMore = hasMore;
-        this.setData({ categories: updatedCategories });
-      }
-
-      return result.records.map(product => {
+      const newProducts = result.records.map(product => {
         const parsedPrice = Number(product.price || 0);
         return {
           id: product._id,
@@ -158,33 +113,49 @@ Page({
           displayPrice: parsedPrice.toFixed(2)
         };
       });
+
+      const products = isRefresh ? newProducts : [...this.data.products, ...newProducts];
+      const hasMore = result.total > products.length;
+
+      this.setData({
+        products,
+        hasMore,
+        currentPage: page + 1,
+        loading: false
+      });
     } catch (err) {
       console.error('加载商品失败:', err);
-      return [];
+      this.setData({ loading: false });
     }
   },
 
   onSideBarChange(e) {
-    const value = e.currentTarget.dataset.value;
+    const index = e.currentTarget.dataset.index;
+    if (index === this.data.sideBarIndex) return;
 
+    const category = this.data.categories[index];
+    
     this.setData({
-      sideBarIndex: value,
-      scrollTop: 0,
+      sideBarIndex: index,
+      currentCategory: category,
+      products: [],
+      hasMore: true,
       currentPage: 1,
+      scrollTop: 0
     }, () => {
-      this.loadBatchProducts(value);
+      this.loadProducts(true);
     });
   },
 
   onImageError(e) {
-    const index = e.currentTarget.dataset.index;
     // 图片加载失败，静默处理
   },
 
   onGoodsClick(e) {
     const { id } = e.currentTarget.dataset;
+    const categoryName = this.data.currentCategory ? this.data.currentCategory.label : '';
     wx.navigateTo({
-      url: `/pages/goods/detail/detail?id=${id}`,
+      url: `/pages/goods/detail/detail?id=${id}&categoryName=${encodeURIComponent(categoryName)}`,
       fail: (err) => {
         console.error('页面跳转失败:', err);
         wx.showToast({
@@ -196,9 +167,8 @@ Page({
   },
 
   onScrollToLower() {
-    if (this.data.categories[this.data.sideBarIndex].hasMore
-       && !this.data.loading) {
-      this.loadBatchProducts(this.data.sideBarIndex);
+    if (this.data.hasMore && !this.data.loading) {
+      this.loadProducts(false);
     }
   }
 });

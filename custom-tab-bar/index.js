@@ -3,7 +3,8 @@ Component({
   data: {
     index: 0,
     list: [],
-    ready: false
+    ready: false,
+    show: true  // 控制 tabbar 显示/隐藏，非 tabBar 页面可设置为 false
   },
 
   lifetimes: {

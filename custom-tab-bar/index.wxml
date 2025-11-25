@@ -1,5 +1,5 @@
 <!-- miniprogram/custom-tab-bar/index.wxml -->
-<view class="wrapper">
+<view class="wrapper" wx:if="{{show}}">
   <view class="tab-bar">
     <view 
       wx:for="{{list}}" 

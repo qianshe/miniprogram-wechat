@@ -1,0 +1,39 @@
+<view class="page">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <view class="header-title">治丧指南</view>
+    <view class="header-desc">专业指导，让您从容应对</view>
+  </view>
+
+  <!-- 加载状态 -->
+  <t-loading wx:if="{{loading}}" theme="circular" size="40rpx" loading class="loading-center" />
+
+  <!-- 步骤列表 -->
+  <view wx:elif="{{steps.length > 0}}" class="steps-container">
+    <view 
+      class="step-card" 
+      wx:for="{{steps}}" 
+      wx:key="_id"
+      bindtap="onStepClick"
+      data-step="{{item}}"
+    >
+      <view class="step-index">{{index + 1}}</view>
+      <view class="step-content">
+        <view class="step-title">{{item.title}}</view>
+        <view class="step-desc">{{item.description}}</view>
+      </view>
+      <view class="step-arrow">
+        <text class="arrow-icon">></text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 无数据显示 -->
+  <t-empty wx:else description="暂无流程数据" />
+
+  <!-- 底部提示 -->
+  <view class="page-footer" wx:if="{{steps.length > 0}}">
+    <view class="footer-text">如有疑问，请拨打24小时服务热线</view>
+    <view class="footer-phone" bindtap="onCallService">400-XXX-XXXX</view>
+  </view>
+</view>

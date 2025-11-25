@@ -33,7 +33,7 @@
     </view>
     <view class="info-item">
       <text class="label">分类</text>
-      <text class="value">{{goods.category === 0 ? '自营用品' : '自营用品'}}</text>
+      <text class="value">{{categoryName || '未分类'}}</text>
     </view>
   </view>
 

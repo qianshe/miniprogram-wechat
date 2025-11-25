@@ -62,9 +62,7 @@ page .round-image {
 .content {
   flex: 1;
   height: 100%;
-  overflow-y: auto;
   background: var(--card-bg);
-  position: relative;
   border-radius: 20rpx;
   box-shadow: var(--shadow-sm);
   border: 1rpx solid rgba(0, 0, 0, 0.04);
@@ -142,7 +140,7 @@ page .round-image {
 }
 
 .product-price::before {
-  content: '¥';
+  content: '\A5';
   font-size: 24rpx;
   margin-right: 2rpx;
 }
@@ -165,7 +163,11 @@ page .round-image {
   text-align: center;
 }
 
-.loading-text, .no-more {
+.loading-text, .no-more, .empty-tip {
   font-size: 24rpx;
   color: var(--text-sub);
+}
+
+.empty-tip {
+  padding: 60rpx 0;
 }
