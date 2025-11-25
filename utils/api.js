@@ -182,14 +182,38 @@ const api = {
   },
 
   getOrderDetail: async (orderNo, isAdmin = false) => {
-    console.log('[API] 调用getOrderDetail:', { orderNo, isAdmin });
     const result = await callCloudFunction('orderManagement', 'getOrderDetail', { orderNo, isAdmin });
-    console.log('[API] getOrderDetail返回结果:', result);
     return result;
   },
 
   getUserOrders: async (params) => {
     return await callCloudFunction('orderManagement', 'getOrders', { ...params, isAdmin: false });
+  },
+
+  // 取消订单 - 调用云函数更新状态为已取消(4)
+  cancelOrder: async (orderNo) => {
+    return await callCloudFunction('orderManagement', 'updateOrderStatus', { 
+      orderNo, 
+      status: 4,  // CANCELLED
+      isAdmin: false 
+    });
+  },
+
+  // 支付订单 - 调用云函数更新状态为已支付(1)
+  payOrder: async (orderNo) => {
+    return await callCloudFunction('orderManagement', 'updateOrderStatus', { 
+      orderNo, 
+      status: 1,  // PAID
+      isAdmin: false 
+    });
+  },
+
+  // 删除订单 - 调用云函数删除订单
+  deleteOrder: async (orderNo) => {
+    return await callCloudFunction('orderManagement', 'deleteOrder', { 
+      orderNo, 
+      isAdmin: false 
+    });
   },
 
   // 流程步骤 - 统一云函数调用

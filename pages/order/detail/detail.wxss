@@ -1,11 +1,12 @@
 .container {
-  padding-bottom: 120rpx;
+  padding-bottom: 150rpx;
   background: var(--bg-color);
   min-height: 100vh;
 }
 
 .order-detail {
   padding: 20rpx;
+  padding-bottom: 200rpx;
 }
 
 /* 状态栏 */

@@ -179,6 +179,12 @@ page {
   font-size: 30rpx;
 }
 
+.icon-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #b8865c;
+}
+
 .item-title {
   font-size: 30rpx;
   font-weight: 600;

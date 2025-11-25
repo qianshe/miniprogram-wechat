@@ -178,7 +178,7 @@ Page({
 
   onImageError(e) {
     const index = e.currentTarget.dataset.index;
-    console.log('图片加载失败，使用默认图片:', index);
+    // 图片加载失败，静默处理
   },
 
   onGoodsClick(e) {

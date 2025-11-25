@@ -22,7 +22,6 @@ App({
         env: cloudConfig.envId,
         ...cloudConfig.options
       })
-      console.log('云开发初始化成功')
     }
 
     // 展示本地存储能力
@@ -57,7 +56,6 @@ App({
     try {
       const auth = require('./utils/auth.js');
       auth.setupSecurityEnvironment();
-      console.log('Security environment initialized');
     } catch (error) {
       console.error('Failed to initialize security environment:', error);
     }
@@ -88,7 +86,6 @@ App({
     wx.getNetworkType({
       success: (res) => {
         this.globalData.networkStatus = res.networkType;
-        console.log('Current network type:', res.networkType);
       }
     });
 
@@ -123,9 +120,7 @@ App({
     const updateManager = wx.getUpdateManager();
 
     updateManager.onCheckForUpdate((res) => {
-      if (res.hasUpdate) {
-        console.log('发现新版本');
-      }
+      // 静默检查更新
     });
 
     updateManager.onUpdateReady(() => {
@@ -199,8 +194,6 @@ App({
           console.warn(`Failed to clear cache ${key}:`, err);
         }
       });
-
-      console.log('Cache cleared successfully');
     } catch (err) {
       console.error('Failed to clear cache:', err);
     }
@@ -227,8 +220,6 @@ App({
       this.globalData.userInfo = null;
       this.globalData.isAdmin = false;
       this.globalData.currentTabIndex = 0;
-
-      console.log('User logged out successfully');
     } catch (err) {
       console.error('Logout failed:', err);
     }

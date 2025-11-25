@@ -144,6 +144,12 @@ Page({
 
       const { orderNo } = data;
 
+      // 订单创建成功后，清除已下单的商品
+      const orderedItemIds = this.data.orderItems.map(item => item.id);
+      const cartItems = wx.getStorageSync('cartListLocal') || [];
+      const updatedCartItems = cartItems.filter(item => !orderedItemIds.includes(item.id));
+      wx.setStorageSync('cartListLocal', updatedCartItems);
+
       wx.showToast({
         title: '订单提交成功',
         icon: 'success',

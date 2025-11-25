@@ -282,3 +282,16 @@
   font-size: 28rpx;
   color: var(--text-sub);
 }
+
+/* TDesign Button WeChat Green Override */
+.footer t-button[theme="primary"] {
+  --td-button-primary-bg-color: var(--wechat-green);
+  --td-button-primary-border-color: var(--wechat-green);
+  --td-button-primary-active-bg-color: var(--wechat-green-dark);
+  --td-button-primary-active-border-color: var(--wechat-green-dark);
+}
+
+.footer t-button[theme="primary"][disabled] {
+  --td-button-primary-disabled-bg: #ccc;
+  --td-button-primary-disabled-border-color: #ccc;
+}

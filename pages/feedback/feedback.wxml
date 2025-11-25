@@ -1,29 +1,8 @@
-
 <view class="feedback-container">
-  <t-cell-group>
-    <t-textarea
-      label="问题描述"
-      placeholder="请详细描述您遇到的问题"
-      maxlength="500"
-      indicator
-      bind:change="onContentChange"
-      value="{{content}}"
-    />
-    <t-upload
-      media-type="{{['image']}}"
-      max="9"
-      files="{{fileList}}"
-      bind:success="handleSuccess"
-      bind:remove="handleRemove"
-    />
-    <t-input
-      label="联系方式"
-      placeholder="请输入您的联系方式"
-      bind:change="onContactChange"
-      value="{{contact}}"
-    />
-  </t-cell-group>
-  <view class="submit-button">
-    <t-button theme="primary" size="large" bind:tap="submitFeedback">提交反馈</t-button>
+  <view class="qrcode-section">
+    <view class="qrcode-title">加入用户交流群</view>
+    <view class="qrcode-desc">扫描下方二维码，加入微信群与我们直接沟通</view>
+    <image class="qrcode-image" src="/assets/images/wechat-group-qrcode.png" mode="aspectFit" show-menu-by-longpress="{{true}}"></image>
+    <view class="qrcode-tip">长按图片可保存或识别二维码</view>
   </view>
 </view>

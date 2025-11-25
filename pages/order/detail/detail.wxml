@@ -20,13 +20,13 @@
         <text class="timeline-text">支付</text>
         <text class="timeline-time" wx:if="{{orderInfo.status >= 1}}">{{orderInfo.payTime || '-'}}</text>
       </view>
-      <view class="timeline-line {{orderInfo.status >= 1 && orderInfo.status !== 2 && orderInfo.status !== 3 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.status >= 1 && orderInfo.status !== 2 && orderInfo.status !== 3 ? 'active' : ''}}">
+      <view class="timeline-line {{orderInfo.status >= 2 && orderInfo.status !== 4 ? 'active' : ''}}"></view>
+      <view class="timeline-item {{orderInfo.status >= 2 && orderInfo.status !== 4 ? 'active' : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">服务中</text>
       </view>
-      <view class="timeline-line {{orderInfo.status >= 1 && orderInfo.status !== 2 && orderInfo.status !== 3 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.status >= 1 && orderInfo.status !== 2 && orderInfo.status !== 3 ? 'active' : ''}}">
+      <view class="timeline-line {{orderInfo.status >= 3 && orderInfo.status !== 4 ? 'active' : ''}}"></view>
+      <view class="timeline-item {{orderInfo.status >= 3 && orderInfo.status !== 4 ? 'active' : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">完成</text>
       </view>
@@ -109,24 +109,16 @@
       <view class="remark">{{orderInfo.remark}}</view>
     </view>
 
-    <view class="section" wx:if="{{orderInfo.qrCodeUrl}}">
-      <view class="section-title">订单二维码</view>
-      <view class="qrcode-container">
-        <image class="qrcode-image" src="{{orderInfo.qrCodeUrl}}" mode="aspectFit"></image>
-        <view class="qrcode-tip">凭此二维码到店核销</view>
-      </view>
-    </view>
-
     <view class="actions">
       <block wx:if="{{orderInfo.status === 0}}">
         <t-button theme="default" bindtap="handleCancel">取消订单</t-button>
         <t-button theme="primary" bindtap="handlePay">立即支付</t-button>
       </block>
-      <block wx:elif="{{orderInfo.status === 1}}">
+      <block wx:elif="{{orderInfo.status === 1 || orderInfo.status === 2}}">
         <t-button theme="default" bindtap="contactService">联系客服</t-button>
         <t-button theme="danger" bindtap="applyRefund">申请退款</t-button>
       </block>
-      <block wx:elif="{{orderInfo.status === 2 || orderInfo.status === 3}}">
+      <block wx:elif="{{orderInfo.status === 3 || orderInfo.status === 4}}">
         <t-button theme="default" bindtap="deleteOrder">删除订单</t-button>
         <t-button theme="primary" bindtap="rebuyOrder">再次购买</t-button>
       </block>

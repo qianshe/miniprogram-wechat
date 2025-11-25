@@ -15,6 +15,10 @@ page {
   --shadow-md: 0 10rpx 28rpx rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 16rpx 48rpx rgba(0, 0, 0, 0.12);
   
+  /* WeChat Green Theme */
+  --wechat-green: #07C160;
+  --wechat-green-dark: #06AD56;
+  
   background-color: var(--bg-color);
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
     Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB', 'Microsoft Yahei',

@@ -284,8 +284,6 @@
 
 
 
-
-
 /* TDesign弹窗内容样式 */
 .popup-content {
   background: #fff;
@@ -313,4 +311,17 @@
   font-size: 28rpx;
   color: #ff4d4f;
   font-weight: bold;
+}
+
+/* TDesign Button WeChat Green Override */
+.bottom-bar t-button[theme="primary"] {
+  --td-button-primary-bg-color: var(--wechat-green);
+  --td-button-primary-border-color: var(--wechat-green);
+  --td-button-primary-active-bg-color: var(--wechat-green-dark);
+  --td-button-primary-active-border-color: var(--wechat-green-dark);
+}
+
+.bottom-bar t-button[theme="primary"][disabled] {
+  --td-button-primary-disabled-bg: #ccc;
+  --td-button-primary-disabled-border-color: #ccc;
 }

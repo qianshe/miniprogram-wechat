@@ -70,6 +70,12 @@ Page({
     });
   },
 
+  toAddress() {
+    wx.navigateTo({
+      url: '/pages/address/address'
+    });
+  },
+
   toFeedback() {
     wx.navigateTo({
       url: '/pages/feedback/feedback'

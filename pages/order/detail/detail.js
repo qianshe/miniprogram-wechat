@@ -26,21 +26,15 @@ Page({
   },
 
   async loadOrderDetail() {
-    console.log('[订单详情页] 开始加载订单详情:', {
-      orderNo: this.data.orderNo,
-      isAdmin: this.data.isAdmin || false,
-      timestamp: new Date().toISOString()
-    });
-
     try {
       // 调用统一API获取订单详情
       const orderData = await api.getOrderDetail(this.data.orderNo, this.data.isAdmin || false);
-      console.log('[订单详情页] API调用成功，返回数据:', orderData);
 
       const statusInfo = this.getStatusInfo(orderData.status);
-      console.log('[订单详情页] 状态信息:', statusInfo);
 
       // 格式化数据
+      const items = Array.isArray(orderData.items) ? orderData.items : [];
+      const totalAmount = Number(orderData.totalAmount || 0);
       const orderInfo = {
         ...orderData,
         statusText: statusInfo.text,
@@ -49,13 +43,8 @@ Page({
         createdTime: this.formatDate(orderData.createTime),
         serviceTime: this.formatDate(orderData.serviceTime),
         payTime: orderData.payTime ? this.formatDate(orderData.payTime) : '',
-        totalAmount: orderData.totalAmount.toFixed(2), // 云函数已转换为元
-        items: orderData.items.map((item, index) => {
-          console.log(`[订单详情页] 格式化商品项 ${index + 1}:`, {
-            原始: item,
-            格式化后价格: item.price.toFixed(2),
-            格式化后小计: item.subtotal.toFixed(2)
-          });
+        totalAmount: totalAmount.toFixed(2), // 云函数已转换为元
+        items: items.map((item) => {
           return {
             ...item,
             productPrice: item.price.toFixed(2),
@@ -63,14 +52,6 @@ Page({
           };
         })
       };
-
-      console.log('[订单详情页] 最终格式化数据:', {
-        orderNo: orderInfo.orderNo,
-        totalAmount: orderInfo.totalAmount,
-        itemCount: orderInfo.items.length,
-        status: orderInfo.status,
-        statusText: orderInfo.statusText
-      });
 
       this.setData({
         orderInfo,
@@ -101,7 +82,6 @@ Page({
 
 
 
-
   getStatusInfo(status) {
     const statusInfo = {
       0: {
@@ -111,18 +91,23 @@ Page({
       },
       1: {
         text: '已支付',
-        desc: '我们会尽快为您安排服务',
+        desc: '我们将尽快为您安排服务',
         class: 'paid'
       },
       2: {
+        text: '处理中',
+        desc: '服务进行中，请留意通知',
+        class: 'processing'
+      },
+      3: {
+        text: '已完成',
+        desc: '服务已完成，感谢使用',
+        class: 'completed'
+      },
+      4: {
         text: '已取消',
         desc: '订单已取消',
         class: 'cancelled'
-      },
-      3: {
-        text: '已退款',
-        desc: '退款已完成',
-        class: 'refunded'
       }
     };
     return statusInfo[status] || {
@@ -191,40 +176,18 @@ Page({
       success: async (res) => {
         if (res.confirm) {
           try {
-            // 尝试从服务器申请退款
-            try {
-              const res = await request.post(`/api/orders/${this.data.orderNo}/refund`);
-              if (res.code === 200) {
-                wx.showToast({
-                  title: '退款申请已提交',
-                  icon: 'success'
-                });
-                // 重新加载订单详情
-                this.loadOrderDetail();
-              }
-            } catch (err) {
-              console.error('从服务器申请退款失败:', err);
-              
-              // 从本地存储更新订单状态
-              const orders = wx.getStorageSync('orders') || [];
-              const orderIndex = orders.findIndex(o => o.orderNo === this.data.orderNo);
-              
-              if (orderIndex !== -1) {
-                orders[orderIndex].status = 3; // 已退款
-                wx.setStorageSync('orders', orders);
-                
-                wx.showToast({
-                  title: '退款申请已提交',
-                  icon: 'success'
-                });
-                
-                // 重新加载订单详情
-                this.loadOrderDetail();
-              }
-            }
-          } catch (err) {
+            // 调用云函数取消订单（退款等同于取消）
+            await api.cancelOrder(this.data.orderNo);
             wx.showToast({
-              title: '申请退款失败',
+              title: '退款申请已提交',
+              icon: 'success'
+            });
+            // 重新加载订单详情
+            this.loadOrderDetail();
+          } catch (err) {
+            console.error('申请退款失败:', err);
+            wx.showToast({
+              title: err.message || '申请退款失败',
               icon: 'none'
             });
           }
@@ -241,41 +204,33 @@ Page({
       success: async (res) => {
         if (res.confirm) {
           try {
-            // 尝试从服务器删除订单
-            try {
-              const res = await request.delete(`/api/orders/${this.data.orderNo}`);
-              if (res.code === 200) {
-                wx.showToast({
-                  title: '订单已删除',
-                  icon: 'success'
-                });
-                
-                // 返回订单列表页
-                setTimeout(() => {
-                  wx.navigateBack();
-                }, 1500);
-              }
-            } catch (err) {
-              console.error('从服务器删除订单失败:', err);
-              
-              // 从本地存储删除订单
-              const orders = wx.getStorageSync('orders') || [];
-              const newOrders = orders.filter(o => o.orderNo !== this.data.orderNo);
-              wx.setStorageSync('orders', newOrders);
-              
-              wx.showToast({
-                title: '订单已删除',
-                icon: 'success'
-              });
-              
-              // 返回订单列表页
-              setTimeout(() => {
-                wx.navigateBack();
-              }, 1500);
-            }
-          } catch (err) {
+            // 调用云函数删除订单
+            await api.deleteOrder(this.data.orderNo);
+            
             wx.showToast({
-              title: '删除订单失败',
+              title: '订单已删除',
+              icon: 'success'
+            });
+            
+            // 获取页面栈，刷新订单列表页数据
+            const pages = getCurrentPages();
+            const prevPage = pages[pages.length - 2];
+            if (prevPage && prevPage.loadOrders) {
+              prevPage.setData({
+                'pagination.page': 1,
+                orders: []
+              });
+              prevPage.loadOrders();
+            }
+            
+            // 返回订单列表页
+            setTimeout(() => {
+              wx.navigateBack();
+            }, 1500);
+          } catch (err) {
+            console.error('删除订单失败:', err);
+            wx.showToast({
+              title: err.message || '删除订单失败',
               icon: 'none'
             });
           }
@@ -328,40 +283,18 @@ Page({
 
   async handleCancel() {
     try {
-      // 尝试从服务器取消订单
-      try {
-        const res = await request.post(`/api/orders/${this.data.orderNo}/cancel`);
-        if (res.code === 200) {
-          wx.showToast({
-            title: '订单已取消',
-            icon: 'success'
-          });
-          // 重新加载订单详情
-          this.loadOrderDetail();
-        }
-      } catch (err) {
-        console.error('从服务器取消订单失败:', err);
-        
-        // 从本地存储更新订单状态
-        const orders = wx.getStorageSync('orders') || [];
-        const orderIndex = orders.findIndex(o => o.orderNo === this.data.orderNo);
-        
-        if (orderIndex !== -1) {
-          orders[orderIndex].status = 2; // 已取消
-          wx.setStorageSync('orders', orders);
-          
-          wx.showToast({
-            title: '订单已取消',
-            icon: 'success'
-          });
-          
-          // 重新加载订单详情
-          this.loadOrderDetail();
-        }
-      }
-    } catch (err) {
+      // 调用云函数取消订单
+      await api.cancelOrder(this.data.orderNo);
       wx.showToast({
-        title: '取消订单失败',
+        title: '订单已取消',
+        icon: 'success'
+      });
+      // 重新加载订单详情
+      this.loadOrderDetail();
+    } catch (err) {
+      console.error('取消订单失败:', err);
+      wx.showToast({
+        title: err.message || '取消订单失败',
         icon: 'none'
       });
     }
@@ -369,41 +302,18 @@ Page({
 
   async handlePay() {
     try {
-      // 尝试从服务器支付订单
-      try {
-        const res = await request.post(`/api/orders/${this.data.orderNo}/pay`);
-        if (res.code === 200) {
-          wx.showToast({
-            title: '支付成功',
-            icon: 'success'
-          });
-          // 重新加载订单详情
-          this.loadOrderDetail();
-        }
-      } catch (err) {
-        console.error('从服务器支付订单失败:', err);
-        
-        // 从本地存储更新订单状态
-        const orders = wx.getStorageSync('orders') || [];
-        const orderIndex = orders.findIndex(o => o.orderNo === this.data.orderNo);
-        
-        if (orderIndex !== -1) {
-          orders[orderIndex].status = 1; // 已支付
-          orders[orderIndex].payTime = new Date().toISOString(); // 添加支付时间
-          wx.setStorageSync('orders', orders);
-          
-          wx.showToast({
-            title: '支付成功',
-            icon: 'success'
-          });
-          
-          // 重新加载订单详情
-          this.loadOrderDetail();
-        }
-      }
-    } catch (err) {
+      // 调用云函数支付订单
+      await api.payOrder(this.data.orderNo);
       wx.showToast({
-        title: '支付失败',
+        title: '支付成功',
+        icon: 'success'
+      });
+      // 重新加载订单详情
+      this.loadOrderDetail();
+    } catch (err) {
+      console.error('支付订单失败:', err);
+      wx.showToast({
+        title: err.message || '支付失败',
         icon: 'none'
       });
     }

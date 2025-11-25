@@ -2,7 +2,7 @@
   <!-- 搜索框 -->
   <view class="search-container">
     <t-search
-      placeholder="搜索订单号或联系人"
+      placeholder="搜索订单号"
       value="{{searchKeyword}}"
       bind:change="onSearchChange"
       bind:submit="onSearchConfirm"
@@ -80,7 +80,9 @@
   </view>
 
   <view class="order-list">
-    <t-loading wx:if="{{loading}}" text="加载中..." />
+    <view class="loading-wrapper" wx:if="{{loading}}">
+      <view class="loading-text">加载中...</view>
+    </view>
     <t-empty wx:elif="{{!orders.length}}" description="暂无订单" />
     <view class="orders" wx:else>
       <view class="order-item"
@@ -94,16 +96,12 @@
         </view>
         <view class="order-info">
           <view class="info-row">
-            <text class="label">联系人：</text>
-            <text>{{item.contactName}}</text>
-          </view>
-          <view class="info-row">
-            <text class="label">服务时间：</text>
-            <text>{{item.serviceTime}}</text>
-          </view>
-          <view class="info-row">
             <text class="label">创建时间：</text>
             <text>{{item.createdTime}}</text>
+          </view>
+          <view class="info-row" wx:if="{{item.status === 'completed' && item.completedTime}}">
+            <text class="label">完成时间：</text>
+            <text>{{item.completedTime}}</text>
           </view>
         </view>
         <view class="order-footer">

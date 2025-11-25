@@ -59,6 +59,9 @@ exports.main = async (event, context) => {
       case 'bindOrder':
         result = await bindOrder(data, context);
         break;
+      case 'deleteOrder':
+        result = await deleteOrder(data, context);
+        break;
       default:
         result = {
           code: 400,
@@ -437,6 +440,7 @@ async function getOrderDetail(data, context) {
  * 更新订单状态
  */
 async function updateOrderStatus(data, context) {
+  const { OPENID } = cloud.getWXContext();
   const { orderNo, status, isAdmin = false } = data;
   
   if (!orderNo || status === undefined) {
@@ -455,33 +459,77 @@ async function updateOrderStatus(data, context) {
     };
   }
   
-  if (!isAdmin) {
-    return {
-      code: 403,
-      message: '无权限执行此操作'
-    };
-  }
-  
   try {
-    // 支持通过_id或orderNo更新
+    // 支持通过_id或orderNo查询
     const whereCondition = _.or([
       { _id: orderNo },
       { orderNo: orderNo }
     ]);
 
+    // 先查询订单
+    const orderResult = await db.collection('orders').where(whereCondition).get();
+    
+    if (orderResult.data.length === 0) {
+      return {
+        code: 404,
+        message: '订单不存在'
+      };
+    }
+
+    const order = orderResult.data[0];
+    const targetStatus = parseInt(status);
+
+    // 权限检查
+    if (!isAdmin) {
+      // 普通用户只能操作自己的订单
+      if (order.userOpenid !== OPENID) {
+        return {
+          code: 403,
+          message: '无权限操作此订单'
+        };
+      }
+      
+      // 普通用户只能进行特定状态变更
+      // 1. 取消待支付订单: PENDING(0) -> CANCELLED(4)
+      // 2. 支付待支付订单: PENDING(0) -> PAID(1) (模拟支付)
+      const allowedTransitions = [
+        { from: ORDER_STATUS.PENDING, to: ORDER_STATUS.CANCELLED },
+        { from: ORDER_STATUS.PENDING, to: ORDER_STATUS.PAID }
+      ];
+      
+      const isAllowed = allowedTransitions.some(
+        t => t.from === order.status && t.to === targetStatus
+      );
+      
+      if (!isAllowed) {
+        return {
+          code: 403,
+          message: '无权限执行此状态变更'
+        };
+      }
+    }
+
+    // 执行更新
+    const updateData = {
+      status: targetStatus,
+      updateTime: new Date()
+    };
+    
+    // 如果是支付操作，添加支付时间
+    if (targetStatus === ORDER_STATUS.PAID) {
+      updateData.payTime = new Date();
+    }
+
     const result = await db.collection('orders')
       .where(whereCondition)
       .update({
-        data: {
-          status: parseInt(status),
-          updateTime: new Date()
-        }
+        data: updateData
       });
     
     if (result.stats.updated === 0) {
       return {
-        code: 404,
-        message: '订单不存在'
+        code: 500,
+        message: '更新订单状态失败'
       };
     }
     
@@ -543,6 +591,83 @@ async function bindOrder(data, context) {
     return {
       code: 500,
       message: '绑定订单失败'
+    };
+  }
+}
+
+/**
+ * 删除订单
+ */
+async function deleteOrder(data, context) {
+  const { OPENID } = cloud.getWXContext();
+  const { orderNo, isAdmin = false } = data;
+
+  if (!orderNo) {
+    return {
+      code: 400,
+      message: '订单号不能为空'
+    };
+  }
+
+  try {
+    // 支持通过_id或orderNo查询
+    const whereCondition = _.or([
+      { _id: orderNo },
+      { orderNo: orderNo }
+    ]);
+
+    // 先查询订单
+    const orderResult = await db.collection('orders').where(whereCondition).get();
+
+    if (orderResult.data.length === 0) {
+      return {
+        code: 404,
+        message: '订单不存在'
+      };
+    }
+
+    const order = orderResult.data[0];
+
+    // 权限检查
+    if (!isAdmin) {
+      // 普通用户只能删除自己的订单
+      if (order.userOpenid !== OPENID) {
+        return {
+          code: 403,
+          message: '无权限删除此订单'
+        };
+      }
+
+      // 普通用户只能删除已取消或已完成的订单
+      if (order.status !== ORDER_STATUS.CANCELLED && order.status !== ORDER_STATUS.COMPLETED) {
+        return {
+          code: 403,
+          message: '只能删除已取消或已完成的订单'
+        };
+      }
+    }
+
+    // 执行删除
+    const deleteResult = await db.collection('orders').where(whereCondition).remove();
+
+    if (deleteResult.stats.removed === 0) {
+      return {
+        code: 500,
+        message: '删除订单失败'
+      };
+    }
+
+    console.log('订单删除成功:', { orderNo, deletedCount: deleteResult.stats.removed });
+
+    return {
+      code: 200,
+      message: '订单删除成功'
+    };
+  } catch (error) {
+    console.error('删除订单失败:', error);
+    return {
+      code: 500,
+      message: '删除订单失败'
     };
   }
 }

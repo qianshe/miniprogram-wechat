@@ -20,48 +20,69 @@
     <view class="card-list" wx:if="{{hasUserInfo}}">
       <view class="list-item" wx:if="{{!isAdmin}}" bindtap="toOrders">
         <view class="item-left">
-          <view class="item-icon">🧾</view>
+          <view class="item-icon">
+            <text class="icon-text">单</text>
+          </view>
           <view class="item-title">我的订单</view>
         </view>
-        <view class="item-arrow">›</view>
+        <view class="item-arrow">></view>
+      </view>
+      <view class="list-item" wx:if="{{!isAdmin}}" bindtap="toAddress">
+        <view class="item-left">
+          <view class="item-icon">
+            <text class="icon-text">址</text>
+          </view>
+          <view class="item-title">收货地址管理</view>
+        </view>
+        <view class="item-arrow">></view>
       </view>
       <view class="list-item" bindtap="toFeedback">
         <view class="item-left">
-          <view class="item-icon">💬</view>
+          <view class="item-icon">
+            <text class="icon-text">馈</text>
+          </view>
           <view class="item-title">意见反馈</view>
         </view>
-        <view class="item-arrow">›</view>
+        <view class="item-arrow">></view>
       </view>
       <view class="list-item" bindtap="toCreateOrder">
         <view class="item-left">
-          <view class="item-icon">➕</view>
+          <view class="item-icon">
+            <text class="icon-text">建</text>
+          </view>
           <view class="item-title">创建订单（admin）</view>
         </view>
-        <view class="item-arrow">›</view>
+        <view class="item-arrow">></view>
       </view>
       <view class="list-item" bindtap="toManagePage">
         <view class="item-left">
-          <view class="item-icon">🗂</view>
+          <view class="item-icon">
+            <text class="icon-text">管</text>
+          </view>
           <view class="item-title">管理页面（admin）</view>
         </view>
-        <view class="item-arrow">›</view>
+        <view class="item-arrow">></view>
       </view>
       <view class="list-item" bindtap="toIndexHome">
         <view class="item-left">
-          <view class="item-icon">🏠</view>
+          <view class="item-icon">
+            <text class="icon-text">首</text>
+          </view>
           <view class="item-title">返回首页</view>
         </view>
-        <view class="item-arrow">›</view>
+        <view class="item-arrow">></view>
       </view>
     </view>
 
     <view class="card-list" wx:if="{{!hasUserInfo}}">
       <view class="list-item" bindtap="toIndexHome">
         <view class="item-left">
-          <view class="item-icon">🏠</view>
+          <view class="item-icon">
+            <text class="icon-text">首</text>
+          </view>
           <view class="item-title">返回首页</view>
         </view>
-        <view class="item-arrow">›</view>
+        <view class="item-arrow">></view>
       </view>
     </view>
   </view>

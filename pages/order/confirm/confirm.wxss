@@ -180,25 +180,27 @@
   margin: 0;
   font-size: 30rpx;
   font-weight: 600;
-  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.15);
+  background: var(--wechat-green);
+  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
   transition: all 0.3s;
 }
 
 .submit-btn:active {
   transform: scale(0.98);
-  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1);
+  background: var(--wechat-green-dark);
+  box-shadow: 0 4rpx 10rpx rgba(7, 193, 96, 0.2);
 }
 
 /* 白事系统提交按钮 */
 .white-theme .submit-btn {
-  background: var(--primary-color);
+  background: var(--wechat-green);
   box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
 }
 
 /* 红事系统提交按钮 */
 .red-theme .submit-btn {
-  background: var(--danger-color);
-  box-shadow: 0 8rpx 20rpx rgba(244, 67, 54, 0.3);
+  background: var(--wechat-green);
+  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
 }
 
 .submit-btn[disabled] {

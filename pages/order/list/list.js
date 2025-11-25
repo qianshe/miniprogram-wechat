@@ -1,5 +1,13 @@
 const { api } = require('../../../utils/api.js');
 
+const STATUS_TEXT_MAP = {
+  0: '待支付',
+  1: '已支付',
+  2: '处理中',
+  3: '已完成',
+  4: '已取消'
+};
+
 Page({
   data: {
     orders: [],
@@ -10,15 +18,15 @@ Page({
       total: 0
     },
     hasMore: true,
-    activeTab: '0', // 当前选中的标签页
+    activeTab: '0',
     statusTabs: [
       { value: '0', label: '全部' },
       { value: '1', label: '待支付' },
       { value: '2', label: '已支付' },
-      { value: '3', label: '已完成' },
-      { value: '4', label: '已取消' }
+      { value: '3', label: '处理中' },
+      { value: '4', label: '已完成' },
+      { value: '5', label: '已取消' }
     ],
-    // 搜索和筛选相关数据
     searchKeyword: '',
     showFilterPanel: false,
     startDate: '',
@@ -33,39 +41,35 @@ Page({
     this.loadOrders();
   },
 
-  // TDesign标签页变化
   onTabChange(e) {
     const value = e.detail.value;
     this.setData({
       activeTab: value,
-      'pagination.page': 1,  // 重置页码
-      orders: [],  // 清空当前订单列表
+      'pagination.page': 1,
+      orders: [],
     }, () => {
-      this.loadOrders();  // 重新加载订单
+      this.loadOrders();
     });
   },
 
-  // 保留原方法以兼容其他调用
   onTabClick(e) {
     const value = e.currentTarget.dataset.value;
     this.setData({
       activeTab: value,
-      'pagination.page': 1,  // 重置页码
-      orders: [],  // 清空当前订单列表
+      'pagination.page': 1,
+      orders: [],
       loading: true
     }, () => {
-      this.loadOrders();  // 重新加载订单
+      this.loadOrders();
     });
   },
 
-  // TDesign搜索框变化
   onSearchChange(e) {
     this.setData({
       searchKeyword: e.detail.value
     });
   },
 
-  // TDesign搜索框清空
   onSearchClear() {
     this.setData({
       searchKeyword: ''
@@ -74,7 +78,6 @@ Page({
     });
   },
 
-  // 搜索确认
   onSearchConfirm() {
     this.setData({
       'pagination.page': 1,
@@ -85,49 +88,42 @@ Page({
     });
   },
 
-  // TDesign弹窗显示状态变化
   onFilterPopupChange(e) {
     this.setData({
       showFilterPanel: e.detail.visible
     });
   },
 
-  // 切换筛选面板
   toggleFilterPanel() {
     this.setData({
       showFilterPanel: !this.data.showFilterPanel
     });
   },
 
-  // 开始日期变化
   onStartDateChange(e) {
     this.setData({
       startDate: e.detail.value
     });
   },
 
-  // 结束日期变化
   onEndDateChange(e) {
     this.setData({
       endDate: e.detail.value
     });
   },
 
-  // TDesign输入框 - 最低价格变化
   onMinPriceChange(e) {
     this.setData({
       minPrice: e.detail.value
     });
   },
 
-  // TDesign输入框 - 最高价格变化
   onMaxPriceChange(e) {
     this.setData({
       maxPrice: e.detail.value
     });
   },
 
-  // 重置筛选条件
   resetFilter() {
     this.setData({
       startDate: '',
@@ -138,7 +134,6 @@ Page({
     });
   },
 
-  // 应用筛选条件
   applyFilter() {
     this.setData({
       showFilterPanel: false,
@@ -151,7 +146,6 @@ Page({
     });
   },
 
-  // 加载更多
   loadMore() {
     if (this.data.hasMore) {
       this.setData({
@@ -169,21 +163,18 @@ Page({
 
     try {
       const { page, size } = this.data.pagination;
-      // 根据标签页状态过滤订单
       const status = this.getStatusByTab(this.data.activeTab);
 
       const params = {
         page,
         size,
-        ...(status !== undefined ? { status } : {})  // 使用新的 orderStatus 参数
+        ...(status !== undefined ? { status } : {})
       };
 
-      // 添加搜索关键词
       if (this.data.searchKeyword) {
         params.keyword = this.data.searchKeyword;
       }
 
-      // 添加日期筛选
       if (this.data.startDate) {
         params.startDate = this.data.startDate;
       }
@@ -191,15 +182,13 @@ Page({
         params.endDate = this.data.endDate;
       }
 
-      // 添加价格筛选
       if (this.data.minPrice) {
-        params.minPrice = parseInt(this.data.minPrice) * 100; // 转换为分
+        params.minPrice = parseInt(this.data.minPrice) * 100;
       }
       if (this.data.maxPrice) {
-        params.maxPrice = parseInt(this.data.maxPrice) * 100; // 转换为分
+        params.maxPrice = parseInt(this.data.maxPrice) * 100;
       }
 
-      // 调用统一API获取订单列表
       const data = await api.getUserOrders({
         ...params,
         page,
@@ -212,7 +201,6 @@ Page({
 
       const { records, total } = data;
 
-      // 如果云数据库没有数据，显示空状态
       if (records.length === 0 && page === 1) {
         this.setData({
           orders: [],
@@ -226,7 +214,7 @@ Page({
         statusText: this.getStatusText(order.status),
         createdTime: this.formatDate(order.createTime),
         serviceTime: this.formatDate(order.serviceTime),
-        totalAmount: order.totalAmount.toFixed(2) // 云函数已转换为元
+        totalAmount: Number(order.totalAmount).toFixed(2)
       }));
 
       this.setData({
@@ -237,7 +225,6 @@ Page({
       });
     } catch (err) {
       console.error('云函数调用失败:', err);
-      // 云函数调用失败时，显示错误提示
       wx.showToast({
         title: '加载失败，请重试',
         icon: 'none'
@@ -250,23 +237,18 @@ Page({
   },
 
   getStatusText(status) {
-    const statusMap = {
-      '0': '全部',
-      '1': '待支付',
-      '2': '已支付',
-      '3': '已完成',
-      '4': '已取消'
-    };
-    return statusMap[status] || '未知状态';
+    const statusValue = Number(status);
+    return STATUS_TEXT_MAP[statusValue] || '未知状态';
   },
 
   getStatusByTab(tab) {
     const statusMap = {
-      '0': undefined, // 全部
-      '1': 0,        // 待支付
-      '2': 1,        // 已支付
-      '3': 3,        // 已完成
-      '4': 4         // 已取消
+      '0': undefined,
+      '1': 0,
+      '2': 1,
+      '3': 2,
+      '4': 3,
+      '5': 4
     };
     return statusMap[tab];
   },
@@ -282,32 +264,26 @@ Page({
     }
   },
 
-  // 转换订单号显示格式：order_20240101_001 -> ORD20240101001
   formatOrderNoForDisplay(orderNo) {
     if (!orderNo) return orderNo;
-    // 匹配格式：order_YYYYMMDD_XXX
     const match = orderNo.match(/^order_(\d{8})_(\d{3})$/);
     if (match) {
       return `ORD${match[1]}${match[2]}`;
     }
-    return orderNo; // 如果格式不匹配，返回原值
+    return orderNo;
   },
 
-  // 转换显示格式的订单号回数据库格式：ORD20240101001 -> order_20240101_001
   formatOrderNoForQuery(displayOrderNo) {
     if (!displayOrderNo) return displayOrderNo;
-    // 匹配格式：ORDYYYYMMDDXXX
     const match = displayOrderNo.match(/^ORD(\d{8})(\d{3})$/);
     if (match) {
       return `order_${match[1]}_${match[2]}`;
     }
-    return displayOrderNo; // 如果格式不匹配，返回原值
+    return displayOrderNo;
   },
 
   onOrderClick(e) {
     const { orderid } = e.currentTarget.dataset;
-    
-    // 普通模式下跳转详情
     wx.navigateTo({
       url: `/pages/order/detail/detail?orderNo=${orderid}`
     });

@@ -71,7 +71,6 @@ module.exports = {
       // 记录认证时间
       wx.setStorageSync('auth_time', Date.now());
 
-      console.log('User auth data saved securely');
     } catch (error) {
       console.error('Failed to set auth data:', error);
       throw error;
@@ -233,7 +232,6 @@ module.exports = {
       };
 
       wx.setStorageSync(SECURITY_KEY, security);
-      console.log('Security environment setup completed');
     } catch (error) {
       console.error('Failed to setup security environment:', error);
     }
@@ -323,8 +321,6 @@ module.exports = {
         app.globalData.userInfo = null;
         app.globalData.isAdmin = false;
       }
-
-      console.log('Auth data cleared successfully');
     } catch (error) {
       console.error('Failed to clear auth data:', error);
     }

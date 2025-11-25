@@ -8,27 +8,22 @@ Component({
 
   lifetimes: {
     created() {
-      console.log('tabBar created');
     },
 
     attached() {
-      console.log('tabBar attached');
       this.initTabBar();
     },
 
     ready() {
-      console.log('tabBar ready');
       this.setData({ ready: true });
     },
 
     detached() {
-      console.log('tabBar detached');
     }
   },
 
   pageLifetimes: {
     show() {
-      console.log('tabBar page show');
       if (this.data.ready) {
         const app = getApp();
         const systemType = app.globalData.systemType || 'white';

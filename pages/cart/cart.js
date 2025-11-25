@@ -18,7 +18,6 @@ Page({
   },
 
   onShow() {
-    console.log('[页面生命周期] onShow触发，从本地缓存加载购物车');
     this.setData({ loading: true });
     this.loadCartItems();
   },
@@ -155,9 +154,7 @@ Page({
     cartItems[index].quantity = safeQuantity;
     this.setData({ cartItems }, () => {
       this.updateTotalAmount();
-      console.log('[缓存更新] 更新数量后准备更新缓存，商品ID:', item.id, '新数量:', safeQuantity);
       wx.setStorageSync('cartListLocal', this.data.cartItems);
-      console.log('[缓存更新] 缓存更新成功');
     });
   },
 
@@ -176,9 +173,7 @@ Page({
           cartItems.splice(index, 1);
           this.setData({ cartItems }, () => {
             this.updateTotalAmount();
-            console.log('[缓存更新] 删除商品后准备更新缓存，剩余商品数:', this.data.cartItems.length);
             wx.setStorageSync('cartListLocal', this.data.cartItems);
-            console.log('[缓存更新] 缓存更新成功');
           });
 
           wx.showToast({
@@ -323,18 +318,14 @@ Page({
   },
 
   onHide() {
-    console.log('[页面生命周期] onHide触发');
     // 保存购物车数据到本地
     wx.setStorageSync('cartListLocal', this.data.cartItems);
-    // 删除这行日志：console.log('[缓存更新] onHide时缓存已更新');
   },
 
   onUnload() {
-    console.log('[页面生命周期] onUnload触发');
     // 卸载时也保存一次
     if (this.data.cartItems && this.data.cartItems.length > 0) {
       wx.setStorageSync('cartListLocal', this.data.cartItems);
-      // 删除这行日志：console.log('[缓存更新] onUnload时缓存已更新');
     }
   }
 });
