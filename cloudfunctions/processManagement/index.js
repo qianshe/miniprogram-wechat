@@ -1,97 +1,31 @@
-// 流程管理云函数
-// 支持流程步骤查询、流程详情获取等功能
+/**
+ * 流程管理云函数
+ * 支持流程步骤查询、流程详情获取等功能
+ */
 
-const cloud = require('wx-server-sdk');
+const cloud = require('wx-server-sdk')
+const { ErrorCodes, success, error, paramError, permissionError, notFoundError, dbError, wrapHandler } = require('../_shared/errorHandler')
 
 // 初始化云开发环境
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
-});
+})
 
-const db = cloud.database();
-const _ = db.command;
-
-/**
- * 云函数入口函数
- */
-exports.main = async (event, context) => {
-  const { action, data } = event;
-  const startTime = Date.now();
-  
-  // 记录请求日志
-  console.log(`[${new Date().toISOString()}] 流程管理云函数调用:`, {
-    action,
-    requestId: context.requestId,
-    openid: cloud.getWXContext().OPENID
-  });
-  
-  try {
-    let result;
-    
-    switch (action) {
-      case 'getProcessSteps':
-        result = await getProcessSteps(data, context);
-        break;
-      case 'getStepDetail':
-        result = await getStepDetail(data, context);
-        break;
-      case 'createProcessStep':
-        result = await createProcessStep(data, context);
-        break;
-      case 'updateProcessStep':
-        result = await updateProcessStep(data, context);
-        break;
-      case 'deleteProcessStep':
-        result = await deleteProcessStep(data, context);
-        break;
-      default:
-        result = {
-          code: 400,
-          message: '不支持的操作类型'
-        };
-    }
-    
-    // 记录执行时间
-    const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 流程管理云函数执行完成:`, {
-      action,
-      executionTime: `${executionTime}ms`,
-      success: result.code === 200
-    });
-    
-    return result;
-  } catch (error) {
-    const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 流程管理云函数执行错误:`, {
-      action,
-      executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
-    });
-    
-    return {
-      code: 500,
-      message: error.message || '服务器内部错误',
-      requestId: context.requestId
-    };
-  }
-};
+const db = cloud.database()
+const _ = db.command
 
 /**
  * 检查集合是否存在
  */
 async function checkCollectionExists(collectionName) {
   try {
-    // 尝试获取集合信息
-    const result = await db.collection(collectionName).limit(1).get();
-    return true;
-  } catch (error) {
-    // 如果集合不存在，会抛出错误
-    if (error.errCode === -502001 || error.message.includes('collection not exist')) {
-      return false;
+    await db.collection(collectionName).limit(1).get()
+    return true
+  } catch (err) {
+    if (err.errCode === -502001 || err.message.includes('collection not exist')) {
+      return false
     }
-    // 其他错误重新抛出
-    throw error;
+    throw err
   }
 }
 
@@ -99,16 +33,14 @@ async function checkCollectionExists(collectionName) {
  * 初始化数据库集合和默认数据
  */
 async function initDatabase() {
-  console.log(`[${new Date().toISOString()}] 开始初始化数据库...`);
+  console.log('[PROCESS] Starting database initialization...')
 
   try {
-    // 检查processSteps集合是否存在
-    const collectionExists = await checkCollectionExists('processSteps');
+    const collectionExists = await checkCollectionExists('processSteps')
 
     if (!collectionExists) {
-      console.log(`[${new Date().toISOString()}] processSteps集合不存在，开始创建...`);
+      console.log('[PROCESS] processSteps collection not found, creating default data...')
 
-      // 创建默认的流程步骤数据
       const defaultSteps = [
         // 白事流程步骤 (type: 0)
         {
@@ -184,229 +116,160 @@ async function initDatabase() {
           createTime: new Date(),
           updateTime: new Date()
         }
-      ];
+      ]
 
-      // 批量插入默认数据
       for (const step of defaultSteps) {
-        await db.collection('processSteps').add({ data: step });
+        await db.collection('processSteps').add({ data: step })
       }
 
-      console.log(`[${new Date().toISOString()}] 数据库初始化完成，已创建${defaultSteps.length}条默认流程步骤`);
+      console.log(`[PROCESS] Database initialized with ${defaultSteps.length} default steps`)
     } else {
-      console.log(`[${new Date().toISOString()}] processSteps集合已存在，跳过初始化`);
+      console.log('[PROCESS] processSteps collection exists, skipping initialization')
     }
 
-    return true;
-  } catch (error) {
-    console.error(`[${new Date().toISOString()}] 数据库初始化失败:`, error);
-    throw error;
+    return true
+  } catch (err) {
+    console.error('[PROCESS] Database initialization failed:', err)
+    throw err
   }
 }
 
 /**
  * 获取流程步骤列表
  */
-async function getProcessSteps(data, context) {
-  const startTime = Date.now();
-  const { type = 0, page = 1, size = 20 } = data;
+async function getProcessSteps(data) {
+  const { type = 0, page = 1, size = 20 } = data || {}
 
-  console.log(`[${new Date().toISOString()}] 开始获取流程步骤:`, {
-    type, page, size
-  });
+  console.log('[PROCESS] getProcessSteps:', { type, page, size })
 
   try {
-    // 首先检查并初始化数据库
-    await initDatabase();
+    await initDatabase()
 
-    // 构建查询条件
-    let query = db.collection('processSteps');
-    const conditions = [];
+    let query = db.collection('processSteps')
+    const conditions = [{ type: parseInt(type) }]
 
-    // 流程类型筛选 (0: 白事, 1: 红事)
-    conditions.push({ type: parseInt(type) });
-
-    // 应用查询条件
     if (conditions.length > 0) {
-      query = query.where(_.and(conditions));
+      query = query.where(_.and(conditions))
     }
 
-    // 排序 - 按order字段升序
-    query = query.orderBy('order', 'asc');
+    query = query.orderBy('order', 'asc')
 
-    // 分页
-    const skip = (page - 1) * size;
-    query = query.skip(skip).limit(size);
+    const skip = (page - 1) * size
+    query = query.skip(skip).limit(size)
 
-    // 执行查询
-    const result = await query.get();
+    const result = await query.get()
 
-    // 获取总数
-    let countQuery = db.collection('processSteps');
+    let countQuery = db.collection('processSteps')
     if (conditions.length > 0) {
-      countQuery = countQuery.where(_.and(conditions));
+      countQuery = countQuery.where(_.and(conditions))
     }
-    const countResult = await countQuery.count();
+    const countResult = await countQuery.count()
 
-    const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 流程步骤获取成功:`, {
+    console.log('[PROCESS] getProcessSteps success:', {
       type,
-      stepCount: result.data.length,
-      total: countResult.total,
-      executionTime: `${executionTime}ms`
-    });
+      count: result.data.length,
+      total: countResult.total
+    })
 
-    return {
-      code: 200,
-      message: '获取流程步骤成功',
-      data: {
-        records: result.data,
-        total: countResult.total,
-        page,
-        size
-      }
-    };
-  } catch (error) {
-    console.error('获取流程步骤失败:', error);
-    return {
-      code: 500,
-      message: '获取流程步骤失败'
-    };
+    return success({
+      records: result.data,
+      total: countResult.total,
+      page,
+      size
+    }, '获取流程步骤成功')
+  } catch (err) {
+    console.error('[PROCESS] getProcessSteps error:', err)
+    return dbError('获取流程步骤失败', { error: err.message })
   }
 }
 
 /**
  * 获取流程步骤详情
  */
-async function getStepDetail(data, context) {
-  const startTime = Date.now();
-  const { id } = data;
-  
-  console.log(`[${new Date().toISOString()}] 开始获取步骤详情:`, {
-    stepId: id
-  });
-  
-  if (!id) {
-    console.warn('步骤ID为空');
-    return {
-      code: 400,
-      message: '步骤ID不能为空'
-    };
-  }
-  
-  try {
-    // 首先尝试使用文档ID查询
-    let result;
-    try {
-      result = await db.collection('processSteps').doc(id).get();
-    } catch (docError) {
-      // 如果文档ID查询失败，尝试使用where条件查询
-      console.log(`[${new Date().toISOString()}] 文档ID查询失败，尝试条件查询:`, { stepId: id });
+async function getStepDetail(data) {
+  const { id } = data || {}
 
-      // 尝试按order字段查询（如果传入的是数字）
-      const numericId = parseInt(id);
+  console.log('[PROCESS] getStepDetail:', { id })
+
+  if (!id) {
+    return paramError('步骤ID不能为空')
+  }
+
+  try {
+    let result
+    try {
+      result = await db.collection('processSteps').doc(id).get()
+    } catch (docError) {
+      console.log('[PROCESS] Doc query failed, trying alternative queries:', { id })
+
+      const numericId = parseInt(id)
       if (!isNaN(numericId)) {
         const orderResult = await db.collection('processSteps')
-          .where('order', '==', numericId)
+          .where({ order: numericId })
           .limit(1)
-          .get();
+          .get()
 
         if (orderResult.data && orderResult.data.length > 0) {
-          result = { data: orderResult.data[0] };
+          result = { data: orderResult.data[0] }
         }
       }
 
-      // 如果按order查询也没有结果，尝试按title模糊查询
       if (!result || !result.data) {
         const titleResult = await db.collection('processSteps')
-          .where('title', '==', id)
+          .where({ title: id })
           .limit(1)
-          .get();
+          .get()
 
         if (titleResult.data && titleResult.data.length > 0) {
-          result = { data: titleResult.data[0] };
+          result = { data: titleResult.data[0] }
         }
       }
     }
 
     if (!result || !result.data) {
-      console.warn('步骤不存在:', { stepId: id });
-      return {
-        code: 404,
-        message: '步骤不存在'
-      };
+      console.warn('[PROCESS] Step not found:', { id })
+      return notFoundError('步骤不存在')
     }
 
-    const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 步骤详情获取成功:`, {
-      stepId: id,
-      stepTitle: result.data.title,
-      executionTime: `${executionTime}ms`
-    });
+    console.log('[PROCESS] getStepDetail success:', {
+      id,
+      title: result.data.title
+    })
 
-    return {
-      code: 200,
-      message: '获取步骤详情成功',
-      data: result.data
-    };
-  } catch (error) {
-    const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 获取步骤详情失败:`, {
-      stepId: id,
-      executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
-    });
-    
-    return {
-      code: 500,
-      message: '获取步骤详情失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return success(result.data, '获取步骤详情成功')
+  } catch (err) {
+    console.error('[PROCESS] getStepDetail error:', err)
+    return dbError('获取步骤详情失败', { error: err.message })
   }
 }
 
 /**
  * 创建流程步骤
  */
-async function createProcessStep(data, context) {
-  const { OPENID } = cloud.getWXContext();
-  const startTime = Date.now();
-  const { isAdmin } = data;
+async function createProcessStep(data) {
+  const { OPENID } = cloud.getWXContext()
+  const { isAdmin } = data || {}
 
-  console.log(`[${new Date().toISOString()}] 开始创建流程步骤:`, {
+  console.log('[PROCESS] createProcessStep:', {
     openid: OPENID,
-    stepTitle: data.title,
+    title: data?.title,
     isAdmin
-  });
+  })
 
-  // 权限检查 - 只有管理员可以创建流程步骤
   if (!isAdmin) {
-    console.warn('创建流程步骤失败: 无管理员权限', { openid: OPENID });
-    return {
-      code: 403,
-      message: '无权限执行此操作'
-    };
+    console.warn('[PROCESS] createProcessStep denied: no admin permission')
+    return permissionError('无权限执行此操作')
   }
 
-  // 数据验证
-  if (!data.title || !data.description) {
-    console.warn('创建流程步骤失败: 必填字段缺失');
-    return {
-      code: 400,
-      message: '步骤标题和描述不能为空'
-    };
+  if (!data?.title || !data?.description) {
+    return paramError('步骤标题和描述不能为空')
   }
 
   if (data.type === undefined || ![0, 1].includes(parseInt(data.type))) {
-    console.warn('创建流程步骤失败: 流程类型无效', { type: data.type });
-    return {
-      code: 400,
-      message: '流程类型必须为0(白事)或1(红事)'
-    };
+    return paramError('流程类型必须为0(白事)或1(红事)')
   }
 
   try {
-    // 构建步骤数据
     const step = {
       title: data.title,
       description: data.description,
@@ -419,174 +282,134 @@ async function createProcessStep(data, context) {
       createTime: new Date(),
       updateTime: new Date(),
       creatorOpenid: OPENID
-    };
+    }
 
-    // 保存到数据库
     const result = await db.collection('processSteps').add({
       data: step
-    });
+    })
 
-    const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 流程步骤创建成功:`, {
+    console.log('[PROCESS] createProcessStep success:', {
       stepId: result._id,
-      stepTitle: data.title,
-      executionTime: `${executionTime}ms`
-    });
+      title: data.title
+    })
 
-    return {
-      code: 200,
-      message: '创建流程步骤成功',
-      data: {
-        _id: result._id,
-        ...step
-      }
-    };
-  } catch (error) {
-    const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 创建流程步骤失败:`, {
-      stepTitle: data.title,
-      executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
-    });
-
-    return {
-      code: 500,
-      message: '创建流程步骤失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return success({
+      _id: result._id,
+      ...step
+    }, '创建流程步骤成功')
+  } catch (err) {
+    console.error('[PROCESS] createProcessStep error:', err)
+    return dbError('创建流程步骤失败', { error: err.message })
   }
 }
 
 /**
  * 更新流程步骤
  */
-async function updateProcessStep(data, context) {
-  const { OPENID } = cloud.getWXContext();
-  const startTime = Date.now();
-  const { id, isAdmin, ...updateData } = data;
+async function updateProcessStep(data) {
+  const { OPENID } = cloud.getWXContext()
+  const { id, isAdmin, ...updateData } = data || {}
 
-  console.log(`[${new Date().toISOString()}] 开始更新流程步骤:`, {
+  console.log('[PROCESS] updateProcessStep:', {
     openid: OPENID,
     stepId: id,
     isAdmin
-  });
+  })
 
-  // 权限检查 - 只有管理员可以更新流程步骤
   if (!isAdmin) {
-    console.warn('更新流程步骤失败: 无管理员权限', { openid: OPENID, stepId: id });
-    return {
-      code: 403,
-      message: '无权限执行此操作'
-    };
+    console.warn('[PROCESS] updateProcessStep denied: no admin permission')
+    return permissionError('无权限执行此操作')
   }
 
   if (!id) {
-    console.warn('更新流程步骤失败: 步骤ID为空');
-    return {
-      code: 400,
-      message: '步骤ID不能为空'
-    };
+    return paramError('步骤ID不能为空')
   }
 
   try {
-    // 构建更新数据
     const updateFields = {
       ...updateData,
       updateTime: new Date(),
       updaterOpenid: OPENID
-    };
+    }
 
-    // 更新步骤
     await db.collection('processSteps').doc(id).update({
       data: updateFields
-    });
+    })
 
-    const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 流程步骤更新成功:`, {
-      stepId: id,
-      executionTime: `${executionTime}ms`
-    });
+    console.log('[PROCESS] updateProcessStep success:', { stepId: id })
 
-    return {
-      code: 200,
-      message: '更新流程步骤成功'
-    };
-  } catch (error) {
-    const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 更新流程步骤失败:`, {
-      stepId: id,
-      executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
-    });
-
-    return {
-      code: 500,
-      message: '更新流程步骤失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return success(null, '更新流程步骤成功')
+  } catch (err) {
+    console.error('[PROCESS] updateProcessStep error:', err)
+    return dbError('更新流程步骤失败', { error: err.message })
   }
 }
 
 /**
  * 删除流程步骤
  */
-async function deleteProcessStep(data, context) {
-  const { OPENID } = cloud.getWXContext();
-  const startTime = Date.now();
-  const { id, isAdmin } = data;
+async function deleteProcessStep(data) {
+  const { OPENID } = cloud.getWXContext()
+  const { id, isAdmin } = data || {}
 
-  console.log(`[${new Date().toISOString()}] 开始删除流程步骤:`, {
+  console.log('[PROCESS] deleteProcessStep:', {
     openid: OPENID,
     stepId: id,
     isAdmin
-  });
+  })
 
-  // 权限检查 - 只有管理员可以删除流程步骤
   if (!isAdmin) {
-    console.warn('删除流程步骤失败: 无管理员权限', { openid: OPENID, stepId: id });
-    return {
-      code: 403,
-      message: '无权限执行此操作'
-    };
+    console.warn('[PROCESS] deleteProcessStep denied: no admin permission')
+    return permissionError('无权限执行此操作')
   }
 
   if (!id) {
-    console.warn('删除流程步骤失败: 步骤ID为空');
-    return {
-      code: 400,
-      message: '步骤ID不能为空'
-    };
+    return paramError('步骤ID不能为空')
   }
 
   try {
-    // 删除步骤
-    await db.collection('processSteps').doc(id).remove();
+    await db.collection('processSteps').doc(id).remove()
 
-    const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 流程步骤删除成功:`, {
-      stepId: id,
-      executionTime: `${executionTime}ms`
-    });
+    console.log('[PROCESS] deleteProcessStep success:', { stepId: id })
 
-    return {
-      code: 200,
-      message: '删除流程步骤成功'
-    };
-  } catch (error) {
-    const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 删除流程步骤失败:`, {
-      stepId: id,
-      executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
-    });
-
-    return {
-      code: 500,
-      message: '删除流程步骤失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return success(null, '删除流程步骤成功')
+  } catch (err) {
+    console.error('[PROCESS] deleteProcessStep error:', err)
+    return dbError('删除流程步骤失败', { error: err.message })
   }
 }
+
+/**
+ * 主处理函数
+ */
+const handler = async (event, context) => {
+  const { action, data } = event
+
+  console.log('[PROCESS] Cloud function called:', {
+    action,
+    requestId: context.requestId,
+    openid: cloud.getWXContext().OPENID
+  })
+
+  if (!action) {
+    return paramError('缺少action参数')
+  }
+
+  switch (action) {
+    case 'getProcessSteps':
+      return await getProcessSteps(data)
+    case 'getStepDetail':
+      return await getStepDetail(data)
+    case 'createProcessStep':
+      return await createProcessStep(data)
+    case 'updateProcessStep':
+      return await updateProcessStep(data)
+    case 'deleteProcessStep':
+      return await deleteProcessStep(data)
+    default:
+      return error(ErrorCodes.PARAM_ERROR, `不支持的操作类型: ${action}`)
+  }
+}
+
+// 导出包装后的处理函数
+exports.main = wrapHandler(handler, { functionName: 'processManagement' })

@@ -3,6 +3,7 @@
 // 采用软删除策略，删除时仅标记为禁用状态
 
 const cloud = require('wx-server-sdk');
+const { ErrorCodes, success, error, paramError, permissionError, notFoundError, dbError, wrapHandler } = require('../_shared/errorHandler');
 
 // 初始化云开发环境
 cloud.init({
@@ -25,75 +26,56 @@ const CATEGORY_TYPE = {
 };
 
 /**
- * 云函数入口函数
+ * 云函数主处理逻辑
  */
-exports.main = async (event, context) => {
+const handler = async (event, context) => {
   const { action, data } = event;
   const startTime = Date.now();
 
   // 记录请求日志
-  console.log(`[${new Date().toISOString()}] 分类管理云函数调用:`, {
+  console.log('[CATEGORY_MANAGEMENT] Request received:', {
     action,
     requestId: context.requestId,
     openid: cloud.getWXContext().OPENID
   });
 
-  try {
-    let result;
+  let result;
 
-    switch (action) {
-      case 'getCategories':
-        result = await getCategories(data, context);
-        break;
-      case 'getCategoryDetail':
-        result = await getCategoryDetail(data, context);
-        break;
-      case 'createCategory':
-        result = await createCategory(data, context);
-        break;
-      case 'updateCategory':
-        result = await updateCategory(data, context);
-        break;
-      case 'deleteCategory':
-        result = await deleteCategory(data, context);
-        break;
-      case 'migrateCategories':
-        result = await migrateCategories(data, context);
-        break;
-      case 'cleanupRedCategories':
-        result = await cleanupRedCategories(data, context);
-        break;
-      default:
-        result = {
-          code: 400,
-          message: '不支持的操作类型'
-        };
-    }
-
-    // 记录执行时间
-    const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 分类管理云函数执行完成:`, {
-      action,
-      executionTime: `${executionTime}ms`,
-      success: result.code === 200
-    });
-
-    return result;
-  } catch (error) {
-    const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 分类管理云函数执行错误:`, {
-      action,
-      executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
-    });
-
-    return {
-      code: 500,
-      message: error.message || '服务器内部错误',
-      requestId: context.requestId
-    };
+  switch (action) {
+    case 'getCategories':
+      result = await getCategories(data, context);
+      break;
+    case 'getCategoryDetail':
+      result = await getCategoryDetail(data, context);
+      break;
+    case 'createCategory':
+      result = await createCategory(data, context);
+      break;
+    case 'updateCategory':
+      result = await updateCategory(data, context);
+      break;
+    case 'deleteCategory':
+      result = await deleteCategory(data, context);
+      break;
+    case 'migrateCategories':
+      result = await migrateCategories(data, context);
+      break;
+    case 'cleanupRedCategories':
+      result = await cleanupRedCategories(data, context);
+      break;
+    default:
+      result = paramError('action', 'Unsupported action type');
   }
+
+  // 记录执行时间
+  const executionTime = Date.now() - startTime;
+  console.log('[CATEGORY_MANAGEMENT] Request completed:', {
+    action,
+    executionTime: `${executionTime}ms`,
+    success: result.code === 0
+  });
+
+  return result;
 };
 
 /**
@@ -107,9 +89,9 @@ async function getCategories(data, context) {
     size = 20,
     status,
     includeProductCount = true
-  } = data;
+  } = data || {};
 
-  console.log(`[${new Date().toISOString()}] 开始获取分类列表:`, {
+  console.log('[CATEGORY_MANAGEMENT] getCategories:', {
     type, page, size, status, includeProductCount
   });
 
@@ -181,36 +163,28 @@ async function getCategories(data, context) {
     }
 
     const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 分类列表获取成功:`, {
+    console.log('[CATEGORY_MANAGEMENT] getCategories success:', {
       count: categories.length,
       total: countResult.total,
       executionTime: `${executionTime}ms`
     });
 
-    return {
-      code: 200,
-      message: '获取分类列表成功',
-      data: {
-        records: categories,
-        total: countResult.total,
-        page: parseInt(page),
-        size: parseInt(size),
-        hasMore: categories.length === size
-      }
-    };
-  } catch (error) {
+    return success({
+      records: categories,
+      total: countResult.total,
+      page: parseInt(page),
+      size: parseInt(size),
+      hasMore: categories.length === size
+    }, 'Get category list success');
+  } catch (err) {
     const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 获取分类列表失败:`, {
+    console.error('[CATEGORY_MANAGEMENT] getCategories failed:', {
       executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
+      error: err.message,
+      stack: err.stack
     });
 
-    return {
-      code: 500,
-      message: '获取分类列表失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return dbError('Failed to get category list', { originalError: err.message });
   }
 }
 
@@ -219,16 +193,13 @@ async function getCategories(data, context) {
  */
 async function getCategoryDetail(data, context) {
   const startTime = Date.now();
-  const { id, includeProductCount = true } = data;
+  const { id, includeProductCount = true } = data || {};
 
-  console.log(`[${new Date().toISOString()}] 开始获取分类详情:`, { categoryId: id });
+  console.log('[CATEGORY_MANAGEMENT] getCategoryDetail:', { categoryId: id });
 
   if (!id) {
-    console.warn('获取分类详情失败: 分类ID为空');
-    return {
-      code: 400,
-      message: '分类ID不能为空'
-    };
+    console.warn('[CATEGORY_MANAGEMENT] getCategoryDetail failed: Missing category ID');
+    return paramError('id', 'Category ID is required');
   }
 
   try {
@@ -236,11 +207,8 @@ async function getCategoryDetail(data, context) {
     const result = await db.collection('categories').doc(id).get();
 
     if (!result.data) {
-      console.warn('分类不存在:', { categoryId: id });
-      return {
-        code: 404,
-        message: '分类不存在'
-      };
+      console.warn('[CATEGORY_MANAGEMENT] Category not found:', { categoryId: id });
+      return notFoundError('Category');
     }
 
     let category = result.data;
@@ -261,31 +229,23 @@ async function getCategoryDetail(data, context) {
     }
 
     const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 分类详情获取成功:`, {
+    console.log('[CATEGORY_MANAGEMENT] getCategoryDetail success:', {
       categoryId: id,
       categoryName: category.name,
       executionTime: `${executionTime}ms`
     });
 
-    return {
-      code: 200,
-      message: '获取分类详情成功',
-      data: category
-    };
-  } catch (error) {
+    return success(category, 'Get category detail success');
+  } catch (err) {
     const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 获取分类详情失败:`, {
+    console.error('[CATEGORY_MANAGEMENT] getCategoryDetail failed:', {
       categoryId: id,
       executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
+      error: err.message,
+      stack: err.stack
     });
 
-    return {
-      code: 500,
-      message: '获取分类详情失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return dbError('Failed to get category detail', { originalError: err.message });
   }
 }
 
@@ -296,37 +256,28 @@ async function createCategory(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
 
-  console.log(`[${new Date().toISOString()}] 开始创建分类:`, {
+  console.log('[CATEGORY_MANAGEMENT] createCategory:', {
     openid: OPENID,
-    categoryName: data.name,
-    type: data.type,
-    isAdmin: data.isAdmin
+    categoryName: data?.name,
+    type: data?.type,
+    isAdmin: data?.isAdmin
   });
 
   // 权限检查 - 只有管理员可以创建分类
-  if (!data.isAdmin) {
-    console.warn('创建分类失败: 无管理员权限', { openid: OPENID });
-    return {
-      code: 403,
-      message: '无权限执行此操作'
-    };
+  if (!data?.isAdmin) {
+    console.warn('[CATEGORY_MANAGEMENT] createCategory failed: No admin permission', { openid: OPENID });
+    return permissionError('Only admin can create category');
   }
 
   // 数据验证
-  if (!data.name) {
-    console.warn('创建分类失败: 分类名称为空');
-    return {
-      code: 400,
-      message: '分类名称不能为空'
-    };
+  if (!data?.name) {
+    console.warn('[CATEGORY_MANAGEMENT] createCategory failed: Missing name');
+    return paramError('name', 'Category name is required');
   }
 
-  if (!data.type || !Object.values(CATEGORY_TYPE).includes(data.type)) {
-    console.warn('创建分类失败: 分类类型无效', { type: data.type });
-    return {
-      code: 400,
-      message: '分类类型无效，必须为 "red" 或 "white"'
-    };
+  if (!data?.type || !Object.values(CATEGORY_TYPE).includes(data.type)) {
+    console.warn('[CATEGORY_MANAGEMENT] createCategory failed: Invalid type', { type: data?.type });
+    return paramError('type', 'Category type must be "red" or "white"');
   }
 
   try {
@@ -339,11 +290,8 @@ async function createCategory(data, context) {
       .get();
 
     if (existingCategory.data.length > 0) {
-      console.warn('创建分类失败: 同名分类已存在');
-      return {
-        code: 400,
-        message: '同类型下已存在同名分类'
-      };
+      console.warn('[CATEGORY_MANAGEMENT] createCategory failed: Duplicate name');
+      return error(ErrorCodes.BUSINESS_ERROR, 'Category with same name already exists in this type');
     }
 
     // 获取当前最大排序值
@@ -374,34 +322,26 @@ async function createCategory(data, context) {
     });
 
     const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 分类创建成功:`, {
+    console.log('[CATEGORY_MANAGEMENT] createCategory success:', {
       categoryId: result._id,
       categoryName: data.name,
       executionTime: `${executionTime}ms`
     });
 
-    return {
-      code: 200,
-      message: '创建分类成功',
-      data: {
-        _id: result._id,
-        ...category
-      }
-    };
-  } catch (error) {
+    return success({
+      _id: result._id,
+      ...category
+    }, 'Create category success');
+  } catch (err) {
     const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 创建分类失败:`, {
-      categoryName: data.name,
+    console.error('[CATEGORY_MANAGEMENT] createCategory failed:', {
+      categoryName: data?.name,
       executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
+      error: err.message,
+      stack: err.stack
     });
 
-    return {
-      code: 500,
-      message: '创建分类失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return dbError('Failed to create category', { originalError: err.message });
   }
 }
 
@@ -411,9 +351,9 @@ async function createCategory(data, context) {
 async function updateCategory(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, isAdmin, ...updateData } = data;
+  const { id, isAdmin, ...updateData } = data || {};
 
-  console.log(`[${new Date().toISOString()}] 开始更新分类:`, {
+  console.log('[CATEGORY_MANAGEMENT] updateCategory:', {
     openid: OPENID,
     categoryId: id,
     isAdmin
@@ -421,29 +361,20 @@ async function updateCategory(data, context) {
 
   // 权限检查 - 只有管理员可以更新分类
   if (!isAdmin) {
-    console.warn('更新分类失败: 无管理员权限', { openid: OPENID, categoryId: id });
-    return {
-      code: 403,
-      message: '无权限执行此操作'
-    };
+    console.warn('[CATEGORY_MANAGEMENT] updateCategory failed: No admin permission', { openid: OPENID, categoryId: id });
+    return permissionError('Only admin can update category');
   }
 
   if (!id) {
-    console.warn('更新分类失败: 分类ID为空');
-    return {
-      code: 400,
-      message: '分类ID不能为空'
-    };
+    console.warn('[CATEGORY_MANAGEMENT] updateCategory failed: Missing category ID');
+    return paramError('id', 'Category ID is required');
   }
 
   try {
     // 检查分类是否存在
     const existingResult = await db.collection('categories').doc(id).get();
     if (!existingResult.data) {
-      return {
-        code: 404,
-        message: '分类不存在'
-      };
+      return notFoundError('Category');
     }
 
     // 如果更新名称，检查是否与同类型下其他分类重名
@@ -457,10 +388,7 @@ async function updateCategory(data, context) {
         .get();
 
       if (duplicateCheck.data.length > 0) {
-        return {
-          code: 400,
-          message: '同类型下已存在同名分类'
-        };
+        return error(ErrorCodes.BUSINESS_ERROR, 'Category with same name already exists in this type');
       }
     }
 
@@ -487,29 +415,22 @@ async function updateCategory(data, context) {
     });
 
     const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 分类更新成功:`, {
+    console.log('[CATEGORY_MANAGEMENT] updateCategory success:', {
       categoryId: id,
       executionTime: `${executionTime}ms`
     });
 
-    return {
-      code: 200,
-      message: '更新分类成功'
-    };
-  } catch (error) {
+    return success(null, 'Update category success');
+  } catch (err) {
     const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 更新分类失败:`, {
+    console.error('[CATEGORY_MANAGEMENT] updateCategory failed:', {
       categoryId: id,
       executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
+      error: err.message,
+      stack: err.stack
     });
 
-    return {
-      code: 500,
-      message: '更新分类失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return dbError('Failed to update category', { originalError: err.message });
   }
 }
 
@@ -520,9 +441,9 @@ async function updateCategory(data, context) {
 async function deleteCategory(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, isAdmin } = data;
+  const { id, isAdmin } = data || {};
 
-  console.log(`[${new Date().toISOString()}] 开始删除分类:`, {
+  console.log('[CATEGORY_MANAGEMENT] deleteCategory:', {
     openid: OPENID,
     categoryId: id,
     isAdmin
@@ -530,29 +451,20 @@ async function deleteCategory(data, context) {
 
   // 权限检查 - 只有管理员可以删除分类
   if (!isAdmin) {
-    console.warn('删除分类失败: 无管理员权限', { openid: OPENID, categoryId: id });
-    return {
-      code: 403,
-      message: '无权限执行此操作'
-    };
+    console.warn('[CATEGORY_MANAGEMENT] deleteCategory failed: No admin permission', { openid: OPENID, categoryId: id });
+    return permissionError('Only admin can delete category');
   }
 
   if (!id) {
-    console.warn('删除分类失败: 分类ID为空');
-    return {
-      code: 400,
-      message: '分类ID不能为空'
-    };
+    console.warn('[CATEGORY_MANAGEMENT] deleteCategory failed: Missing category ID');
+    return paramError('id', 'Category ID is required');
   }
 
   try {
     // 检查分类是否存在
     const existingResult = await db.collection('categories').doc(id).get();
     if (!existingResult.data) {
-      return {
-        code: 404,
-        message: '分类不存在'
-      };
+      return notFoundError('Category');
     }
 
     // 检查分类下是否有商品
@@ -574,38 +486,30 @@ async function deleteCategory(data, context) {
     });
 
     const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 分类删除成功（软删除）:`, {
+    console.log('[CATEGORY_MANAGEMENT] deleteCategory success (soft delete):', {
       categoryId: id,
       hadProducts: productCount.total > 0,
       productCount: productCount.total,
       executionTime: `${executionTime}ms`
     });
 
-    return {
-      code: 200,
-      message: '删除分类成功',
-      data: {
-        hadProducts: productCount.total > 0,
-        productCount: productCount.total,
-        notice: productCount.total > 0 
-          ? `该分类下有 ${productCount.total} 个商品，建议重新分配这些商品的分类`
-          : null
-      }
-    };
-  } catch (error) {
+    return success({
+      hadProducts: productCount.total > 0,
+      productCount: productCount.total,
+      notice: productCount.total > 0 
+        ? `This category has ${productCount.total} products, please reassign them to other categories`
+        : null
+    }, 'Delete category success');
+  } catch (err) {
     const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 删除分类失败:`, {
+    console.error('[CATEGORY_MANAGEMENT] deleteCategory failed:', {
       categoryId: id,
       executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
+      error: err.message,
+      stack: err.stack
     });
 
-    return {
-      code: 500,
-      message: '删除分类失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return dbError('Failed to delete category', { originalError: err.message });
   }
 }
 
@@ -617,18 +521,15 @@ async function migrateCategories(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
 
-  console.log(`[${new Date().toISOString()}] 开始迁移分类数据:`, {
+  console.log('[CATEGORY_MANAGEMENT] migrateCategories:', {
     openid: OPENID,
-    isAdmin: data.isAdmin
+    isAdmin: data?.isAdmin
   });
 
   // 权限检查 - 只有管理员可以执行迁移
-  if (!data.isAdmin) {
-    console.warn('迁移分类数据失败: 无管理员权限', { openid: OPENID });
-    return {
-      code: 403,
-      message: '无权限执行此操作'
-    };
+  if (!data?.isAdmin) {
+    console.warn('[CATEGORY_MANAGEMENT] migrateCategories failed: No admin permission', { openid: OPENID });
+    return permissionError('Only admin can migrate categories');
   }
 
   // 预定义的白事分类数据
@@ -657,7 +558,7 @@ async function migrateCategories(data, context) {
           .get();
 
         if (existing.data.length > 0) {
-          console.log(`白事分类 "${category.name}" 已存在，跳过`);
+          console.log(`[CATEGORY_MANAGEMENT] White category "${category.name}" already exists, skipping`);
           results.white.skipped++;
           continue;
         }
@@ -677,40 +578,104 @@ async function migrateCategories(data, context) {
           }
         });
 
-        console.log(`白事分类 "${category.name}" 创建成功`);
+        console.log(`[CATEGORY_MANAGEMENT] White category "${category.name}" created successfully`);
         results.white.success++;
       } catch (err) {
-        console.error(`白事分类 "${category.name}" 创建失败:`, err);
+        console.error(`[CATEGORY_MANAGEMENT] White category "${category.name}" creation failed:`, err);
         results.white.failed++;
       }
     }
 
     const executionTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] 分类数据迁移完成:`, {
+    console.log('[CATEGORY_MANAGEMENT] migrateCategories completed:', {
       results,
       executionTime: `${executionTime}ms`
     });
 
-    return {
-      code: 200,
-      message: '分类数据迁移完成',
-      data: {
-        results,
-        totalWhite: whiteCategories.length
-      }
-    };
-  } catch (error) {
+    return success({
+      results,
+      totalWhite: whiteCategories.length
+    }, 'Category migration completed');
+  } catch (err) {
     const executionTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] 迁移分类数据失败:`, {
+    console.error('[CATEGORY_MANAGEMENT] migrateCategories failed:', {
       executionTime: `${executionTime}ms`,
-      error: error.message,
-      stack: error.stack
+      error: err.message,
+      stack: err.stack
     });
 
-    return {
-      code: 500,
-      message: '迁移分类数据失败',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    };
+    return dbError('Failed to migrate categories', { originalError: err.message });
   }
 }
+
+/**
+ * 清理红事分类
+ * 删除所有红事类型的分类（仅管理员可执行）
+ */
+async function cleanupRedCategories(data, context) {
+  const { OPENID } = cloud.getWXContext();
+  const startTime = Date.now();
+
+  console.log('[CATEGORY_MANAGEMENT] cleanupRedCategories:', {
+    openid: OPENID,
+    isAdmin: data?.isAdmin
+  });
+
+  // 权限检查 - 只有管理员可以执行清理
+  if (!data?.isAdmin) {
+    console.warn('[CATEGORY_MANAGEMENT] cleanupRedCategories failed: No admin permission', { openid: OPENID });
+    return permissionError('Only admin can cleanup red categories');
+  }
+
+  try {
+    // 查找所有红事分类
+    const redCategories = await db.collection('categories')
+      .where({
+        type: CATEGORY_TYPE.RED
+      })
+      .get();
+
+    if (redCategories.data.length === 0) {
+      console.log('[CATEGORY_MANAGEMENT] No red categories found to cleanup');
+      return success({
+        deletedCount: 0
+      }, 'No red categories to cleanup');
+    }
+
+    // 删除所有红事分类
+    let deletedCount = 0;
+    for (const category of redCategories.data) {
+      try {
+        await db.collection('categories').doc(category._id).remove();
+        deletedCount++;
+        console.log(`[CATEGORY_MANAGEMENT] Red category "${category.name}" deleted`);
+      } catch (err) {
+        console.error(`[CATEGORY_MANAGEMENT] Failed to delete red category "${category.name}":`, err);
+      }
+    }
+
+    const executionTime = Date.now() - startTime;
+    console.log('[CATEGORY_MANAGEMENT] cleanupRedCategories completed:', {
+      totalFound: redCategories.data.length,
+      deletedCount,
+      executionTime: `${executionTime}ms`
+    });
+
+    return success({
+      totalFound: redCategories.data.length,
+      deletedCount
+    }, 'Red categories cleanup completed');
+  } catch (err) {
+    const executionTime = Date.now() - startTime;
+    console.error('[CATEGORY_MANAGEMENT] cleanupRedCategories failed:', {
+      executionTime: `${executionTime}ms`,
+      error: err.message,
+      stack: err.stack
+    });
+
+    return dbError('Failed to cleanup red categories', { originalError: err.message });
+  }
+}
+
+// 导出包装后的处理函数
+exports.main = wrapHandler(handler, { functionName: 'categoryManagement' });

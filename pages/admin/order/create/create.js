@@ -11,7 +11,7 @@ Page({
     selectedProducts: [],
     searchKeyword: '',
     showProductSelector: false,
-    
+
     // 订单数据
     formData: {
       contactName: '',
@@ -20,10 +20,10 @@ Page({
       address: '',
       remark: ''
     },
-    
+
     // 计算数据
     totalAmount: 0,
-    
+
     // 页面状态
     isSubmitting: false,
     errors: {},
@@ -50,7 +50,7 @@ Page({
     const year = tomorrow.getFullYear();
     const month = (tomorrow.getMonth() + 1).toString().padStart(2, '0');
     const day = tomorrow.getDate().toString().padStart(2, '0');
-    
+
     this.setData({
       'formData.serviceTime': `${year}-${month}-${day}`
     });
@@ -60,11 +60,19 @@ Page({
    * 加载产品列表
    */
   loadProducts() {
-    // 模拟数据
-    const mockProducts = this.getMockProducts();
-    this.setData({
-      productList: mockProducts
-    });
+    adminApi.getProducts({ page: 1, size: 100 })
+      .then(data => {
+        const products = (data.records || []).map(item => ({
+          ...item,
+          thumb: item.thumb || item.imageUrl || ''
+        }));
+        this.setData({ productList: products });
+      })
+      .catch(err => {
+        console.error('加载产品失败', err);
+        // Fallback to mock
+        this.setData({ productList: this.getMockProducts() });
+      });
   },
 
   /**
@@ -129,17 +137,17 @@ Page({
   selectProduct(e) {
     const { id } = e.currentTarget.dataset;
     const product = this.data.productList.find(item => item.id === id);
-    
+
     if (!product) return;
-    
+
     // 检查产品是否已经选择
     const existIndex = this.data.selectedProducts.findIndex(item => item.id === id);
-    
+
     if (existIndex >= 0) {
       // 已经选择过，增加数量
       const selectedProducts = this.data.selectedProducts;
       selectedProducts[existIndex].quantity += 1;
-      
+
       this.setData({
         selectedProducts
       });
@@ -149,12 +157,12 @@ Page({
         ...product,
         quantity: 1
       };
-      
+
       this.setData({
         selectedProducts: [...this.data.selectedProducts, newProduct]
       });
     }
-    
+
     this.calculateTotal();
     this.closeProductSelector();
   },
@@ -165,13 +173,13 @@ Page({
   increaseQuantity(e) {
     const { index } = e.currentTarget.dataset;
     const selectedProducts = this.data.selectedProducts;
-    
+
     selectedProducts[index].quantity += 1;
-    
+
     this.setData({
       selectedProducts
     });
-    
+
     this.calculateTotal();
   },
 
@@ -181,10 +189,10 @@ Page({
   decreaseQuantity(e) {
     const { index } = e.currentTarget.dataset;
     const selectedProducts = this.data.selectedProducts;
-    
+
     if (selectedProducts[index].quantity > 1) {
       selectedProducts[index].quantity -= 1;
-      
+
       this.setData({
         selectedProducts
       });
@@ -203,7 +211,7 @@ Page({
         }
       });
     }
-    
+
     this.calculateTotal();
   },
 
@@ -213,13 +221,13 @@ Page({
   removeProduct(e) {
     const { index } = e.currentTarget.dataset;
     const selectedProducts = this.data.selectedProducts;
-    
+
     selectedProducts.splice(index, 1);
-    
+
     this.setData({
       selectedProducts
     });
-    
+
     this.calculateTotal();
   },
 
@@ -231,7 +239,7 @@ Page({
     this.data.selectedProducts.forEach(product => {
       total += product.price * product.quantity;
     });
-    
+
     this.setData({
       totalAmount: total
     });
@@ -420,14 +428,14 @@ Page({
   goBack() {
     wx.navigateBack();
   },
-  
+
   // 过滤产品列表 - 根据搜索关键词
   getFilteredProducts() {
     const { productList, searchKeyword } = this.data;
     if (!searchKeyword) return productList;
-    
-    return productList.filter(product => 
+
+    return productList.filter(product =>
       product.name.toLowerCase().includes(searchKeyword.toLowerCase())
     );
   }
-}); 
+});

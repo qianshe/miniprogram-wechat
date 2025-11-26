@@ -1,129 +1,156 @@
 <view class="page-container">
-  <view class="page-header">
-    <view class="page-title">创建订单</view>
+  <!-- 顶部导航/标题 -->
+  <view class="header-section">
+    <view class="header-title">创建订单</view>
+    <view class="header-subtitle">填写客户信息并添加服务产品</view>
   </view>
   
-  <!-- 订单表单 -->
-  <t-cell-group title="客户信息">
-    <t-cell title="联系人姓名" required>
-      <t-input
-        slot="note"
-        placeholder="请输入联系人姓名"
-        value="{{formData.contactName}}"
-        bind:change="onInputChange"
-        data-field="contactName"
-        status="{{errors.contactName ? 'error' : ''}}"
-        tips="{{errors.contactName}}"
-      />
-    </t-cell>
+  <view class="form-container">
+    <!-- 客户信息卡片 -->
+    <view class="form-card">
+      <view class="card-title">客户信息</view>
+      
+      <view class="input-group">
+        <view class="input-label">联系人</view>
+        <t-input
+          placeholder="请输入客户姓名"
+          value="{{formData.contactName}}"
+          bind:change="onInputChange"
+          data-field="contactName"
+          borderless="{{true}}"
+          class="filled-input"
+          placeholder-class="placeholder-style"
+        />
+      </view>
 
-    <t-cell title="联系电话" required>
-      <t-input
-        slot="note"
-        type="number"
-        placeholder="请输入联系电话"
-        value="{{formData.contactPhone}}"
-        bind:change="onInputChange"
-        data-field="contactPhone"
-        status="{{errors.contactPhone ? 'error' : ''}}"
-        tips="{{errors.contactPhone}}"
-      />
-    </t-cell>
+      <view class="input-group">
+        <view class="input-label">联系电话</view>
+        <t-input
+          type="number"
+          placeholder="请输入手机号码"
+          value="{{formData.contactPhone}}"
+          bind:change="onInputChange"
+          data-field="contactPhone"
+          borderless="{{true}}"
+          class="filled-input"
+          placeholder-class="placeholder-style"
+        />
+      </view>
 
-    <t-cell title="服务时间" required>
-      <picker
-        slot="note"
-        mode="date"
-        value="{{formData.serviceTime}}"
-        bindchange="onServiceTimeChange"
-        start="{{formData.serviceTime}}"
-      >
-        <view class="form-picker">
-          {{formData.serviceTime || '请选择服务时间'}}
-          <t-icon name="chevron-right" size="16" />
-        </view>
-      </picker>
-      <view class="error-tips" wx:if="{{errors.serviceTime}}">{{errors.serviceTime}}</view>
-    </t-cell>
-
-    <t-cell title="服务地址" required>
-      <t-input
-        slot="note"
-        type="textarea"
-        placeholder="请输入详细地址"
-        value="{{formData.address}}"
-        bind:change="onInputChange"
-        data-field="address"
-        status="{{errors.address ? 'error' : ''}}"
-        tips="{{errors.address}}"
-      />
-    </t-cell>
-
-    <t-cell title="备注">
-      <t-input
-        slot="note"
-        type="textarea"
-        placeholder="可选填"
-        value="{{formData.remark}}"
-        bind:change="onInputChange"
-        data-field="remark"
-      />
-    </t-cell>
-  </t-cell-group>
-  
-  <!-- 产品列表 -->
-  <t-cell-group title="产品信息">
-    <t-cell title="选择产品" arrow bindtap="openProductSelector">
-      <t-button slot="note" size="small" theme="primary">添加产品</t-button>
-    </t-cell>
-  </t-cell-group>
-
-  <view class="form-section" wx:if="{{selectedProducts.length > 0 || errors.products}}">
-    
-    <view class="error-message" wx:if="{{errors.products}}">{{errors.products}}</view>
-    
-    <block wx:if="{{selectedProducts.length > 0}}">
-      <view class="product-list">
-        <view class="product-item" wx:for="{{selectedProducts}}" wx:key="id">
-          <view class="product-info">
-            <image class="product-thumb" src="{{item.thumb}}" mode="aspectFill"></image>
-            <view class="product-details">
-              <view class="product-name">{{item.name}}</view>
-              <view class="product-price">¥{{item.price / 100}}</view>
-            </view>
+      <view class="input-group">
+        <view class="input-label">服务时间</view>
+        <picker
+          mode="date"
+          value="{{formData.serviceTime}}"
+          bindchange="onServiceTimeChange"
+          start="{{formData.serviceTime}}"
+        >
+          <view class="filled-input picker-trigger">
+            <text class="{{formData.serviceTime ? 'text-value' : 'text-placeholder'}}">
+              {{formData.serviceTime || '请选择服务日期'}}
+            </text>
+            <t-icon name="calendar" size="40rpx" color="#ccc" />
           </view>
-          <view class="product-quantity">
-            <view class="quantity-adjust decrease" bindtap="decreaseQuantity" data-index="{{index}}">-</view>
-            <view class="quantity-value">{{item.quantity}}</view>
-            <view class="quantity-adjust increase" bindtap="increaseQuantity" data-index="{{index}}">+</view>
-          </view>
-          <view class="remove-btn" bindtap="removeProduct" data-index="{{index}}">×</view>
+        </picker>
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">服务地址</view>
+        <t-textarea
+          placeholder="请输入详细服务地址"
+          value="{{formData.address}}"
+          bind:change="onInputChange"
+          data-field="address"
+          autosize
+          borderless="{{true}}"
+          class="filled-input textarea-input"
+          placeholder-class="placeholder-style"
+        />
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">订单备注</view>
+        <t-textarea
+          placeholder="可选填备注信息"
+          value="{{formData.remark}}"
+          bind:change="onInputChange"
+          data-field="remark"
+          autosize
+          borderless="{{true}}"
+          class="filled-input textarea-input"
+          placeholder-class="placeholder-style"
+        />
+      </view>
+    </view>
+    
+    <!-- 产品信息卡片 -->
+    <view class="form-card">
+      <view class="card-header">
+        <view class="card-title" style="margin-bottom: 0;">产品信息</view>
+        <view class="add-product-btn" bindtap="openProductSelector">
+          <t-icon name="add" size="32rpx" />
+          <text>添加产品</text>
         </view>
       </view>
       
-      <view class="total-amount">
-        <text class="total-label">总计：</text>
-        <text class="total-value">¥{{totalAmount / 100}}</text>
+      <block wx:if="{{selectedProducts.length > 0}}">
+        <view class="product-list">
+          <view class="product-item" wx:for="{{selectedProducts}}" wx:key="id">
+            <image class="product-thumb" src="{{item.thumb}}" mode="aspectFill"></image>
+            <view class="product-info">
+              <view class="product-main">
+                <view class="product-name">{{item.name}}</view>
+                <view class="product-price">¥{{item.price}}</view>
+              </view>
+              <view class="product-action">
+                <view class="quantity-control">
+                  <view class="qty-btn minus" bindtap="decreaseQuantity" data-index="{{index}}">-</view>
+                  <view class="qty-num">{{item.quantity}}</view>
+                  <view class="qty-btn plus" bindtap="increaseQuantity" data-index="{{index}}">+</view>
+                </view>
+                <view class="delete-btn" bindtap="removeProduct" data-index="{{index}}">
+                  <t-icon name="delete" size="36rpx" color="#999" />
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        
+        <view class="total-section">
+          <text class="total-label">合计金额</text>
+          <text class="total-price">¥{{totalAmount}}</text>
+        </view>
+      </block>
+      
+      <view class="empty-state" wx:else bindtap="openProductSelector">
+        <view class="empty-icon-wrapper">
+          <t-icon name="cart-add" size="48rpx" color="var(--primary-color)" />
+        </view>
+        <text>点击添加服务产品</text>
       </view>
-    </block>
-    
-    <view class="empty-product" wx:else>
-      <view class="empty-icon">+</view>
-      <view class="empty-text">请添加产品</view>
     </view>
   </view>
   
-  <!-- 操作按钮 -->
-  <view class="action-buttons">
-    <t-button theme="default" bindtap="goBack">取消</t-button>
-    <t-button
-      theme="primary"
-      loading="{{isSubmitting}}"
-      bindtap="submitOrder"
-      disabled="{{isSubmitting}}"
-    >
-      {{isSubmitting ? '提交中...' : '提交订单'}}
-    </t-button>
+  <!-- 底部操作栏 -->
+  <view class="footer-bar">
+    <view class="footer-total" wx:if="{{totalAmount > 0}}">
+      <text>总计:</text>
+      <text class="footer-price">¥{{totalAmount}}</text>
+    </view>
+    <view class="footer-actions">
+      <t-button theme="light" size="large" shape="round" class="action-btn cancel" bindtap="goBack">取消</t-button>
+      <t-button
+        theme="primary"
+        size="large"
+        shape="round"
+        class="action-btn submit"
+        loading="{{isSubmitting}}"
+        bindtap="submitOrder"
+        disabled="{{isSubmitting}}"
+      >
+        立即创建
+      </t-button>
+    </view>
   </view>
   
   <!-- 产品选择弹窗 -->
@@ -135,19 +162,19 @@
     <view class="selector-content">
       <view class="selector-header">
         <view class="selector-title">选择产品</view>
-        <t-icon name="close" size="20" bindtap="closeProductSelector" />
+        <t-icon name="close" size="40rpx" bindtap="closeProductSelector" />
       </view>
 
       <view class="selector-search">
-        <t-input
+        <t-search
           placeholder="搜索产品名称"
           bind:change="onSearchInput"
           value="{{searchKeyword}}"
-          prefix-icon="search"
+          shape="round"
         />
       </view>
       
-      <view class="selector-list">
+      <scroll-view scroll-y class="selector-list">
         <block wx:if="{{getFilteredProducts().length > 0}}">
           <view 
             class="selector-item" 
@@ -157,14 +184,21 @@
             data-id="{{item.id}}"
           >
             <image class="selector-thumb" src="{{item.thumb}}" mode="aspectFill"></image>
-            <view class="selector-details">
+            <view class="selector-info">
               <view class="selector-name">{{item.name}}</view>
-              <view class="selector-price">¥{{item.price / 100}}</view>
+              <view class="selector-bottom">
+                <view class="selector-price">¥{{item.price}}</view>
+                <view class="add-icon">
+                  <t-icon name="add" size="32rpx" color="#fff" />
+                </view>
+              </view>
             </view>
           </view>
         </block>
-        <view class="empty-results" wx:else>无匹配产品</view>
-      </view>
+        <view class="empty-results" wx:else>
+          <t-empty description="未找到相关产品" />
+        </view>
+      </scroll-view>
     </view>
   </t-popup>
 </view>

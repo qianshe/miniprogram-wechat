@@ -1,0 +1,92 @@
+{
+  "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
+  "version": "2.0",
+  "envId": "YOUR_CLOUDBASE_ENV_ID_HERE",
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    {
+      "name": "login",
+      "timeout": 10,
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "orderManagement",
+      "timeout": 20,
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "categoryManagement",
+      "timeout": 10,
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "productManagement",
+      "timeout": 20,
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "processManagement",
+      "timeout": 20,
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    }
+  ],
+  "framework": {
+    "name": "miniprogram",
+    "plugins": {}
+  },
+  "database": {
+    "indexConfigFile": "database/indexes.json",
+    "collections": [
+      {
+        "name": "users",
+        "description": "User information collection"
+      },
+      {
+        "name": "products",
+        "description": "Product catalog collection"
+      },
+      {
+        "name": "categories",
+        "description": "Category taxonomy collection"
+      },
+      {
+        "name": "orders",
+        "description": "Order records collection"
+      },
+      {
+        "name": "processes",
+        "description": "Process definition collection"
+      },
+      {
+        "name": "addresses",
+        "description": "User address collection"
+      },
+      {
+        "name": "feedback",
+        "description": "User feedback collection"
+      },
+      {
+        "name": "carts",
+        "description": "Shopping cart collection"
+      },
+      {
+        "name": "admins",
+        "description": "Admin user collection"
+      }
+    ],
+    "indexManagement": {
+      "tool": "database/index-manager.js",
+      "commands": {
+        "list": "node database/index-manager.js list",
+        "summary": "node database/index-manager.js summary",
+        "consoleGuide": "node database/index-manager.js console-guide",
+        "export": "node database/index-manager.js export"
+      }
+    }
+  }
+}

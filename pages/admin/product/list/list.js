@@ -159,8 +159,14 @@ Page({
         const hasMore = params.page * params.pageSize < total;
         const newPage = this.data.page + 1;
 
+        // 处理图片字段映射 (兼容 imageUrl 和 thumb)
+        const processedRecords = records.map(item => ({
+          ...item,
+          thumb: item.thumb || item.imageUrl || ''
+        }));
+
         this.setData({
-          products: reset ? records : [...this.data.products, ...records],
+          products: reset ? processedRecords : [...this.data.products, ...processedRecords],
           page: newPage,
           hasMore,
           isLoading: false,

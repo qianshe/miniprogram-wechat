@@ -1,64 +1,158 @@
-<view class="container">
-  <view class="page-header">
-    <view class="page-title">{{isEdit ? '编辑商品' : '新增商品'}}</view>
+<view class="page-container">
+  <!-- 顶部导航/标题 -->
+  <view class="header-section">
+    <view class="header-title">{{isEdit ? '编辑商品' : '创建新商品'}}</view>
+    <view class="header-subtitle">请完善以下商品信息</view>
   </view>
 
-  <!-- 基本信息 -->
-  <view class="form-section">
-    <view class="section-title">基本信息</view>
-    <t-cell-group theme="card">
-      <t-input label="商品名称" placeholder="请输入商品名称" value="{{formData.name}}" bind:change="onNameChange" />
-      <t-cell title="商品分类" arrow hover note="{{selectedCategoryName || '请选择分类'}}" bind:click="onCategoryPicker" />
-      <t-textarea label="商品描述" placeholder="请输入商品详细描述" value="{{formData.description}}" bind:change="onDescriptionChange" autosize />
-    </t-cell-group>
+  <!-- 图片上传区域 (突出显示) -->
+  <view class="upload-section">
+    <view class="upload-card">
+      <t-upload
+        mediaType="{{['image']}}"
+        max="{{1}}"
+        files="{{fileList}}"
+        bind:add="onAddImage"
+        bind:remove="onRemoveImage"
+        class="custom-upload"
+      />
+      <view class="upload-placeholder" wx:if="{{fileList.length === 0}}">
+        <t-icon name="add-circle" size="64rpx" color="var(--primary-color)" />
+        <text style="color: var(--text-main); font-weight: 500;">点击上传商品主图</text>
+        <text style="font-size: 24rpx; color: #999;">支持 JPG, PNG 格式</text>
+      </view>
+    </view>
+    <view class="upload-tips">建议尺寸 800x800 像素</view>
   </view>
 
-  <!-- 价格与库存 -->
-  <view class="form-section">
-    <view class="section-title">价格与库存</view>
-    <t-cell-group theme="card">
-      <t-input label="商品价格" placeholder="0.00" type="number" value="{{formData.price}}" bind:change="onPriceChange" suffix="元" />
-      <t-input label="市场原价" placeholder="0.00" type="number" value="{{formData.originalPrice}}" bind:change="onOriginalPriceChange" suffix="元" />
-      <t-input label="库存数量" placeholder="0" type="number" value="{{formData.stock}}" bind:change="onStockChange" />
-    </t-cell-group>
-  </view>
+  <!-- 表单内容区域 -->
+  <view class="form-container">
+    
+    <!-- 基本信息卡片 -->
+    <view class="form-card">
+      <view class="card-title">基本信息</view>
+      
+      <view class="input-group">
+        <view class="input-label">商品名称</view>
+        <t-input 
+          placeholder="请输入商品名称" 
+          value="{{formData.name}}" 
+          bind:change="onNameChange" 
+          borderless="{{true}}"
+          class="filled-input"
+          placeholder-class="placeholder-style"
+        />
+      </view>
 
-  <!-- 商品图片 -->
-  <view class="form-section">
-    <view class="section-title">商品图片</view>
-    <t-cell-group theme="card">
-      <t-cell title="主图上传" description="建议尺寸 800x800" bordered="{{false}}">
-        <view class="upload-container" slot="note">
-          <t-upload
-            mediaType="{{['image']}}"
-            max="{{1}}"
-            files="{{fileList}}"
-            bind:add="onAddImage"
-            bind:remove="onRemoveImage"
-          />
+      <view class="input-group">
+        <view class="input-label">商品分类</view>
+        <view class="filled-input picker-trigger" bindtap="onCategoryPicker">
+          <text class="{{selectedCategoryName ? 'text-value' : 'text-placeholder'}}">
+            {{selectedCategoryName || '请选择商品分类'}}
+          </text>
+          <t-icon name="chevron-right" size="40rpx" color="#ccc" />
         </view>
-      </t-cell>
-    </t-cell-group>
-  </view>
+      </view>
 
-  <!-- 上架设置 -->
-  <view class="form-section">
-    <view class="section-title">上架设置</view>
-    <t-cell-group theme="card">
-      <t-cell title="立即上架" description="关闭后商品将存入仓库">
-        <t-switch value="{{formData.status === 1}}" bind:change="onStatusChange" slot="note" />
-      </t-cell>
-    </t-cell-group>
+      <view class="input-group">
+        <view class="input-label">商品描述</view>
+        <t-textarea 
+          placeholder="请输入商品详细描述..." 
+          value="{{formData.description}}" 
+          bind:change="onDescriptionChange" 
+          autosize 
+          borderless="{{true}}"
+          class="filled-input textarea-input"
+          placeholder-class="placeholder-style"
+          maxlength="200"
+          indicator
+        />
+      </view>
+    </view>
+
+    <!-- 价格与库存卡片 -->
+    <view class="form-card">
+      <view class="card-title">价格与库存</view>
+      
+      <view class="grid-row">
+        <view class="grid-col">
+          <view class="input-group">
+            <view class="input-label">销售价格</view>
+            <t-input 
+              type="number" 
+              placeholder="0.00" 
+              value="{{formData.price}}" 
+              bind:change="onPriceChange" 
+              borderless="{{true}}"
+              class="filled-input"
+              suffix="元"
+            />
+          </view>
+        </view>
+        <view class="grid-col">
+          <view class="input-group">
+            <view class="input-label">市场原价</view>
+            <t-input 
+              type="number" 
+              placeholder="0.00" 
+              value="{{formData.originalPrice}}" 
+              bind:change="onOriginalPriceChange" 
+              borderless="{{true}}"
+              class="filled-input"
+              suffix="元"
+            />
+          </view>
+        </view>
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">库存数量</view>
+        <t-input 
+          type="number" 
+          placeholder="0" 
+          value="{{formData.stock}}" 
+          bind:change="onStockChange" 
+          borderless="{{true}}"
+          class="filled-input"
+        />
+      </view>
+    </view>
+
+    <!-- 设置卡片 -->
+    <view class="form-card">
+      <view class="setting-row">
+        <view class="setting-info">
+          <view class="setting-title">立即上架</view>
+          <view class="setting-desc">开启后商品将在店铺中可见</view>
+        </view>
+        <t-switch 
+          value="{{formData.status === 1}}" 
+          bind:change="onStatusChange" 
+          colors="{{['var(--primary-color)', '#e6e6e6']}}" 
+        />
+      </view>
+    </view>
+
   </view>
 
   <!-- 底部按钮 -->
-  <view class="bottom-bar">
-    <t-button class="submit-btn" theme="primary" size="large" block bind:tap="onSubmit">保存商品</t-button>
+  <view class="footer-bar">
+    <t-button 
+      theme="primary" 
+      size="large" 
+      block 
+      shape="round" 
+      class="submit-btn" 
+      bind:tap="onSubmit"
+    >
+      保存商品
+    </t-button>
   </view>
 
+  <!-- 分类选择器 -->
   <t-picker
     visible="{{categoryVisible}}"
-    value="{{[formData.categoryId]}}"
+    value="{{[formData.category]}}"
     title="选择分类"
     cancelBtn="取消"
     confirmBtn="确认"

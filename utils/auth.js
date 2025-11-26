@@ -1,5 +1,6 @@
 /**
  * 认证工具类 - 增强安全版本
+ * 与 permission.js 权限校验模块集成
  */
 const USER_INFO_KEY = 'userInfo';
 const SECURITY_KEY = 'auth_security'; // 安全配置键
@@ -8,6 +9,9 @@ const LAST_ACTIVE_KEY = 'last_active_time'; // 最后活跃时间
 const AUTH_KEY = 'auth_token';
 const REFRESH_KEY = 'refresh_token';
 const EXPIRES_KEY = 'auth_expires';
+
+// 引入权限校验模块
+const permission = require('./permission');
 
 const app = getApp();
 
@@ -67,6 +71,9 @@ module.exports = {
         app.globalData.userInfo = secureUserInfo;
         app.globalData.isAdmin = userInfo.isAdmin || false;
       }
+
+      // 同步更新权限模块的管理员状态
+      permission.setAdminStatus(userInfo.isAdmin || false);
 
       // 记录认证时间
       wx.setStorageSync('auth_time', Date.now());
@@ -312,7 +319,7 @@ module.exports = {
         try {
           wx.removeStorageSync(key);
         } catch (err) {
-          console.warn(`Failed to remove storage key ${key}:`, err);
+          console.warn('Failed to remove storage key ' + key + ':', err);
         }
       });
 
@@ -321,6 +328,9 @@ module.exports = {
         app.globalData.userInfo = null;
         app.globalData.isAdmin = false;
       }
+      
+      // 同步清除权限模块的权限信息
+      permission.clearPermissions();
     } catch (error) {
       console.error('Failed to clear auth data:', error);
     }
@@ -367,5 +377,51 @@ module.exports = {
     });
   },
 
+  /**
+   * 获取权限校验模块
+   * 提供对权限模块的访问，用于页面守卫和操作权限检查
+   */
+  getPermission() {
+    return permission;
+  },
+
+  /**
+   * 检查页面访问权限
+   * @param {string} pagePath 页面路径
+   * @returns {object} { allowed: boolean, reason?: string, redirect?: string }
+   */
+  checkPageAccess(pagePath) {
+    return permission.checkPageAccess(pagePath);
+  },
+
+  /**
+   * 页面守卫 - 在页面 onLoad 中调用
+   * @param {object} pageInstance 页面实例 (this)
+   * @param {object} options 页面参数
+   * @returns {boolean} 是否允许访问
+   */
+  pageGuard(pageInstance, options = {}) {
+    return permission.pageGuard(pageInstance, options);
+  },
+
+  /**
+   * 检查操作权限
+   * @param {string} action 操作名称
+   * @param {object} resource 资源对象（可选）
+   * @returns {boolean}
+   */
+  checkPermission(action, resource = null) {
+    return permission.checkPermission(action, resource);
+  },
+
+  /**
+   * 权限装饰器 - 用于包装需要权限的函数
+   * @param {string} action 操作名称
+   * @param {function} fn 原函数
+   * @returns {function}
+   */
+  withPermission(action, fn) {
+    return permission.withPermission(action, fn);
+  }
 
 };

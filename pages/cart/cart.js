@@ -323,6 +323,12 @@ Page({
   },
 
   onUnload() {
+    // 清理定时器，防止内存泄漏
+    if (this.data.resetTimer) {
+      clearTimeout(this.data.resetTimer);
+      this.setData({ resetTimer: null });
+    }
+    
     // 卸载时也保存一次
     if (this.data.cartItems && this.data.cartItems.length > 0) {
       wx.setStorageSync('cartListLocal', this.data.cartItems);

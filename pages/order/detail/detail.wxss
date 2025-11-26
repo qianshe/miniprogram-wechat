@@ -305,9 +305,27 @@
   padding: 20rpx 30rpx;
   display: flex;
   justify-content: flex-end;
+  gap: 16rpx;
   box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.05);
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   z-index: 100;
+}
+
+.actions t-button {
+  margin-left: 16rpx;
+}
+
+.actions t-button:first-child {
+  margin-left: 0;
+}
+
+/* 管理员按钮样式 */
+.btn-primary {
+  min-width: 160rpx;
+}
+
+.btn-secondary {
+  min-width: 140rpx;
 }
 
 .back-btn {

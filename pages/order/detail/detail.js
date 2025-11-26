@@ -1,4 +1,4 @@
-const { api } = require('../../../utils/api.js');
+const { api, adminApi } = require('../../../utils/api.js');
 
 Page({
   data: {
@@ -6,7 +6,8 @@ Page({
     orderInfo: null,
     loading: true,
     systemType: 'white', // 默认为白事系统
-    themeColor: '#333333' // 默认主题色
+    themeColor: '#333333', // 默认主题色
+    isAdmin: false // 是否为管理员
   },
 
   onLoad(options) {
@@ -14,9 +15,13 @@ Page({
     const systemType = options.systemType || 'white';
     const themeColor = systemType === 'red' ? '#d32f2f' : '#333333';
     
+    // 获取管理员状态
+    const isAdmin = options.isAdmin === 'true' || options.isAdmin === true;
+    
     this.setData({
       systemType,
-      themeColor
+      themeColor,
+      isAdmin
     });
     
     if (options.orderNo) {
@@ -373,5 +378,134 @@ Page({
     return (this.data.orderInfo.discountAmount / 100).toFixed(2);
   },
 
+  // 管理员操作：上一步（回退状态）
+  async handlePrevStep() {
+    const currentStatus = this.data.orderInfo.status;
+    let prevStatus;
+    
+    // 根据当前状态确定上一步状态
+    // 0:待支付 -> 无上一步
+    // 1:已支付 -> 0:待支付
+    // 2:处理中 -> 1:已支付
+    // 3:已完成 -> 2:处理中
+    // 4:已取消 -> 无上一步
+    switch (currentStatus) {
+      case 1:
+        prevStatus = 0;
+        break;
+      case 2:
+        prevStatus = 1;
+        break;
+      case 3:
+        prevStatus = 2;
+        break;
+      default:
+        wx.showToast({
+          title: '当前状态无法回退',
+          icon: 'none'
+        });
+        return;
+    }
+
+    wx.showLoading({ title: '处理中...' });
+
+    try {
+      await adminApi.updateOrderStatus(this.data.orderNo, prevStatus);
+      wx.hideLoading();
+      wx.showToast({
+        title: '状态已回退',
+        icon: 'success'
+      });
+      // 刷新订单详情
+      this.loadOrderDetail();
+    } catch (err) {
+      wx.hideLoading();
+      console.error('回退订单状态失败:', err);
+      wx.showToast({
+        title: err.message || '操作失败',
+        icon: 'none'
+      });
+    }
+  },
+
+  // 管理员操作：下一步（推进状态）
+  async handleNextStep() {
+    const currentStatus = this.data.orderInfo.status;
+    let nextStatus;
+    
+    // 根据当前状态确定下一步状态
+    // 0:待支付 -> 1:已支付
+    // 1:已支付 -> 2:处理中
+    // 2:处理中 -> 3:已完成
+    // 3:已完成 -> 无下一步
+    // 4:已取消 -> 无下一步
+    switch (currentStatus) {
+      case 0:
+        nextStatus = 1;
+        break;
+      case 1:
+        nextStatus = 2;
+        break;
+      case 2:
+        nextStatus = 3;
+        break;
+      default:
+        wx.showToast({
+          title: '当前状态无法推进',
+          icon: 'none'
+        });
+        return;
+    }
+
+    wx.showLoading({ title: '处理中...' });
+
+    try {
+      await adminApi.updateOrderStatus(this.data.orderNo, nextStatus);
+      wx.hideLoading();
+      wx.showToast({
+        title: '状态已更新',
+        icon: 'success'
+      });
+      // 刷新订单详情
+      this.loadOrderDetail();
+    } catch (err) {
+      wx.hideLoading();
+      console.error('推进订单状态失败:', err);
+      wx.showToast({
+        title: err.message || '操作失败',
+        icon: 'none'
+      });
+    }
+  },
+
+  // 管理员操作：取消订单
+  async handleAdminCancel() {
+    wx.showModal({
+      title: '取消订单',
+      content: '确定要取消此订单吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '处理中...' });
+          try {
+            await adminApi.updateOrderStatus(this.data.orderNo, 4); // 4:已取消
+            wx.hideLoading();
+            wx.showToast({
+              title: '订单已取消',
+              icon: 'success'
+            });
+            // 刷新订单详情
+            this.loadOrderDetail();
+          } catch (err) {
+            wx.hideLoading();
+            console.error('取消订单失败:', err);
+            wx.showToast({
+              title: err.message || '取消失败',
+              icon: 'none'
+            });
+          }
+        }
+      }
+    });
+  },
 
 });

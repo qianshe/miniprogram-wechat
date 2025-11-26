@@ -112,17 +112,45 @@
     </view>
 
     <view class="actions">
-      <block wx:if="{{orderInfo.status === 0}}">
-        <t-button theme="default" bindtap="handleCancel">取消订单</t-button>
-        <t-button theme="primary" bindtap="handlePay">立即支付</t-button>
+      <!-- 管理员按钮 -->
+      <block wx:if="{{isAdmin}}">
+        <!-- 待支付(0): 下一步, 取消订单 -->
+        <block wx:if="{{orderInfo.status === 0}}">
+          <t-button theme="default" class="btn-secondary" bindtap="handleAdminCancel">取消订单</t-button>
+          <t-button theme="primary" class="btn-primary" bindtap="handleNextStep">下一步</t-button>
+        </block>
+        <!-- 已支付(1): 上一步, 下一步, 取消订单 -->
+        <block wx:elif="{{orderInfo.status === 1}}">
+          <t-button theme="default" class="btn-secondary" bindtap="handlePrevStep">上一步</t-button>
+          <t-button theme="default" class="btn-secondary" bindtap="handleAdminCancel">取消订单</t-button>
+          <t-button theme="primary" class="btn-primary" bindtap="handleNextStep">下一步</t-button>
+        </block>
+        <!-- 处理中(2): 上一步, 下一步, 取消订单 -->
+        <block wx:elif="{{orderInfo.status === 2}}">
+          <t-button theme="default" class="btn-secondary" bindtap="handlePrevStep">上一步</t-button>
+          <t-button theme="default" class="btn-secondary" bindtap="handleAdminCancel">取消订单</t-button>
+          <t-button theme="primary" class="btn-primary" bindtap="handleNextStep">下一步</t-button>
+        </block>
+        <!-- 已完成(3): 上一步 -->
+        <block wx:elif="{{orderInfo.status === 3}}">
+          <t-button theme="default" class="btn-secondary" bindtap="handlePrevStep">上一步</t-button>
+        </block>
+        <!-- 已取消(4): 无按钮 -->
       </block>
-      <block wx:elif="{{orderInfo.status === 1 || orderInfo.status === 2}}">
-        <t-button theme="default" bindtap="contactService">联系客服</t-button>
-        <t-button theme="danger" bindtap="applyRefund">申请退款</t-button>
-      </block>
-      <block wx:elif="{{orderInfo.status === 3 || orderInfo.status === 4}}">
-        <t-button theme="default" bindtap="deleteOrder">删除订单</t-button>
-        <t-button theme="primary" bindtap="rebuyOrder">再次购买</t-button>
+      <!-- 普通用户按钮 -->
+      <block wx:else>
+        <block wx:if="{{orderInfo.status === 0}}">
+          <t-button theme="default" bindtap="handleCancel">取消订单</t-button>
+          <t-button theme="primary" bindtap="handlePay">立即支付</t-button>
+        </block>
+        <block wx:elif="{{orderInfo.status === 1 || orderInfo.status === 2}}">
+          <t-button theme="default" bindtap="contactService">联系客服</t-button>
+          <t-button theme="danger" bindtap="applyRefund">申请退款</t-button>
+        </block>
+        <block wx:elif="{{orderInfo.status === 3 || orderInfo.status === 4}}">
+          <t-button theme="default" bindtap="deleteOrder">删除订单</t-button>
+          <t-button theme="primary" bindtap="rebuyOrder">再次购买</t-button>
+        </block>
       </block>
     </view>
   </block>

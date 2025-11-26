@@ -24,6 +24,7 @@ project.config.json
 project.private.config.json
 
 # 云开发环境配置（包含环境ID等敏感信息）
+cloudbaserc.json
 config/cloud.config.js
 
 # 其他敏感/临时文件

@@ -51,6 +51,7 @@ Page({
             wx.showLoading({ title: '加载中...' });
             const product = await adminApi.getProductDetail(id);
 
+            const thumb = product.thumb || product.imageUrl || '';
             this.setData({
                 formData: {
                     name: product.name,
@@ -60,9 +61,9 @@ Page({
                     category: product.category,  // 使用category字段
                     description: product.description,
                     status: product.status,
-                    thumb: product.thumb
+                    thumb: thumb
                 },
-                fileList: product.thumb ? [{ url: product.thumb }] : []
+                fileList: thumb ? [{ url: thumb }] : []
             });
 
             // 设置选中的分类名称
