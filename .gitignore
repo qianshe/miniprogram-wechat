@@ -18,7 +18,20 @@ dataSources.local.xml
 
 # 忽略所有的 .DS_Store 文件
 .DS_Store
+
+# 微信小程序敏感配置文件
 project.config.json
-ClaudeCode使用指南.md
+project.private.config.json
+
+# 云开发环境配置（包含环境ID等敏感信息）
 config/cloud.config.js
+
+# 其他敏感/临时文件
+ClaudeCode使用指南.md
 CLAUDE.md
+
+# AI 编辑器配置目录
+.kilocode/
+.claude/
+rules/
+mcp.json
