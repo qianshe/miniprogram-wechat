@@ -2,7 +2,7 @@
 // 支持商品查询、创建、更新、删除等功能
 
 const cloud = require('wx-server-sdk');
-const { ErrorCodes, success, error, paramError, permissionError, notFoundError, dbError, wrapHandler } = require('../_shared/errorHandler');
+const { ErrorCodes, success, error, paramError, permissionError, notFoundError, dbError, wrapHandler } = require('./_shared/errorHandler');
 
 // 初始化云开发环境
 cloud.init({

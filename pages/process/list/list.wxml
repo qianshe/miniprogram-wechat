@@ -34,6 +34,6 @@
   <!-- 底部提示 -->
   <view class="page-footer" wx:if="{{steps.length > 0}}">
     <view class="footer-text">如有疑问，请拨打24小时服务热线</view>
-    <view class="footer-phone" bindtap="onCallService">400-XXX-XXXX</view>
+    <view class="footer-phone" bindtap="onCallService">15025963707</view>
   </view>
 </view>

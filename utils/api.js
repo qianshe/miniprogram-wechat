@@ -19,7 +19,7 @@ const callCloudFunction = async (functionName, action, data = {}, page = null) =
         data
       }
     });
-
+    // 检查成功码 200 (HTTP OK)
     if (result.result.code === 200) {
       return result.result.data;
     } else {

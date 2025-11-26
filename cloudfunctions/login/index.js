@@ -7,8 +7,8 @@ const {
   paramError,
   wrapHandler,
   validateRequired
-} = require('../_shared/errorHandler')
-const { createLogger, maskOpenId } = require('../_shared/sensitive')
+} = require('./_shared/errorHandler')
+const { createLogger, maskOpenId } = require('./_shared/sensitive')
 
 // 创建安全日志记录器
 const logger = createLogger('login')

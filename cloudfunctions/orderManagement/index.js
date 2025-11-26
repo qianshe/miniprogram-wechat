@@ -10,13 +10,13 @@ const {
   permissionError,
   notFoundError,
   wrapHandlerWithTracing
-} = require('../_shared/errorHandler');
+} = require('./_shared/errorHandler');
 const {
   filterFields,
   filterFieldsArray,
   createFilterOptions,
   Roles
-} = require('../_shared/fieldFilter');
+} = require('./_shared/fieldFilter');
 
 // 初始化云开发环境
 cloud.init({

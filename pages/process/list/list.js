@@ -71,7 +71,7 @@ Page({
 
   onCallService() {
     wx.makePhoneCall({
-      phoneNumber: '400-XXX-XXXX',
+      phoneNumber: '15025963707',
       fail: () => {
         wx.showToast({
           title: '拨打电话失败',
