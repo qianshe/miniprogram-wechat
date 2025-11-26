@@ -1,7 +1,7 @@
 <view class="scan-result-container">
   <view class="page-header">
     <image class="logo" src="/assets/images/logo.png" mode="aspectFit"></image>
-    <view class="header-title">红白事一站式服务平台</view>
+    <view class="header-title">白事一站式服务平台</view>
   </view>
 
   <!-- 加载中 -->
