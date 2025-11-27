@@ -237,9 +237,23 @@ async function createProduct(data, context) {
   }
 
   try {
+    // 如果有分类ID,查询分类名称
+    let categoryName = '';
+    if (data.category) {
+      try {
+        const categoryResult = await db.collection('categories').doc(data.category).get();
+        if (categoryResult.data) {
+          categoryName = categoryResult.data.name;
+        }
+      } catch (err) {
+        console.warn('[PRODUCT_MANAGEMENT] Failed to get category name:', err.message);
+      }
+    }
+
     // 构建商品数据
     const product = {
       ...data,
+      categoryName, // 保存分类名称
       price: Math.round(data.price * 100), // 转换为分
       createTime: new Date(),
       updateTime: new Date(),
@@ -256,6 +270,7 @@ async function createProduct(data, context) {
     console.log('[PRODUCT_MANAGEMENT] createProduct success:', {
       productId: result._id,
       productName: data.name,
+      categoryName,
       executionTime: `${executionTime}ms`
     });
 
@@ -303,6 +318,18 @@ async function updateProduct(data, context) {
   }
 
   try {
+    // 如果更新了分类ID,查询分类名称
+    if (updateData.category) {
+      try {
+        const categoryResult = await db.collection('categories').doc(updateData.category).get();
+        if (categoryResult.data) {
+          updateData.categoryName = categoryResult.data.name;
+        }
+      } catch (err) {
+        console.warn('[PRODUCT_MANAGEMENT] Failed to get category name:', err.message);
+      }
+    }
+
     // 构建更新数据
     const updateFields = {
       ...updateData,
@@ -323,6 +350,7 @@ async function updateProduct(data, context) {
     const executionTime = Date.now() - startTime;
     console.log('[PRODUCT_MANAGEMENT] updateProduct success:', {
       productId: id,
+      categoryName: updateData.categoryName,
       executionTime: `${executionTime}ms`
     });
 

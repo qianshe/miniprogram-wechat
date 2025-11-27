@@ -1,4 +1,5 @@
 const { api } = require('../../../utils/api.js');
+const auth = require('../../../utils/auth.js');
 
 Page({
   data: {
@@ -35,7 +36,7 @@ Page({
         ...goods,
         price: parsedPrice,
         displayPrice: parsedPrice.toFixed(2),
-        displayTime: goods.createTime ? new Date(goods.createTime).toLocaleString() : '未知时间',
+        displayTime: goods.createTime ? new Date(goods.createTime).toLocaleString() : '',
         image: goods.imageUrl || 'https://tdesign.gtimg.com/mobile/demos/default_goods.png',
         images: goods.imageUrl ? [goods.imageUrl] : ['https://tdesign.gtimg.com/mobile/demos/default_goods.png']
       };
@@ -45,7 +46,7 @@ Page({
         loading: false
       });
     } catch (err) {
-      console.error('获取商品详情失败:', err);
+      console.error('[goods/detail] Load goods detail failed:', err);
       wx.showToast({
         title: '加载失败',
         icon: 'none'
@@ -89,6 +90,12 @@ Page({
   },
 
   addToCart() {
+    // 登录状态校验
+    if (!auth.checkAuth()) {
+      auth.loginWithPrompt();
+      return;
+    }
+
     if (!this.data.goods) return;
 
     if (this.data.quantity > this.data.goods.stock) {

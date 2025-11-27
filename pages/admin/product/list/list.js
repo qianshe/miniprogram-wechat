@@ -159,9 +159,10 @@ Page({
         const hasMore = params.page * params.pageSize < total;
         const newPage = this.data.page + 1;
 
-        // 处理图片字段映射 (兼容 imageUrl 和 thumb)
+        // 处理字段映射 (兼容 _id/id 和 imageUrl/thumb)
         const processedRecords = records.map(item => ({
           ...item,
+          id: item._id || item.id,  // 将 _id 映射为 id
           thumb: item.thumb || item.imageUrl || ''
         }));
 

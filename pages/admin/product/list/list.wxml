@@ -63,7 +63,7 @@
     <t-empty wx:if="{{products.length === 0 && !isLoading}}" description="暂无相关商品" icon="info-circle-filled" />
     
     <block wx:else>
-      <view class="product-item" wx:for="{{products}}" wx:key="id" bindtap="viewProduct" data-id="{{item.id}}">
+      <view class="product-item" wx:for="{{products}}" wx:key="id" bindtap="editProduct" data-id="{{item.id}}">
         <view class="product-thumb">
           <image src="{{item.thumb}}" mode="aspectFill" lazy-load></image>
           <view class="product-status {{item.status === 1 ? 'status-on' : 'status-off'}}">

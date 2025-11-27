@@ -53,7 +53,6 @@
   position: absolute;
   top: 0;
   left: 0;
-  opacity: 0; /* 隐藏实际上传组件，只用作触发 */
   z-index: 10;
 }
 
@@ -84,10 +83,14 @@
   color: #999;
   font-size: 28rpx;
   gap: 20rpx;
-  pointer-events: none;
   width: 100%;
   height: 100%;
-  background-color: #fafafa; /* 浅色背景 */
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  transition: all 0.3s ease;
+}
+
+.upload-placeholder:active {
+  background: linear-gradient(135deg, #e8ebf0 0%, #b8c5d6 100%);
 }
 
 .upload-tips {
@@ -139,12 +142,18 @@
 
 /* 自定义填充式输入框 */
 .filled-input {
-  background-color: #f7f8fa !important; /* 浅灰背景 */
+  background-color: #f7f8fa !important;
+  border: 2rpx solid #e5e7eb !important;
   border-radius: 16rpx !important;
   padding: 24rpx 32rpx !important;
   font-size: 28rpx;
   color: var(--text-main);
   transition: all 0.3s;
+}
+
+.filled-input:focus {
+  border-color: var(--primary-color) !important;
+  background-color: #fff !important;
 }
 
 .filled-input:active {

@@ -1,4 +1,5 @@
 const { api, priceToYuan } = require('../../../utils/api.js');
+const auth = require('../../../utils/auth.js');
 
 Page({
   data: {
@@ -57,14 +58,14 @@ Page({
           // 并行获取所有关联商品的详情
           const productPromises = stepDetail.productList.map(productId =>
             api.getProductDetail(productId).catch(err => {
-              console.warn(`获取商品详情失败: ${productId}`, err);
+              console.warn('[process/detail] Failed to get product detail:', productId, err);
               return null;
             })
           );
           const products = await Promise.all(productPromises);
           relatedProducts = products.filter(product => product !== null);
         } catch (err) {
-          console.error('获取关联商品失败:', err);
+          console.error('[process/detail] Failed to get related products:', err);
         }
       }
 
@@ -76,7 +77,7 @@ Page({
       });
 
     } catch (err) {
-      console.error('[DEBUG] 获取步骤详情异常:', {
+      console.error('[process/detail] Exception loading step detail:', {
         stepId,
         error: err,
         errorMessage: err.message,
@@ -95,9 +96,9 @@ Page({
   getMockStepInfo(stepId) {
     return {
       id: stepId,
-      title: '模拟步骤',
-      description: '模拟步骤描述',
-      content: '模拟步骤内容',
+      title: '',
+      description: '',
+      content: '',
       imageUrl: 'https://tdesign.gtimg.com/mobile/demos/example1.png',
       productList: []
     };
@@ -110,19 +111,19 @@ Page({
       const redProducts = [
         {
           id: 1,
-          name: '婚庆布置套餐',
+          name: '',
           price: 128800, // 使用分为单位，保持与后端一致
           imageUrl: 'https://tdesign.gtimg.com/mobile/demos/example1.png'
         },
         {
           id: 2,
-          name: '婚礼司仪服务',
+          name: '',
           price: 88800, // 使用分为单位，保持与后端一致
           imageUrl: 'https://tdesign.gtimg.com/mobile/demos/example1.png'
         },
         {
           id: 3,
-          name: '婚宴餐饮服务',
+          name: '',
           price: 399900, // 使用分为单位，保持与后端一致
           imageUrl: 'https://tdesign.gtimg.com/mobile/demos/example1.png'
         }
@@ -143,19 +144,19 @@ Page({
       const whiteProducts = [
         {
           id: 101,
-          name: '花圈套餐',
+          name: '',
           price: 38800, // 使用分为单位，保持与后端一致
           imageUrl: 'https://tdesign.gtimg.com/mobile/demos/example1.png'
         },
         {
           id: 102,
-          name: '骨灰盒',
+          name: '',
           price: 68800, // 使用分为单位，保持与后端一致
           imageUrl: 'https://tdesign.gtimg.com/mobile/demos/example1.png'
         },
         {
           id: 103,
-          name: '丧葬服务套餐',
+          name: '',
           price: 299900, // 使用分为单位，保持与后端一致
           imageUrl: 'https://tdesign.gtimg.com/mobile/demos/example1.png'
         }
@@ -179,7 +180,7 @@ Page({
     wx.navigateTo({
       url: `/pages/goods/detail/detail?id=${id}&systemType=${this.data.systemType}`,
       fail: (err) => {
-        console.error('页面跳转失败:', err);
+        console.error('[process/detail] Navigate to product detail failed:', err);
         wx.showToast({
           title: '页面跳转失败',
           icon: 'none'
@@ -189,6 +190,12 @@ Page({
   },
   
   addToCart(e) {
+    // 登录状态校验
+    if (!auth.checkAuth()) {
+      auth.loginWithPrompt();
+      return;
+    }
+
     const { product } = e.currentTarget.dataset;
     
     try {
@@ -217,7 +224,7 @@ Page({
         productId: product.id,
         quantity: 1
       }).catch(err => {
-        console.warn('同步购物车到服务器失败:', err);
+        console.warn('[process/detail] Failed to sync cart to server:', err);
       });
 
       wx.showToast({
@@ -225,7 +232,7 @@ Page({
         icon: 'success'
       });
     } catch (err) {
-      console.error('添加购物车失败:', err);
+      console.error('[process/detail] Failed to add to cart:', err);
       wx.showToast({
         title: '添加失败',
         icon: 'none'

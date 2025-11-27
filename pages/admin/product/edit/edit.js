@@ -121,15 +121,34 @@ Page({
         this.setData({ categoryVisible: false });
     },
 
-    onAddImage(e) {
+    async onAddImage(e) {
         const { files } = e.detail;
-        this.setData({
-            fileList: files
-        });
-        // 这里应该处理图片上传，获取服务器URL
-        // 模拟上传成功
-        if (files.length > 0) {
-            this.setData({ 'formData.thumb': files[0].url });
+        
+        if (files.length === 0) return;
+        
+        try {
+            wx.showLoading({ title: '上传中...' });
+            
+            // 上传到云存储
+            const uploadResult = await wx.cloud.uploadFile({
+                cloudPath: `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${files[0].url.split('.').pop()}`,
+                filePath: files[0].url
+            });
+            
+            // 获取临时下载链接
+            const tempFileURL = uploadResult.fileID;
+            
+            this.setData({
+                fileList: [{ url: tempFileURL, name: 'product-image' }],
+                'formData.thumb': tempFileURL
+            });
+            
+            wx.hideLoading();
+            wx.showToast({ title: '上传成功', icon: 'success' });
+        } catch (error) {
+            wx.hideLoading();
+            console.error('图片上传失败:', error);
+            wx.showToast({ title: '上传失败', icon: 'none' });
         }
     },
 
