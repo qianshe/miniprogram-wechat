@@ -1,7 +1,18 @@
-<view class="page">
-  <image class="background"
-  src="cloud://cloud1-5gudbe4m8263c9dc.636c-cloud1-5gudbe4m8263c9dc-1379027289/assets/images/home.jpeg"
-  mode="aspectFill"></image>
-  <view class="left" bindtap="navigateToWhiteSystem"></view>
-  <!-- <view class="right" bindtap="navigateToRedSystem"></view> -->
+<view class="container" bindtap="onTapOpen">
+  <!-- Left Door Panel -->
+  <view class="door door-left {{isAnimating ? 'open' : ''}}">
+    <image class="logo-img" 
+           src="cloud://cloud1-5gudbe4m8263c9dc.636c-cloud1-5gudbe4m8263c9dc-1379027289/assets/images/home.jpg" 
+           mode="widthFix"></image>
+  </view>
+  
+  <!-- Right Door Panel -->
+  <view class="door door-right {{isAnimating ? 'open' : ''}}">
+    <image class="logo-img" 
+           src="cloud://cloud1-5gudbe4m8263c9dc.636c-cloud1-5gudbe4m8263c9dc-1379027289/assets/images/home.jpg" 
+           mode="widthFix"></image>
+  </view>
+  
+  <!-- Optional hint text -->
+  <view class="click-hint {{isAnimating ? 'fade-out' : ''}}">点击开启</view>
 </view>

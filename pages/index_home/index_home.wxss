@@ -1,36 +1,74 @@
 /* pages/index_home/index_home.wxss */
 
-.page {
-  display: flex;
-  height: 100vh;
+.container {
   position: relative;
-  background-size: cover;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #F1ECD9; /* Beige paper color to match logo background */
 }
 
-.background {
+.door {
   position: absolute;
-  width: 100%;
+  top: 0;
+  width: 50%;
   height: 100%;
-  z-index: -1;
-  background-size: cover;
-  background-position: bottom;
+  background-color: #F1ECD9; /* Match background */
+  overflow: hidden;
+  z-index: 100;
+  transition: transform 1.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-sizing: border-box;
+  /* Removed borders to eliminate the split line */
 }
 
-.left, .right {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  /* 字体改成白色加粗 */
-  color: #ffffff;
-  font-weight: bold;
-  font-size: 20px;
+.door-left {
+  left: 0;
 }
 
-.left {
-  background-color: transparent; /* 设置为全透明背景 */
+.door-right {
+  right: 0;
 }
 
-.right {
-  background-color: transparent; /* 设置为全透明背景 */
+/* Open state classes */
+.door-left.open {
+  transform: translateX(-100%);
+}
+
+.door-right.open {
+  transform: translateX(100%);
+}
+
+.logo-img {
+  position: absolute;
+  top: 50%;
+  width: 200%; /* 200% of 50% parent = 100vw */
+  transform: translateY(-50%);
+  display: block;
+}
+
+.door-left .logo-img {
+  left: 0;
+}
+
+.door-right .logo-img {
+  left: -100%; /* Shift left by 50vw */
+}
+
+.click-hint {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #4A3B32; /* Dark brown for visibility on beige */
+  font-size: 26rpx;
+  letter-spacing: 4rpx;
+  z-index: 101;
+  opacity: 1;
+  transition: opacity 0.5s;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.click-hint.fade-out {
+  opacity: 0;
 }

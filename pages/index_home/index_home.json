@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "福寿礼坊",
+  "navigationBarBackgroundColor": "#F1ECD9",
+  "navigationBarTextStyle": "black",
   "usingComponents": {}
 }
