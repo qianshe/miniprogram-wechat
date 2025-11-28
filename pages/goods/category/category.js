@@ -58,32 +58,26 @@ Page({
           id: category._id
         }));
 
-      if (sortedCategories.length > 0) {
-        this.setData({ 
-          categories: sortedCategories,
-          currentCategory: sortedCategories[0],
-          sideBarIndex: 0
-        }, () => {
-          this.loadProducts(true);
-        });
-      } else {
-        this.setData({ 
-          categories: [],
-          currentCategory: null,
-          products: [],
-          loading: false
-        });
-      }
+      const allCategory = { id: '', label: '全部', title: '全部' };
+      const categoriesWithAll = [allCategory, ...sortedCategories];
+
+      this.setData({
+        categories: categoriesWithAll,
+        currentCategory: allCategory,
+        sideBarIndex: 0
+      }, () => {
+        this.loadProducts(true);
+      });
     } catch (err) {
       console.error("加载分类失败:", err);
       wx.showToast({
         title: '加载分类失败',
         icon: 'none'
       });
-      this.setData({ 
+      this.setData({
         categories: [],
         products: [],
-        loading: false 
+        loading: false
       });
     }
   },
@@ -97,11 +91,16 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const result = await api.getProducts({
+      const params = {
         page,
-        size: PAGE_SIZE,
-        category: this.data.currentCategory.id
-      });
+        size: PAGE_SIZE
+      };
+      
+      if (this.data.currentCategory.id) {
+        params.category = this.data.currentCategory.id;
+      }
+      
+      const result = await api.getProducts(params);
 
       const newProducts = result.records.map(product => {
         const parsedPrice = Number(product.price || 0);

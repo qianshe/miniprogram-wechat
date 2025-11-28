@@ -40,7 +40,10 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "Weixin",
     "navigationBarBackgroundColor": "#ffffff",
-    "backgroundTextStyle": "light"
+    "backgroundTextStyle": "light",
+    "backgroundColor": "#f6f0e7",
+    "backgroundColorTop": "#f6f0e7",
+    "backgroundColorBottom": "#f6f0e7"
   },
   "componentFramework": "glass-easel",
   "sitemapLocation": "sitemap.json",

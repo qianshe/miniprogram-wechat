@@ -1,7 +1,7 @@
 /** pages/index/index.wxss */
 .container {
   min-height: 100vh;
-  background-color: #f6f0e7;
+  background-color: var(--bg-color);
   font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
   display: flex;
   flex-direction: column;
@@ -67,7 +67,7 @@
   margin-top: 0;
   padding: 32rpx;
   padding-bottom: calc(70rpx + env(safe-area-inset-bottom));
-  background: #f9f6f2;
+  background: var(--bg-color);
   border-radius: 28rpx 28rpx 0 0;
   box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.04);
   display: flex;
@@ -85,11 +85,11 @@
 }
 
 .menu-item {
-  background: #fcfbf8;
+  background: #ffffff;
   border-radius: 24rpx;
-  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
-  border: 1rpx solid rgba(0, 0, 0, 0.05);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
 .menu-item:active {
