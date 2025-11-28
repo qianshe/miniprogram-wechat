@@ -9,6 +9,7 @@
     "t-empty": "tdesign-miniprogram/empty/empty",
     "t-tag": "tdesign-miniprogram/tag/tag",
     "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell",
-    "t-dialog": "tdesign-miniprogram/dialog/dialog"
+    "t-dialog": "tdesign-miniprogram/dialog/dialog",
+    "t-icon": "tdesign-miniprogram/icon/icon"
   }
 }

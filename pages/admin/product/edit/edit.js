@@ -20,8 +20,8 @@ Page({
         selectedCategoryName: ''
     },
 
-    onLoad(options) {
-        this.loadCategories();
+    async onLoad(options) {
+        await this.loadCategories();
         if (options.id) {
             this.setData({
                 isEdit: true,
@@ -108,41 +108,58 @@ Page({
         this.setData({ categoryVisible: true });
     },
 
-    onCategoryChange(e) {
-        const { value, label } = e.detail;
+    onSelectCategory(e) {
+        const { value, label } = e.currentTarget.dataset;
         this.setData({
-            'formData.category': value[0],  // 改为category
-            selectedCategoryName: label[0],
+            'formData.category': value,
+            selectedCategoryName: label,
             categoryVisible: false
         });
+    },
+
+    onPopupVisibleChange(e) {
+        this.setData({ categoryVisible: e.detail.visible });
     },
 
     onPickerCancel() {
         this.setData({ categoryVisible: false });
     },
 
-    async onAddImage(e) {
-        const { files } = e.detail;
-        
-        if (files.length === 0) return;
-        
+    async onSelectImage() {
+        try {
+            const res = await wx.chooseImage({
+                count: 1,
+                sizeType: ['compressed'],
+                sourceType: ['album', 'camera']
+            });
+
+            if (res.tempFilePaths.length > 0) {
+                this.uploadImage(res.tempFilePaths[0]);
+            }
+        } catch (error) {
+            console.log('用户取消选择或发生错误', error);
+        }
+    },
+
+    async uploadImage(filePath) {
         try {
             wx.showLoading({ title: '上传中...' });
-            
+
             // 上传到云存储
+            const cloudPath = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${filePath.split('.').pop()}`;
             const uploadResult = await wx.cloud.uploadFile({
-                cloudPath: `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${files[0].url.split('.').pop()}`,
-                filePath: files[0].url
+                cloudPath: cloudPath,
+                filePath: filePath
             });
-            
-            // 获取临时下载链接
-            const tempFileURL = uploadResult.fileID;
-            
+
+            // 获取文件ID
+            const fileID = uploadResult.fileID;
+
             this.setData({
-                fileList: [{ url: tempFileURL, name: 'product-image' }],
-                'formData.thumb': tempFileURL
+                'formData.thumb': fileID,
+                fileList: [{ url: fileID }]
             });
-            
+
             wx.hideLoading();
             wx.showToast({ title: '上传成功', icon: 'success' });
         } catch (error) {
@@ -150,6 +167,14 @@ Page({
             console.error('图片上传失败:', error);
             wx.showToast({ title: '上传失败', icon: 'none' });
         }
+    },
+
+    onPreviewImage(e) {
+        const url = e.currentTarget.dataset.url;
+        wx.previewImage({
+            current: url,
+            urls: [url]
+        });
     },
 
     onRemoveImage(e) {

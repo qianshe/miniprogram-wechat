@@ -3,6 +3,9 @@
   <view class="page-header">
     <view class="page-title">分类管理</view>
     <view class="action-buttons">
+      <t-button theme="primary" size="small" variant="text" icon="chart-bar" bindtap="toggleSort">
+        {{isSorting ? '完成' : '排序'}}
+      </t-button>
       <t-button theme="primary" size="small" bindtap="createCategory">新增分类</t-button>
     </view>
   </view>
@@ -27,41 +30,96 @@
   
   <!-- 分类列表 -->
   <view class="category-list">
-    <t-loading wx:if="{{isLoading && page === 1}}" text="加载中..." />
+    <!-- 骨架屏加载状态 -->
+    <view class="skeleton-list" wx:if="{{isLoading && page === 1}}">
+      <view class="skeleton-item" wx:for="{{[1,2,3,4,5,6]}}" wx:key="*this">
+        <view class="skeleton-content">
+          <view class="skeleton-main">
+            <view class="skeleton-row long"></view>
+            <view class="skeleton-row medium"></view>
+          </view>
+          <view class="skeleton-extra">
+            <view class="skeleton-row short"></view>
+            <view class="skeleton-row short"></view>
+          </view>
+        </view>
+      </view>
+    </view>
     <t-empty wx:elif="{{categories.length === 0 && !isLoading}}" description="暂无分类数据" />
     <block wx:else>
-      <view class="category-item" wx:for="{{categories}}" wx:key="_id">
-        <t-swipe-cell right="{{swipeActions}}">
-          <view class="category-content" bindtap="editCategory" data-id="{{item._id}}">
-            <view class="category-main">
-              <view class="category-name">{{item.name}}</view>
-              <view class="category-meta">
-                <t-tag size="small" theme="{{item.type === 'white' ? 'default' : 'danger'}}" variant="light">
-                  {{item.type === 'white' ? '白事' : '红事'}}
-                </t-tag>
-                <text class="product-count">商品数量: {{item.productCount || 0}}</text>
+      
+      <!-- 普通模式列表 (非排序状态) -->
+      <view class="list-normal" wx:if="{{!isSorting}}">
+        <view class="category-item-wrapper" wx:for="{{categories}}" wx:key="_id" style="margin-bottom: 20rpx;">
+          <view class="category-item">
+            <t-swipe-cell>
+              <view class="category-content" bindtap="editCategory" data-id="{{item._id}}">
+                <view class="category-main">
+                  <view class="category-name">{{item.name}}</view>
+                  <view class="category-meta">
+                    <t-tag size="small" theme="{{item.type === 'white' ? 'default' : 'danger'}}" variant="light">
+                      {{item.type === 'white' ? '白事' : '红事'}}
+                    </t-tag>
+                    <text class="product-count">商品数量: {{item.productCount || 0}}</text>
+                  </view>
+                </view>
+                <view class="category-extra">
+                  <view class="category-sort">排序: {{item.sort}}</view>
+                  <view class="category-status {{item.status === 1 ? 'status-on' : 'status-off'}}">
+                    {{item.status === 1 ? '启用' : '禁用'}}
+                  </view>
+                </view>
               </view>
-            </view>
-            <view class="category-extra">
-              <view class="category-sort">排序: {{item.sort}}</view>
-              <view class="category-status {{item.status === 1 ? 'status-on' : 'status-off'}}">
-                {{item.status === 1 ? '启用' : '禁用'}}
+              <view slot="right" class="swipe-actions">
+                <view class="swipe-btn edit-btn" bindtap="editCategory" data-id="{{item._id}}">编辑</view>
+                <view class="swipe-btn toggle-btn" bindtap="toggleStatus" data-id="{{item._id}}" data-status="{{item.status}}">
+                  {{item.status === 1 ? '禁用' : '启用'}}
+                </view>
+                <view class="swipe-btn delete-btn" bindtap="deleteCategory" data-id="{{item._id}}" data-name="{{item.name}}">删除</view>
               </view>
-            </view>
+            </t-swipe-cell>
           </view>
-          <view slot="right" class="swipe-actions">
-            <view class="swipe-btn edit-btn" bindtap="editCategory" data-id="{{item._id}}">编辑</view>
-            <view class="swipe-btn toggle-btn" bindtap="toggleStatus" data-id="{{item._id}}" data-status="{{item.status}}">
-              {{item.status === 1 ? '禁用' : '启用'}}
-            </view>
-            <view class="swipe-btn delete-btn" bindtap="deleteCategory" data-id="{{item._id}}" data-name="{{item.name}}">删除</view>
-          </view>
-        </t-swipe-cell>
+        </view>
       </view>
+
+      <!-- 排序模式列表 (可拖拽) -->
+      <movable-area class="list-area" wx:if="{{isSorting}}" style="height: {{movableAreaHeight}}rpx; width: 100%">
+        <movable-view
+          wx:for="{{categories}}"
+          wx:key="_id"
+          class="category-item-movable sorting"
+          y="{{item.y}}rpx"
+          direction="vertical"
+          data-index="{{index}}"
+          bindchange="onDragChange"
+          bindtouchend="onDragEnd"
+          style="z-index: {{item.zIndex}}; height: {{itemHeight - 20}}rpx; width: 100%"
+        >
+          <view class="category-item">
+            <view class="category-content">
+              <view class="category-main">
+                <view class="category-name">{{item.name}}</view>
+                <view class="category-meta">
+                  <t-tag size="small" theme="{{item.type === 'white' ? 'default' : 'danger'}}" variant="light">
+                    {{item.type === 'white' ? '白事' : '红事'}}
+                  </t-tag>
+                  <text class="product-count">商品数量: {{item.productCount || 0}}</text>
+                </view>
+              </view>
+              <view class="category-extra">
+                <view class="drag-handle">
+                  <t-icon name="move" size="48rpx" color="#ccc" />
+                </view>
+              </view>
+            </view>
+          </view>
+        </movable-view>
+      </movable-area>
       
       <!-- 加载更多 -->
       <view class="load-more" wx:if="{{isLoading && page > 1}}">
-        <view class="loading">加载中...</view>
+        <view class="loading-spinner"></view>
+        <text>正在加载更多...</text>
       </view>
       <view class="no-more" wx:if="{{!hasMore && !isLoading && categories.length > 0}}">
         没有更多分类了

@@ -10,34 +10,31 @@
   
   <!-- 搜索框 -->
   <view class="search-container">
-    <t-search
-      placeholder="搜索商品名称"
-      bind:change="onSearchInput"
-      bind:submit="onSearchConfirm"
-      bind:clear="onSearchClear"
-      value="{{keyword}}"
-      shape="round"
-    />
-    <view class="category-dropdown">
-      <t-dropdown-menu>
-        <t-dropdown-item options="{{categoryOptions}}" value="{{selectedCategoryId}}" bindchange="onCategoryChange" />
-      </t-dropdown-menu>
+    <view class="search-input-box">
+      <t-search
+        placeholder="搜索商品名称"
+        bind:change="onSearchInput"
+        bind:submit="onSearchConfirm"
+        bind:clear="onSearchClear"
+        value="{{keyword}}"
+        shape="round"
+      />
+    </view>
+    <view class="category-filter-btn {{selectedCategoryId ? 'active' : ''}}" bindtap="showCategoryPicker">
+      <text>{{selectedCategoryName || '分类'}}</text>
+      <t-icon name="filter" size="32rpx" />
     </view>
   </view>
   
   <!-- 排序选项 -->
   <view class="sort-options">
-    <view class="sort-item {{orderBy === 'createTime' ? 'active' : ''}}" bindtap="changeOrderBy" data-orderby="createTime">
-      最新上架
-      <view class="sort-icon {{orderBy === 'createTime' ? (orderDirection === 'desc' ? 'desc' : 'asc') : ''}}"></view>
-    </view>
-    <view class="sort-item {{orderBy === 'price' ? 'active' : ''}}" bindtap="changeOrderBy" data-orderby="price">
-      价格
-      <view class="sort-icon {{orderBy === 'price' ? (orderDirection === 'desc' ? 'desc' : 'asc') : ''}}"></view>
-    </view>
     <view class="sort-item {{orderBy === 'sales' ? 'active' : ''}}" bindtap="changeOrderBy" data-orderby="sales">
       销量
       <view class="sort-icon {{orderBy === 'sales' ? (orderDirection === 'desc' ? 'desc' : 'asc') : ''}}"></view>
+    </view>
+    <view class="sort-item {{orderBy === 'stock' ? 'active' : ''}}" bindtap="changeOrderBy" data-orderby="stock">
+      库存
+      <view class="sort-icon {{orderBy === 'stock' ? (orderDirection === 'desc' ? 'desc' : 'asc') : ''}}"></view>
     </view>
   </view>
   
@@ -110,5 +107,40 @@
         - 到底了 -
       </view>
     </block>
+  </view>
+  
+  <!-- 分类选择弹窗 -->
+  <view class="filter-mask" wx:if="{{categoryVisible}}" catchtap="onPickerCancel"></view>
+  <view class="filter-drawer" wx:if="{{categoryVisible}}" catchtouchmove="true">
+    <view class="filter-panel">
+      <view class="filter-header">
+        <text>选择分类</text>
+        <t-icon name="close" size="20" bindtap="onPickerCancel"></t-icon>
+      </view>
+      <view class="filter-content">
+        <view class="category-list">
+          <view
+            class="category-item {{selectedCategoryId === '' ? 'active' : ''}}"
+            bindtap="onSelectCategory"
+            data-value=""
+            data-label="全部分类"
+          >
+            <text>全部分类</text>
+            <t-icon wx:if="{{selectedCategoryId === ''}}" name="check" color="var(--primary-color)"/>
+          </view>
+          <view
+            wx:for="{{categories}}"
+            wx:key="id"
+            class="category-item {{selectedCategoryId === item._id ? 'active' : ''}}"
+            bindtap="onSelectCategory"
+            data-value="{{item._id}}"
+            data-label="{{item.name}}"
+          >
+            <text>{{item.name}}</text>
+            <t-icon wx:if="{{selectedCategoryId === item._id}}" name="check" color="var(--primary-color)"/>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </view>

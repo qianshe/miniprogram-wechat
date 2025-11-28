@@ -8,6 +8,8 @@
     "t-stepper": "tdesign-miniprogram/stepper/stepper",
     "t-cell": "tdesign-miniprogram/cell/cell",
     "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
-    "t-textarea": "tdesign-miniprogram/textarea/textarea"
+    "t-textarea": "tdesign-miniprogram/textarea/textarea",
+    "t-switch": "tdesign-miniprogram/switch/switch",
+    "t-icon": "tdesign-miniprogram/icon/icon"
   }
 }

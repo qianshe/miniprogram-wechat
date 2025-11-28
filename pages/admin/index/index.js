@@ -26,6 +26,13 @@ Page({
         path: '/pages/admin/product/list/list'
       },
       {
+        id: 'category',
+        name: '分类管理',
+        icon: '📋',
+        desc: '管理商品分类',
+        path: '/pages/admin/category/list/list'
+      },
+      {
         id: 'create-order',
         name: '创建订单',
         icon: '➕',

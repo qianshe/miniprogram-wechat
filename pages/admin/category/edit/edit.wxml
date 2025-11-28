@@ -1,79 +1,124 @@
-<view class="category-edit-container">
-  <t-cell-group>
-    <!-- 分类名称 -->
-    <t-cell title="分类名称" required>
-      <t-input
-        slot="note"
-        placeholder="请输入分类名称"
-        value="{{formData.name}}"
-        bind:change="onNameChange"
-        maxlength="20"
-      />
-    </t-cell>
-
-    <!-- 分类类型（新增时可选，编辑时不可修改） -->
-    <t-cell title="分类类型" required wx:if="{{!isEdit}}">
-      <view slot="note" class="type-radio">
-        <t-radio-group value="{{formData.type}}" bind:change="onTypeChange">
-          <t-radio value="white" label="白事" />
-          <t-radio value="red" label="红事" />
-        </t-radio-group>
-      </view>
-    </t-cell>
-    <t-cell title="分类类型" wx:else>
-      <text slot="note" class="type-text">{{formData.type === 'white' ? '白事' : '红事'}}（不可修改）</text>
-    </t-cell>
-
-    <!-- 排序 -->
-    <t-cell title="排序" description="数值越小越靠前">
-      <t-stepper
-        slot="note"
-        value="{{formData.sort}}"
-        min="1"
-        max="999"
-        bind:change="onSortChange"
-      />
-    </t-cell>
-
-    <!-- 分类描述 -->
-    <t-cell title="分类描述" bordered="{{false}}">
-      <t-textarea
-        slot="note"
-        placeholder="请输入分类描述（选填）"
-        value="{{formData.description}}"
-        bind:change="onDescriptionChange"
-        maxlength="200"
-        autosize
-      />
-    </t-cell>
-  </t-cell-group>
-
-  <!-- 分类状态（仅编辑时显示） -->
-  <t-cell-group wx:if="{{isEdit}}" class="status-group">
-    <t-cell title="分类状态">
-      <view slot="note" class="status-radio">
-        <t-radio-group value="{{formData.status}}" bind:change="onStatusChange">
-          <t-radio value="{{1}}" label="启用" />
-          <t-radio value="{{0}}" label="禁用" />
-        </t-radio-group>
-      </view>
-    </t-cell>
-  </t-cell-group>
-
-  <!-- 商品数量提示（仅编辑时显示） -->
-  <view class="product-count-tip" wx:if="{{isEdit && formData.productCount > 0}}">
-    该分类下有 {{formData.productCount}} 个商品
+<view class="page-container">
+  <!-- 顶部导航/标题 -->
+  <view class="header-section">
+    <view class="header-title">{{isEdit ? '编辑分类' : '创建新分类'}}</view>
+    <view class="header-subtitle">请完善以下分类信息</view>
   </view>
 
-  <!-- 提交按钮 -->
-  <view class="submit-area">
-    <t-button
-      theme="primary"
-      size="large"
-      block
+  <!-- 表单内容区域 -->
+  <view class="form-container">
+    
+    <!-- 基本信息卡片 -->
+    <view class="form-card">
+      <view class="card-title">基本信息</view>
+      
+      <!-- 分类名称 -->
+      <view class="input-group">
+        <view class="input-label">分类名称</view>
+        <t-input 
+          placeholder="请输入分类名称" 
+          value="{{formData.name}}" 
+          bind:change="onNameChange" 
+          borderless="{{true}}"
+          class="filled-input"
+          maxlength="20"
+        />
+      </view>
+
+      <!-- 分类类型 -->
+      <view class="input-group">
+        <view class="input-label">分类类型</view>
+        <block wx:if="{{!isEdit}}">
+          <t-radio-group value="{{formData.type}}" bind:change="onTypeChange" borderless class="type-radio-group">
+            <t-radio 
+              value="white" 
+              label="白事" 
+              icon="none"
+              class="type-radio-item {{formData.type === 'white' ? 'type-radio-item--active' : ''}}" 
+            />
+            <t-radio 
+              value="red" 
+              label="红事" 
+              icon="none"
+              class="type-radio-item {{formData.type === 'red' ? 'type-radio-item--active' : ''}}" 
+            />
+          </t-radio-group>
+        </block>
+        <block wx:else>
+          <view class="filled-input" style="color: #999;">
+            {{formData.type === 'white' ? '白事' : '红事'}} (不可修改)
+          </view>
+        </block>
+      </view>
+
+      <!-- 排序 -->
+      <view class="input-group">
+        <view class="input-label">排序 (数值越小越靠前)</view>
+        <t-stepper
+          value="{{formData.sort}}"
+          min="1"
+          max="999"
+          bind:change="onSortChange"
+          size="medium"
+        />
+      </view>
+    </view>
+
+    <!-- 详细信息卡片 -->
+    <view class="form-card">
+      <view class="card-title">详细信息</view>
+      
+      <!-- 分类描述 -->
+      <view class="input-group">
+        <view class="input-label">分类描述</view>
+        <t-textarea 
+          placeholder="请输入分类描述（选填）" 
+          value="{{formData.description}}" 
+          bind:change="onDescriptionChange" 
+          autosize 
+          borderless="{{true}}"
+          class="filled-input textarea-input"
+          maxlength="200"
+          indicator
+        />
+      </view>
+
+      <!-- 分类状态 -->
+      <block wx:if="{{isEdit}}">
+        <view class="setting-row">
+          <view class="setting-info">
+            <view class="setting-title">启用分类</view>
+            <view class="setting-desc">关闭后该分类将在店铺中隐藏</view>
+          </view>
+          <t-switch 
+            value="{{formData.status === 1}}" 
+            bind:change="onStatusChange" 
+            colors="{{['var(--primary-color)', '#e6e6e6']}}" 
+            custom-value="{{[1, 0]}}"
+          />
+        </view>
+      </block>
+
+      <!-- 商品数量提示 -->
+      <view class="product-count-tip" wx:if="{{isEdit && formData.productCount > 0}}">
+        <t-icon name="info-circle-filled" size="32rpx" color="#fa9550" style="margin-right: 12rpx;" />
+        <text>该分类下有 {{formData.productCount}} 个商品</text>
+      </view>
+    </view>
+
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="footer-bar">
+    <t-button 
+      theme="primary" 
+      size="large" 
+      block 
+      shape="round" 
+      class="submit-btn" 
       loading="{{isSubmitting}}"
       disabled="{{isSubmitting}}"
-      bindtap="submitForm"
+      bind:tap="submitForm"
     >
       {{isEdit ? '保存修改' : '创建分类'}}
     </t-button>

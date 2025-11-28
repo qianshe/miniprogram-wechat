@@ -11,60 +11,79 @@
   align-items: center;
   padding: 24rpx 32rpx;
   background-color: #fff;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
+  z-index: 10;
+  position: relative;
 }
 
 .page-title {
   font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .action-buttons {
   display: flex;
-  gap: 16rpx;
+  gap: 20rpx;
+  align-items: center;
 }
 
 /* 搜索框 */
 .search-container {
-  padding: 16rpx 32rpx;
+  padding: 20rpx 32rpx;
   background-color: #fff;
-  border-bottom: 1rpx solid #eee;
 }
 
 /* 类型筛选 */
 .type-filter {
   display: flex;
-  padding: 20rpx 32rpx;
+  padding: 0 32rpx 24rpx;
   background-color: #fff;
-  border-bottom: 1rpx solid #eee;
   gap: 24rpx;
 }
 
 .filter-item {
-  padding: 12rpx 32rpx;
+  padding: 12rpx 36rpx;
   font-size: 28rpx;
   color: #666;
-  background-color: #f5f5f5;
-  border-radius: 32rpx;
-  transition: all 0.3s;
+  background-color: #f8f9fa;
+  border-radius: 16rpx;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
 }
 
 .filter-item.active {
   color: #fff;
-  background-color: #0052d9;
+  background: linear-gradient(135deg, #0052d9, #003cab);
+  box-shadow: 0 6rpx 16rpx rgba(0, 82, 217, 0.25);
+  transform: translateY(-2rpx);
 }
 
 /* 分类列表 */
 .category-list {
-  padding: 20rpx 32rpx;
+  padding: 24rpx 32rpx;
+  position: relative;
+}
+
+.list-area {
+  width: 100%;
+  position: relative;
+}
+
+.category-item-movable {
+  width: 100%;
+  position: absolute;
+  left: 0;
 }
 
 .category-item {
-  margin-bottom: 20rpx;
+  height: 100%;
   background-color: #fff;
-  border-radius: 16rpx;
+  border-radius: 24rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+  position: relative;
 }
 
 .category-content {
@@ -72,6 +91,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 32rpx;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .category-main {
@@ -80,8 +101,8 @@
 
 .category-name {
   font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: #1a1a1a;
   margin-bottom: 12rpx;
 }
 
@@ -101,6 +122,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 8rpx;
+  min-width: 120rpx;
 }
 
 .category-sort {
@@ -109,9 +131,10 @@
 }
 
 .category-status {
-  font-size: 24rpx;
-  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
   border-radius: 8rpx;
+  font-weight: 500;
 }
 
 .category-status.status-on {
@@ -124,6 +147,14 @@
   background-color: rgba(227, 77, 89, 0.1);
 }
 
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10rpx;
+  opacity: 0.5;
+}
+
 /* 滑动操作按钮 */
 .swipe-actions {
   display: flex;
@@ -134,10 +165,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 160rpx;
+  width: 140rpx;
   height: 100%;
   font-size: 28rpx;
   color: #fff;
+  font-weight: 500;
 }
 
 .edit-btn {
@@ -168,4 +200,89 @@
   text-align: center;
   font-size: 28rpx;
   color: #999;
+}
+
+/* 骨架屏样式 */
+.skeleton-list {
+  width: 100%;
+}
+
+.skeleton-item {
+  background-color: #fff;
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.skeleton-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.skeleton-main {
+  flex: 1;
+}
+
+.skeleton-extra {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12rpx;
+  min-width: 120rpx;
+}
+
+.skeleton-row {
+  height: 32rpx;
+  background: rgba(0,0,0,0.05);
+  border-radius: 8rpx;
+  margin-bottom: 16rpx;
+  animation: skeleton-blink 1.5s infinite ease-in-out;
+}
+
+.skeleton-row:last-child {
+  margin-bottom: 0;
+}
+
+.skeleton-row.short {
+  width: 80rpx;
+  height: 24rpx;
+}
+
+.skeleton-row.medium {
+  width: 200rpx;
+  height: 24rpx;
+}
+
+.skeleton-row.long {
+  width: 300rpx;
+  height: 32rpx;
+  margin-bottom: 20rpx;
+}
+
+@keyframes skeleton-blink {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* 加载更多动画 */
+.loading-spinner {
+  display: inline-block;
+  width: 30rpx;
+  height: 30rpx;
+  border: 4rpx solid #e0e0e0;
+  border-top-color: #0052d9;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 12rpx;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

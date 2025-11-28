@@ -5,21 +5,21 @@
     <view class="header-subtitle">请完善以下商品信息</view>
   </view>
 
-  <!-- 图片上传区域 (突出显示) -->
+  <!-- 图片上传区域 (朋友圈风格) -->
   <view class="upload-section">
-    <view class="upload-card">
-      <t-upload
-        mediaType="{{['image']}}"
-        max="{{1}}"
-        files="{{fileList}}"
-        bind:add="onAddImage"
-        bind:remove="onRemoveImage"
-        class="custom-upload"
-      />
-      <view class="upload-placeholder" wx:if="{{fileList.length === 0}}">
-        <t-icon name="add-circle" size="64rpx" color="var(--primary-color)" />
-        <text style="color: var(--text-main); font-weight: 500;">点击上传商品主图</text>
-        <text style="font-size: 24rpx; color: #999;">支持 JPG, PNG 格式</text>
+    <view class="upload-group">
+      <!-- 已有图片展示 -->
+      <view class="upload-preview" wx:if="{{formData.thumb}}" bindtap="onPreviewImage" data-url="{{formData.thumb}}">
+        <image src="{{formData.thumb}}" mode="aspectFill" class="preview-image" />
+        <view class="delete-btn" catchtap="onRemoveImage">
+          <t-icon name="close" size="32rpx" color="#fff" />
+        </view>
+      </view>
+
+      <!-- 上传按钮 (无图时显示) -->
+      <view class="upload-add" bindtap="onSelectImage" wx:else>
+        <t-icon name="add" size="64rpx" color="#999" />
+        <text class="upload-text">上传主图</text>
       </view>
     </view>
     <view class="upload-tips">建议尺寸 800x800 像素</view>
@@ -47,9 +47,9 @@
       <view class="input-group">
         <view class="input-label">商品分类</view>
         <view class="filled-input picker-trigger" bindtap="onCategoryPicker">
-          <text class="{{selectedCategoryName ? 'text-value' : 'text-placeholder'}}">
+          <view class="{{selectedCategoryName ? 'text-value' : 'text-placeholder'}}">
             {{selectedCategoryName || '请选择商品分类'}}
-          </text>
+          </view>
           <t-icon name="chevron-right" size="40rpx" color="#ccc" />
         </view>
       </view>
@@ -149,17 +149,33 @@
     </t-button>
   </view>
 
-  <!-- 分类选择器 -->
-  <t-picker
-    visible="{{categoryVisible}}"
-    value="{{[formData.category]}}"
-    title="选择分类"
-    cancelBtn="取消"
-    confirmBtn="确认"
-    bindchange="onCategoryChange"
-    bindpick="onColumnChange"
-    bindcancel="onPickerCancel"
-  >
-    <t-picker-item options="{{categories}}" />
-  </t-picker>
+  <!-- 分类选择弹窗 (自定义居中弹窗) -->
+  <view class="custom-modal-mask" wx:if="{{categoryVisible}}" bindtap="onPickerCancel" catchtouchmove="true"></view>
+  <view class="custom-modal-container" wx:if="{{categoryVisible}}" catchtouchmove="true">
+    <view class="picker-header">
+      <view class="picker-title">选择分类</view>
+      <view class="picker-close" bindtap="onPickerCancel">
+        <t-icon name="close" size="40rpx" color="#999" />
+      </view>
+    </view>
+    <scroll-view scroll-y="{{true}}" class="picker-content">
+      <view class="category-list">
+        <t-cell-group>
+          <t-cell
+            wx:for="{{categories}}"
+            wx:key="value"
+            title="{{item.label}}"
+            bind:click="onSelectCategory"
+            data-value="{{item.value}}"
+            data-label="{{item.label}}"
+            t-class="category-cell {{formData.category === item.value ? 'category-cell-active' : ''}}"
+            t-class-title="category-title {{formData.category === item.value ? 'category-title-active' : ''}}"
+            bordered="{{false}}"
+          >
+             <t-icon wx:if="{{formData.category === item.value}}" name="check" slot="right-icon" color="var(--primary-color)"/>
+          </t-cell>
+        </t-cell-group>
+      </view>
+    </scroll-view>
+  </view>
 </view>

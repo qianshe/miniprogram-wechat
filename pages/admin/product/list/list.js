@@ -22,6 +22,8 @@ Page({
     categories: [],
     categoryOptions: [],
     selectedCategoryId: '',
+    selectedCategoryName: '',
+    categoryVisible: false,
     orderBy: 'createTime', // createTime, sales, price
     orderDirection: 'desc' // asc, desc
   },
@@ -31,7 +33,6 @@ Page({
    */
   onLoad(options) {
     this.loadCategories()
-    this.loadProducts(true)
   },
 
   /**
@@ -45,7 +46,7 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
-
+    this.loadProducts(true)
   },
 
   /**
@@ -89,29 +90,29 @@ Page({
   /**
    * 加载商品分类
    */
-  loadCategories() {
-    // 这里应该从API获取分类数据
-    const categories = [
-      { id: 1, name: '食品饮料' },
-      { id: 2, name: '服装鞋包' },
-      { id: 3, name: '美妆护肤' },
-      { id: 4, name: '家居日用' },
-      { id: 5, name: '数码电子' }
-    ]
+  async loadCategories() {
+    try {
+      // 从云函数获取分类列表
+      const result = await adminApi.getCategories({ page: 1, size: 100 });
+      const categories = result.records || [];
 
-    // 转换为下拉菜单格式
-    const categoryOptions = [
-      { label: '全部分类', value: '' },
-      ...categories.map(item => ({
-        label: item.name,
-        value: item.id
-      }))
-    ]
+      // 转换为下拉菜单格式
+      const categoryOptions = [
+        { label: '全部分类', value: '' },
+        ...categories.map(item => ({
+          label: item.name,
+          value: item._id
+        }))
+      ];
 
-    this.setData({
-      categories,
-      categoryOptions
-    })
+      this.setData({
+        categories,
+        categoryOptions
+      });
+    } catch (error) {
+      console.error('加载分类失败:', error);
+      wx.showToast({ title: '加载分类失败', icon: 'none' });
+    }
   },
 
   /**
@@ -276,14 +277,31 @@ Page({
   },
 
   /**
-   * 分类下拉框变化
+   * 显示分类选择器
    */
-  onCategoryChange(e) {
+  showCategoryPicker() {
+    this.setData({ categoryVisible: true });
+  },
+
+  /**
+   * 隐藏分类选择器
+   */
+  onPickerCancel() {
+    this.setData({ categoryVisible: false });
+  },
+
+  /**
+   * 选择分类
+   */
+  onSelectCategory(e) {
+    const { value, label } = e.currentTarget.dataset;
     this.setData({
-      selectedCategoryId: e.detail.value
+      selectedCategoryId: value,
+      selectedCategoryName: label === '全部分类' ? '' : label,
+      categoryVisible: false
     }, () => {
-      this.resetAndLoad()
-    })
+      this.resetAndLoad();
+    });
   },
 
   /**

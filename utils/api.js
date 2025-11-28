@@ -409,6 +409,11 @@ const adminApi = {
     return await callCloudFunction('categoryManagement', 'deleteCategory', { id, isAdmin: true });
   },
 
+  // 批量更新分类排序
+  batchUpdateSort: async (data) => {
+    return await callCloudFunction('categoryManagement', 'batchUpdateCategorySort', { ...data, isAdmin: true });
+  },
+
   // 分类数据迁移 - 将模拟数据迁移到数据库
   migrateCategories: async () => {
     return await callCloudFunction('categoryManagement', 'migrateCategories', { isAdmin: true });

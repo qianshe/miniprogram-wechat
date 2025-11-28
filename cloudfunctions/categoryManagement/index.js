@@ -57,6 +57,9 @@ const handler = async (event, context) => {
     case 'deleteCategory':
       result = await deleteCategory(data, context);
       break;
+    case 'batchUpdateCategorySort':
+      result = await batchUpdateCategorySort(data, context);
+      break;
     case 'migrateCategories':
       result = await migrateCategories(data, context);
       break;
@@ -431,6 +434,69 @@ async function updateCategory(data, context) {
     });
 
     return dbError('Failed to update category', { originalError: err.message });
+  }
+}
+
+/**
+ * 批量更新分类排序
+ */
+async function batchUpdateCategorySort(data, context) {
+  const { OPENID } = cloud.getWXContext();
+  const startTime = Date.now();
+  const { items, isAdmin } = data || {};
+
+  console.log('[CATEGORY_MANAGEMENT] batchUpdateCategorySort:', {
+    openid: OPENID,
+    itemsCount: items?.length,
+    isAdmin
+  });
+
+  // 权限检查
+  if (!isAdmin) {
+    console.warn('[CATEGORY_MANAGEMENT] batchUpdateCategorySort failed: No admin permission', { openid: OPENID });
+    return permissionError('Only admin can batch update category sort');
+  }
+
+  // 参数验证
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    console.warn('[CATEGORY_MANAGEMENT] batchUpdateCategorySort failed: Invalid items');
+    return paramError('items', 'Items must be a non-empty array');
+  }
+
+  try {
+    // 批量更新
+    const updatePromises = items.map(item => {
+      if (!item.id || item.sort === undefined) {
+        return Promise.reject(new Error('Each item must have id and sort'));
+      }
+      
+      return db.collection('categories').doc(item.id).update({
+        data: {
+          sort: parseInt(item.sort),
+          updateTime: new Date(),
+          updaterOpenid: OPENID
+        }
+      });
+    });
+
+    await Promise.all(updatePromises);
+
+    const executionTime = Date.now() - startTime;
+    console.log('[CATEGORY_MANAGEMENT] batchUpdateCategorySort success:', {
+      updatedCount: items.length,
+      executionTime: `${executionTime}ms`
+    });
+
+    return success({ updatedCount: items.length }, 'Batch update category sort success');
+  } catch (err) {
+    const executionTime = Date.now() - startTime;
+    console.error('[CATEGORY_MANAGEMENT] batchUpdateCategorySort failed:', {
+      executionTime: `${executionTime}ms`,
+      error: err.message,
+      stack: err.stack
+    });
+
+    return dbError('Failed to batch update category sort', { originalError: err.message });
   }
 }
 

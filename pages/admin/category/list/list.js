@@ -1,4 +1,3 @@
-
 const app = getApp();
 const { adminApi } = require('../../../../utils/api.js');
 
@@ -18,7 +17,11 @@ Page({
     ],
     showDeleteDialog: false,
     deleteCategoryId: '',
-    deleteCategoryName: ''
+    deleteCategoryName: '',
+    isSorting: false, // 是否处于排序模式
+    itemHeight: 240, // 每一项的高度 (rpx)
+    movableAreaHeight: 0, // 拖拽区域总高度
+    dragIndex: -1 // 当前拖拽的索引
   },
 
   onLoad(options) {
@@ -80,17 +83,26 @@ Page({
       // 如果有关键词，进行本地过滤
       let filteredRecords = records;
       if (this.data.keyword) {
-        filteredRecords = records.filter(item => 
+        filteredRecords = records.filter(item =>
           item.name.toLowerCase().includes(this.data.keyword.toLowerCase())
         );
       }
 
+      // 计算每个分类的Y轴位置
+      const newCategories = reset ? filteredRecords : [...this.data.categories, ...filteredRecords];
+      const listWithPos = newCategories.map((item, index) => ({
+        ...item,
+        y: index * this.data.itemHeight,
+        zIndex: 1
+      }));
+
       this.setData({
-        categories: reset ? filteredRecords : [...this.data.categories, ...filteredRecords],
+        categories: listWithPos,
         page: this.data.page + 1,
         hasMore: hasMore,
         isLoading: false,
-        total
+        total,
+        movableAreaHeight: listWithPos.length * this.data.itemHeight
       });
     } catch (error) {
       console.error('获取分类列表失败:', error);
@@ -201,12 +213,12 @@ Page({
   // 确认删除
   async confirmDelete() {
     const id = this.data.deleteCategoryId;
-    
+
     try {
       wx.showLoading({ title: '删除中...' });
       const result = await adminApi.deleteCategory(id);
       wx.hideLoading();
-      
+
       this.setData({
         showDeleteDialog: false,
         deleteCategoryId: '',
@@ -237,6 +249,93 @@ Page({
       });
       this.setData({
         showDeleteDialog: false
+      });
+    }
+  },
+
+  // 切换排序模式
+  toggleSort() {
+    const newSortingState = !this.data.isSorting;
+    
+    // 如果是退出排序模式(点击完成按钮)
+    if (!newSortingState && this.data.isSorting) {
+      // 保存排序
+      this.saveSortOrder();
+    }
+    
+    this.setData({
+      isSorting: newSortingState
+    });
+  },
+
+  // 拖拽移动
+  onDragChange(e) {
+    // 可以添加实时反馈逻辑，但为了性能暂时留空
+  },
+
+  // 拖拽结束
+  onDragEnd(e) {
+    const { y } = e.detail;
+    const { index } = e.currentTarget.dataset;
+    const { itemHeight, categories } = this.data;
+
+    // 计算目标索引
+    let targetIndex = Math.round(y / itemHeight);
+
+    // 边界检查
+    if (targetIndex < 0) targetIndex = 0;
+    if (targetIndex >= categories.length) targetIndex = categories.length - 1;
+
+    if (targetIndex === index) {
+      // 位置没变，恢复原位
+      this.setData({
+        [`categories[${index}].y`]: index * itemHeight,
+        [`categories[${index}].zIndex`]: 1
+      });
+      return;
+    }
+
+    // 移动元素
+    const list = [...categories];
+    const [movedItem] = list.splice(index, 1);
+    list.splice(targetIndex, 0, movedItem);
+
+    // 重新计算所有元素位置和排序值
+    const updatedList = list.map((item, idx) => ({
+      ...item,
+      y: idx * itemHeight,
+      zIndex: 1,
+      sort: idx + 1 // 简单假设排序值为索引+1
+    }));
+
+    this.setData({
+      categories: updatedList
+    });
+  },
+
+  // 保存排序顺序
+  async saveSortOrder() {
+    try {
+      wx.showLoading({ title: '保存中...' });
+      
+      const items = this.data.categories.map((item, index) => ({
+        id: item._id,
+        sort: index + 1
+      }));
+      
+      await adminApi.batchUpdateSort({ items, isAdmin: true });
+      
+      wx.hideLoading();
+      wx.showToast({
+        title: '排序已更新',
+        icon: 'success'
+      });
+    } catch (error) {
+      wx.hideLoading();
+      console.error('保存排序失败:', error);
+      wx.showToast({
+        title: error.message || '保存失败',
+        icon: 'none'
       });
     }
   },

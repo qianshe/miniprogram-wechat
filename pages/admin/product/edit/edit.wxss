@@ -29,75 +29,73 @@
   padding: 0 32rpx 40rpx;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-.upload-card {
-  width: 100%;
-  height: 400rpx;
-  background-color: #fff;
-  border-radius: 32rpx;
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  overflow: hidden;
+.upload-group {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 2rpx dashed #e0e0e0; /* 添加虚线边框 */
+  flex-wrap: wrap;
+  gap: 24rpx;
 }
 
-/* 覆盖 TDesign 上传组件样式，使其充满容器 */
-.custom-upload {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 10;
-}
-
-/* 修复 TDesign 上传组件内部布局 */
-.t-upload__grid {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.t-upload__item {
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-}
-
-/* 确保上传后的图片充满容器 */
-.t-upload__item image {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover;
-}
-
-.upload-placeholder {
+/* 上传按钮样式 */
+.upload-add {
+  width: 220rpx;
+  height: 220rpx;
+  background-color: #f7f7f7;
+  border-radius: 16rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #999;
-  font-size: 28rpx;
-  gap: 20rpx;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  transition: all 0.3s ease;
+  border: 2rpx dashed #dcdcdc;
+  box-sizing: border-box;
 }
 
-.upload-placeholder:active {
-  background: linear-gradient(135deg, #e8ebf0 0%, #b8c5d6 100%);
+.upload-add:active {
+  background-color: #eeeeee;
+}
+
+.upload-text {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 16rpx;
+}
+
+/* 图片预览样式 */
+.upload-preview {
+  width: 220rpx;
+  height: 220rpx;
+  position: relative;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 删除按钮 */
+.delete-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40rpx;
+  height: 40rpx;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-bottom-left-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
 }
 
 .upload-tips {
   font-size: 24rpx;
   color: var(--text-sub);
   margin-top: 20rpx;
-  text-align: center;
+  margin-left: 8rpx;
 }
 
 /* 表单容器 */
@@ -149,6 +147,7 @@
   font-size: 28rpx;
   color: var(--text-main);
   transition: all 0.3s;
+  box-sizing: border-box; /* 确保高度计算包含 padding */
 }
 
 .filled-input:focus {
@@ -171,10 +170,22 @@
 
 /* 选择器触发器样式 */
 .picker-trigger {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 48rpx; /* 保持高度一致 */
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  height: 96rpx !important; /* 固定高度，与 t-input 保持一致 */
+  padding: 0 32rpx !important; /* 移除垂直 padding，使用 flex 居中 */
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #f7f8fa; /* 确保背景色存在 */
+}
+
+.text-value, .text-placeholder {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 96rpx; /* 垂直居中辅助 */
 }
 
 .text-value {
@@ -185,52 +196,88 @@
   color: #bbb;
 }
 
-/* 栅格布局 */
-.grid-row {
-  display: flex;
-  gap: 24rpx;
-  margin-bottom: 32rpx;
-}
+/* ... (中间省略) ... */
 
-.grid-col {
-  flex: 1;
-}
-
-/* 设置行 */
-.setting-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.setting-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: var(--text-main);
-  margin-bottom: 8rpx;
-}
-
-.setting-desc {
-  font-size: 24rpx;
-  color: var(--text-sub);
-}
-
-/* 底部按钮 */
-.footer-bar {
+/* 弹窗样式 */
+.custom-modal-mask {
   position: fixed;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 24rpx 48rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  box-shadow: 0 -8rpx 32rpx rgba(0, 0, 0, 0.05);
-  z-index: 100;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
-.submit-btn {
-  font-weight: 600;
+.custom-modal-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600rpx;
+  background-color: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+  z-index: 1001;
+  box-shadow: 0 12rpx 48rpx rgba(0, 0, 0, 0.15);
+}
+
+.picker-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32rpx;
+  position: relative;
+  background-color: #fff;
+  border-bottom: 2rpx solid #f5f5f5;
+}
+
+.picker-title {
   font-size: 32rpx;
-  box-shadow: 0 8rpx 20rpx rgba(var(--primary-color-rgb), 0.3);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.picker-close {
+  position: absolute;
+  right: 32rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 10rpx;
+}
+
+.picker-content {
+  max-height: 60vh;
+  min-height: 300rpx;
+  background-color: #fff;
+}
+
+.category-list {
+  padding: 16rpx 24rpx;
+}
+
+.category-cell {
+  border-radius: 16rpx !important;
+  margin-bottom: 16rpx !important;
+  transition: all 0.3s;
+  background-color: #f9f9f9 !important;
+}
+
+.category-cell::after {
+  display: none !important; /* 移除默认边框 */
+}
+
+.category-cell-active {
+  background-color: rgba(var(--primary-color-rgb), 0.08) !important;
+}
+
+.category-title {
+  font-size: 28rpx;
+  color: var(--text-main);
+}
+
+.category-title-active {
+  color: var(--primary-color) !important;
+  font-weight: 600;
 }
