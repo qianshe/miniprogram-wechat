@@ -1,0 +1,132 @@
+<!--
+  Package Confirm Page
+  Order confirmation before submission
+-->
+<view class="package-confirm-page">
+  <!-- Loading State -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- Main Content -->
+  <block wx:else>
+    <!-- Package Info Card -->
+    <view class="section package-section">
+      <view class="section-header">
+        <text class="section-title">套餐信息</text>
+      </view>
+      <view class="package-card">
+        <view class="package-image-wrap">
+          <image 
+            class="package-image" 
+            src="{{packageInfo.imageUrl || '/images/package-default.png'}}"
+            mode="aspectFill"
+          />
+        </view>
+        <view class="package-info">
+          <text class="package-name">{{packageInfo.name}}</text>
+          <text class="package-desc">{{packageInfo.description}}</text>
+          <view class="package-type-badge {{packageInfo.type}}">
+            <text class="badge-text">{{packageInfo.type === 'white' ? '白事套餐' : '红事套餐'}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Items List -->
+    <view class="section items-section">
+      <view class="section-header">
+        <text class="section-title">商品清单</text>
+        <view class="section-meta">
+          <text class="section-count">共{{items.length}}项</text>
+          <text class="customized-hint" wx:if="{{hasCustomizedItems}}">已定制{{customizedCount}}项</text>
+        </view>
+      </view>
+      <view class="items-list">
+        <view class="item-row {{item.isCustomized ? 'customized' : ''}}" wx:for="{{items}}" wx:key="categoryId">
+          <view class="item-image-wrap">
+            <image 
+              class="item-image" 
+              src="{{item.productImage || '/images/product-default.png'}}"
+              mode="aspectFill"
+            />
+            <view class="customized-badge" wx:if="{{item.isCustomized}}">
+              <text class="customized-badge-text">已定制</text>
+            </view>
+          </view>
+          <view class="item-info">
+            <text class="item-category">{{item.categoryName}}</text>
+            <text class="item-name">{{item.productName}}</text>
+            <text class="item-unit-price">单价: {{item.displayUnitPrice}}</text>
+          </view>
+          <view class="item-qty-price">
+            <text class="item-qty">x{{item.quantity}}</text>
+            <text class="item-price">{{item.displaySubtotal}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Remarks -->
+    <view class="section remarks-section">
+      <view class="section-header">
+        <text class="section-title">订单备注</text>
+        <text class="section-hint">(选填)</text>
+      </view>
+      <textarea 
+        class="remarks-textarea" 
+        placeholder="如有特殊要求，请在此说明..."
+        value="{{remarks}}"
+        bindinput="onRemarksInput"
+        maxlength="200"
+      />
+    </view>
+
+    <!-- Price Summary -->
+    <view class="section price-section">
+      <view class="section-header">
+        <text class="section-title">价格明细</text>
+      </view>
+      <view class="price-breakdown">
+        <view class="price-row">
+          <text class="price-label">套餐原价</text>
+          <text class="price-value original">{{displayOriginalPrice}}</text>
+        </view>
+        <view class="price-row" wx:if="{{hasSaved}}">
+          <text class="price-label">套餐优惠</text>
+          <text class="price-value saved">-{{displaySavedAmount}}</text>
+        </view>
+        <view class="price-row total">
+          <text class="price-label">应付金额</text>
+          <view class="price-value-wrap">
+            <text class="currency">CNY</text>
+            <text class="price-value total-price">{{displayTotalPrice}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Bottom Placeholder -->
+    <view class="bottom-placeholder"></view>
+
+    <!-- Bottom Bar -->
+    <view class="bottom-bar">
+      <view class="bottom-left">
+        <text class="total-label">合计:</text>
+        <view class="total-amount">
+          <text class="total-currency">CNY</text>
+          <text class="total-value">{{displayTotalPrice}}</text>
+        </view>
+      </view>
+      <view class="bottom-right">
+        <view class="back-btn" bindtap="onGoBack">
+          <text class="back-text">返回修改</text>
+        </view>
+        <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="onSubmitOrder">
+          <text class="submit-text">{{submitting ? '提交中...' : '提交订单'}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

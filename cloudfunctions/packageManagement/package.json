@@ -1,0 +1,21 @@
+{
+  "name": "packageManagement",
+  "version": "1.0.0",
+  "description": "套餐管理云函数 - 支持套餐查询、创建、更新、删除等功能",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "wechat",
+    "miniprogram",
+    "cloud",
+    "package",
+    "management"
+  ],
+  "author": "WeChat Cloud Development",
+  "license": "MIT"
+}

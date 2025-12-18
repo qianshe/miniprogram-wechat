@@ -33,6 +33,13 @@ Page({
         path: '/pages/admin/category/list/list'
       },
       {
+        id: 'package',
+        name: '套餐管理',
+        icon: '🎁',
+        desc: '管理套餐信息',
+        path: '/pages/admin/package/list/list'
+      },
+      {
         id: 'create-order',
         name: '创建订单',
         icon: '➕',

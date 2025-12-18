@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "套餐管理",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#f6f0e7",
+  "usingComponents": {
+    "t-search": "tdesign-miniprogram/search/search",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-empty": "tdesign-miniprogram/empty/empty"
+  }
+}

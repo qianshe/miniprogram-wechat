@@ -1,0 +1,94 @@
+<!--pages/package/list/list.wxml-->
+<view class="package-list-page">
+  <!-- Page Header -->
+  <view class="page-header">
+    <text class="page-title">精选套餐</text>
+  </view>
+
+  <!-- Package List -->
+  <scroll-view 
+    class="package-scroll"
+    scroll-y
+    enhanced
+    show-scrollbar="{{false}}"
+    bindscrolltolower="onReachBottom"
+  >
+    <!-- Package Cards -->
+    <view class="package-cards">
+      <view 
+        class="package-card"
+        wx:for="{{packages}}"
+        wx:key="_id"
+        bindtap="onPackageClick"
+        data-id="{{item._id}}"
+      >
+        <!-- Card Header with Image -->
+        <view class="card-header">
+          <image 
+            class="package-image" 
+            src="{{item.imageUrl}}" 
+            mode="aspectFill"
+          />
+          <view class="package-badge" wx:if="{{item.hasDiscount}}">
+            <text class="badge-text">优惠</text>
+          </view>
+        </view>
+
+        <!-- Card Body -->
+        <view class="card-body">
+          <view class="package-title-row">
+            <text class="package-name">{{item.name}}</text>
+            <view class="item-count-badge">
+              <text class="item-count">{{item.itemCount}}项</text>
+            </view>
+          </view>
+          
+          <text class="package-desc">{{item.description}}</text>
+          
+          <!-- Price Section -->
+          <view class="price-section">
+            <view class="price-main">
+              <text class="currency">¥</text>
+              <text class="price-value">{{item.displayPrice}}</text>
+            </view>
+            <text class="price-original" wx:if="{{item.hasDiscount}}">¥{{item.displayOriginalPrice}}</text>
+          </view>
+
+          <!-- Action Hint -->
+          <view class="action-hint">
+            <text class="hint-text">点击查看详情</text>
+            <view class="arrow-icon">
+              <text class="arrow">></text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Loading States -->
+    <view class="loading-section">
+      <view class="loading-indicator" wx:if="{{loading}}">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">加载中...</text>
+      </view>
+      
+      <view class="no-more" wx:elif="{{!hasMore && packages.length > 0}}">
+        <view class="divider-line"></view>
+        <text class="no-more-text">已加载全部套餐</text>
+        <view class="divider-line"></view>
+      </view>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty-state" wx:if="{{isEmpty && !loading}}">
+      <view class="empty-icon">
+        <text class="empty-icon-text">!</text>
+      </view>
+      <text class="empty-title">暂无套餐</text>
+      <text class="empty-desc">暂无可用套餐</text>
+    </view>
+
+    <!-- Bottom Safe Area -->
+    <view class="safe-area-bottom"></view>
+  </scroll-view>
+</view>

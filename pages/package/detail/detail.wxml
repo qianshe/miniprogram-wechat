@@ -1,0 +1,237 @@
+<!--pages/package/detail/detail.wxml-->
+<view class="package-detail-page">
+  <!-- Loading State -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- Content -->
+  <block wx:else>
+    <!-- Package Header -->
+    <view class="package-header">
+      <image 
+        class="header-image" 
+        src="{{packageInfo.imageUrl}}" 
+        mode="aspectFill"
+      />
+      <view class="header-overlay"></view>
+      <view class="header-content">
+        <text class="package-name">{{packageInfo.name}}</text>
+        <text class="package-desc">{{packageInfo.description}}</text>
+      </view>
+    </view>
+
+    <!-- Items Section -->
+    <view class="items-section">
+      <view class="section-header">
+        <text class="section-title">套餐内容</text>
+        <text class="section-subtitle">可调整数量或更换商品</text>
+      </view>
+
+      <view class="items-list">
+        <!-- 遍历每个分类 -->
+        <view
+          class="item-card"
+          wx:for="{{items}}"
+          wx:for-index="categoryIndex"
+          wx:for-item="category"
+          wx:key="categoryId"
+        >
+          <!-- Category Header -->
+          <view class="item-header">
+            <text class="category-name">{{category.categoryName}}</text>
+            <view class="category-subtotal">
+              <text class="subtotal-text">小计: </text>
+              <text class="subtotal-value">{{category.displayCategorySubtotal}}</text>
+            </view>
+          </view>
+
+          <!-- Products List - 遍历该分类下的所有商品 -->
+          <view class="products-container">
+            <view 
+              class="product-item {{product.isCustomized ? 'customized' : ''}}"
+              wx:for="{{category.products}}"
+              wx:for-index="productIndex"
+              wx:for-item="product"
+              wx:key="productId"
+            >
+              <!-- Product Info -->
+              <view 
+                class="product-info" 
+                bindtap="onSelectProduct" 
+                data-category-index="{{categoryIndex}}" 
+                data-product-index="{{productIndex}}" 
+                data-category-id="{{category.categoryId}}" 
+                data-category-name="{{category.categoryName}}"
+              >
+                <image 
+                  class="product-image" 
+                  src="{{product.imageUrl}}" 
+                  mode="aspectFill"
+                />
+                <view class="product-details">
+                  <view class="product-name-row">
+                    <text class="product-name">{{product.productName}}</text>
+                    <view class="customized-badge" wx:if="{{product.isCustomized}}">
+                      <text class="customized-badge-text">已定制</text>
+                    </view>
+                  </view>
+                  <text class="product-price">{{product.displayPrice}}/件</text>
+                </view>
+                <view class="change-btn">
+                  <text class="change-text">更换</text>
+                </view>
+              </view>
+
+              <!-- Quantity Control -->
+              <view class="quantity-row">
+                <text class="quantity-label">数量</text>
+                <view class="quantity-control">
+                  <view 
+                    class="qty-btn {{product.quantity <= 1 ? 'disabled' : ''}}"
+                    bindtap="onQuantityChange"
+                    data-category-index="{{categoryIndex}}"
+                    data-product-index="{{productIndex}}"
+                    data-action="decrease"
+                  >
+                    <text class="qty-icon">-</text>
+                  </view>
+                  <text class="qty-value">{{product.quantity}}</text>
+                  <view 
+                    class="qty-btn"
+                    bindtap="onQuantityChange"
+                    data-category-index="{{categoryIndex}}"
+                    data-product-index="{{productIndex}}"
+                    data-action="increase"
+                  >
+                    <text class="qty-icon">+</text>
+                  </view>
+                </view>
+              </view>
+
+              <!-- Product Subtotal -->
+              <view class="product-subtotal-row">
+                <text class="subtotal-label">商品小计</text>
+                <text class="subtotal-value">{{product.displaySubtotal}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Price Summary -->
+    <view class="price-summary">
+      <view class="summary-row">
+        <text class="summary-label">套餐原价</text>
+        <text class="summary-value original">{{displayOriginalPrice}}</text>
+      </view>
+      <view class="summary-row" wx:if="{{hasSaved}}">
+        <text class="summary-label">优惠金额</text>
+        <text class="summary-value saved">-{{displaySavedAmount}}</text>
+      </view>
+      <view class="summary-row total">
+        <text class="summary-label">应付金额</text>
+        <text class="summary-value total-price">{{displayTotalPrice}}</text>
+      </view>
+    </view>
+
+    <!-- Bottom Safe Area Placeholder -->
+    <view class="bottom-placeholder"></view>
+  </block>
+
+  <!-- Bottom Action Bar -->
+  <view class="bottom-bar" wx:if="{{!loading}}">
+    <view class="price-display">
+      <text class="price-label">合计</text>
+      <view class="price-amount">
+        <text class="currency">Y</text>
+        <text class="amount">{{displayTotalPrice}}</text>
+      </view>
+    </view>
+    <view class="confirm-btn" bindtap="onConfirm">
+      <text class="btn-text">确认套餐</text>
+    </view>
+  </view>
+
+  <!-- Product Replacer Popup -->
+  <view class="popup-overlay {{showReplacer ? 'visible' : ''}}" bindtap="onCloseReplacer">
+    <view class="popup-container {{showReplacer ? 'visible' : ''}}" catchtap="onPopupTap">
+      <!-- Popup Header -->
+      <view class="popup-header">
+        <text class="popup-title">选择替换商品</text>
+        <view class="popup-close" bindtap="onCloseReplacer">
+          <text class="close-icon">X</text>
+        </view>
+      </view>
+
+      <!-- Current Product -->
+      <view class="current-product" wx:if="{{currentItem && currentProductIndex >= 0}}">
+        <text class="current-label">当前商品</text>
+        <view class="current-info">
+          <image
+            class="current-image"
+            src="{{currentItem.products[currentProductIndex].imageUrl}}"
+            mode="aspectFill"
+          />
+          <view class="current-details">
+            <text class="current-name">{{currentItem.products[currentProductIndex].productName}}</text>
+            <text class="current-price">{{currentItem.products[currentProductIndex].displayPrice}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Loading State -->
+      <view class="replacer-loading" wx:if="{{loadingProducts}}">
+        <view class="loading-spinner small"></view>
+        <text class="loading-text">加载商品中...</text>
+      </view>
+
+      <!-- Available Products -->
+      <view class="available-products" wx:if="{{!loadingProducts && availableProducts.length > 0}}">
+        <text class="available-label">可选商品 ({{currentCategoryName}})</text>
+        <scroll-view class="products-scroll" scroll-y="true">
+          <view class="products-grid">
+            <view
+              class="product-option {{item._id === selectedProductId ? 'selected' : ''}}"
+              wx:for="{{availableProducts}}"
+              wx:key="_id"
+              bindtap="onSelectReplacement"
+              data-product="{{item}}"
+            >
+              <view class="option-check" wx:if="{{item._id === selectedProductId}}">
+                <text class="check-icon">v</text>
+              </view>
+              <image
+                class="option-image"
+                src="{{item.imageUrl}}"
+                mode="aspectFill"
+              />
+              <text class="option-name">{{item.name}}</text>
+              <text class="option-price">{{item.displayPrice}}</text>
+              <view class="price-diff {{item.priceDiff > 0 ? 'positive' : item.priceDiff < 0 ? 'negative' : 'zero'}}">
+                <text class="diff-text">{{item.priceDiffText}}</text>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- Empty State -->
+      <view class="empty-products" wx:if="{{!loadingProducts && availableProducts.length === 0}}">
+        <text class="empty-text">暂无可替换商品</text>
+      </view>
+
+      <!-- Confirm Button -->
+      <view class="popup-footer" wx:if="{{!loadingProducts && availableProducts.length > 0}}">
+        <view
+          class="replace-btn {{selectedProductId && currentItem && currentProductIndex >= 0 && selectedProductId !== currentItem.products[currentProductIndex].productId ? '' : 'disabled'}}"
+          bindtap="onConfirmReplace"
+        >
+          <text class="replace-btn-text">确认替换</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "套餐编辑",
+  "backgroundColor": "#f6f0e7",
+  "usingComponents": {
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-textarea": "tdesign-miniprogram/textarea/textarea",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-switch": "tdesign-miniprogram/switch/switch",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group"
+  }
+}

@@ -19,6 +19,14 @@ page {
   --wechat-green: #07C160;
   --wechat-green-dark: #06AD56;
   
+  /* Package Pages Theme */
+  --package-accent: #c9a86c;
+  --package-accent-light: #f5efe3;
+  --package-border: #efe7dc;
+  --package-success: #5a8f7b;
+  --package-card-radius: 24rpx;
+  --package-item-radius: 16rpx;
+  
   background-color: var(--bg-color);
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
     Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB', 'Microsoft Yahei',

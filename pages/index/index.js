@@ -38,11 +38,11 @@ Page({
     }, 100);
   },
 
-  // 一站式套装
+  // 一站式套餐
   onTapPackage() {
-    // 跳转到商品分类页，并可能需要传递特定参数显示套装
-    wx.switchTab({
-      url: '/pages/goods/category/category'
+    // 跳转到套餐列表页
+    wx.navigateTo({
+      url: '/pages/package/list/list'
     });
   },
 
