@@ -84,8 +84,7 @@ const getProgress = (data = {}, options = {}) => {
  */
 const adminGetList = (data = {}, options = {}) => {
   return call(FUNCTION_NAME, 'getProcesses', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '加载中...',
@@ -102,8 +101,7 @@ const adminGetList = (data = {}, options = {}) => {
  */
 const adminGetByOrder = (data = {}, options = {}) => {
   return call(FUNCTION_NAME, 'getProcessesByOrder', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '加载中...',
@@ -120,8 +118,7 @@ const adminGetByOrder = (data = {}, options = {}) => {
  */
 const adminGetDetail = (data = {}, options = {}) => {
   return call(FUNCTION_NAME, 'getProcessDetail', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '加载中...',

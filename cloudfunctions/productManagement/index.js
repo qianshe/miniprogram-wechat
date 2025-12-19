@@ -13,6 +13,28 @@ const db = cloud.database();
 const _ = db.command;
 
 /**
+ * 服务端验证管理员身份
+ * 通过查询数据库中的用户记录来验证，而不是信任客户端传来的 isAdmin
+ * @param {string} openid - 用户的 openid
+ * @returns {Promise<boolean>} 是否为管理员
+ */
+async function verifyAdminByOpenid(openid) {
+  if (!openid) return false;
+  
+  try {
+    const userResult = await db.collection('users')
+      .where({ openid })
+      .field({ isAdmin: true })
+      .get();
+    
+    return userResult.data.length > 0 && userResult.data[0].isAdmin === true;
+  } catch (err) {
+    console.error('[PRODUCT_MANAGEMENT] verifyAdminByOpenid error:', err);
+    return false;
+  }
+}
+
+/**
  * 云函数主处理逻辑
  */
 const handler = async (event, context) => {
@@ -215,12 +237,12 @@ async function createProduct(data, context) {
 
   console.log('[PRODUCT_MANAGEMENT] createProduct:', {
     openid: OPENID,
-    productName: data?.name,
-    isAdmin: data?.isAdmin
+    productName: data?.name
   });
 
-  // 权限检查 - 只有管理员可以创建商品
-  if (!data?.isAdmin) {
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+  if (!isAdmin) {
     console.warn('[PRODUCT_MANAGEMENT] createProduct failed: No admin permission', { openid: OPENID });
     return permissionError('Only admin can create product');
   }
@@ -298,15 +320,15 @@ async function createProduct(data, context) {
 async function updateProduct(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, isAdmin, ...updateData } = data || {};
+  const { id, isAdmin: _clientIsAdmin, ...updateData } = data || {};
 
   console.log('[PRODUCT_MANAGEMENT] updateProduct:', {
     openid: OPENID,
-    productId: id,
-    isAdmin
+    productId: id
   });
 
-  // 权限检查 - 只有管理员可以更新商品
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
   if (!isAdmin) {
     console.warn('[PRODUCT_MANAGEMENT] updateProduct failed: No admin permission', { openid: OPENID, productId: id });
     return permissionError('Only admin can update product');
@@ -374,15 +396,15 @@ async function updateProduct(data, context) {
 async function deleteProduct(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, isAdmin } = data || {};
+  const { id, isAdmin: _clientIsAdmin } = data || {};
 
   console.log('[PRODUCT_MANAGEMENT] deleteProduct:', {
     openid: OPENID,
-    productId: id,
-    isAdmin
+    productId: id
   });
 
-  // 权限检查 - 只有管理员可以删除商品
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
   if (!isAdmin) {
     console.warn('[PRODUCT_MANAGEMENT] deleteProduct failed: No admin permission', { openid: OPENID, productId: id });
     return permissionError('Only admin can delete product');
@@ -423,16 +445,16 @@ async function deleteProduct(data, context) {
 async function updateStock(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, stock, isAdmin } = data || {};
+  const { id, stock, isAdmin: _clientIsAdmin } = data || {};
 
   console.log('[PRODUCT_MANAGEMENT] updateStock:', {
     openid: OPENID,
     productId: id,
-    newStock: stock,
-    isAdmin
+    newStock: stock
   });
 
-  // 权限检查 - 只有管理员可以更新库存
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
   if (!isAdmin) {
     console.warn('[PRODUCT_MANAGEMENT] updateStock failed: No admin permission', { openid: OPENID, productId: id });
     return permissionError('Only admin can update stock');

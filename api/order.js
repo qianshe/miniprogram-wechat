@@ -175,8 +175,7 @@ const bind = (data = {}, options = {}) => {
  */
 const adminGetList = (data = {}, options = {}) => {
   return call(FUNCTION_NAME, 'getOrders', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '加载中...',
@@ -193,8 +192,7 @@ const adminGetList = (data = {}, options = {}) => {
  */
 const adminGetDetail = (data = {}, options = {}) => {
   return call(FUNCTION_NAME, 'getOrderDetail', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '加载中...',
@@ -212,8 +210,7 @@ const adminGetDetail = (data = {}, options = {}) => {
  */
 const adminUpdateStatus = async (data = {}, options = {}) => {
   const result = await call(FUNCTION_NAME, 'updateOrderStatus', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '更新中...',

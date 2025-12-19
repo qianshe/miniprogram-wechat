@@ -13,6 +13,28 @@ cloud.init({
 const db = cloud.database();
 const _ = db.command;
 
+/**
+ * 服务端验证管理员身份
+ * 通过查询数据库中的用户记录来验证，而不是信任客户端传来的 isAdmin
+ * @param {string} openid - 用户的 openid
+ * @returns {Promise<boolean>} 是否为管理员
+ */
+async function verifyAdminByOpenid(openid) {
+  if (!openid) return false;
+  
+  try {
+    const userResult = await db.collection('users')
+      .where({ openid })
+      .field({ isAdmin: true })
+      .get();
+    
+    return userResult.data.length > 0 && userResult.data[0].isAdmin === true;
+  } catch (err) {
+    console.error('[CATEGORY_MANAGEMENT] verifyAdminByOpenid error:', err);
+    return false;
+  }
+}
+
 // 分类状态枚举
 const CATEGORY_STATUS = {
   DISABLED: 0,   // 禁用
@@ -262,12 +284,12 @@ async function createCategory(data, context) {
   console.log('[CATEGORY_MANAGEMENT] createCategory:', {
     openid: OPENID,
     categoryName: data?.name,
-    type: data?.type,
-    isAdmin: data?.isAdmin
+    type: data?.type
   });
 
-  // 权限检查 - 只有管理员可以创建分类
-  if (!data?.isAdmin) {
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+  if (!isAdmin) {
     console.warn('[CATEGORY_MANAGEMENT] createCategory failed: No admin permission', { openid: OPENID });
     return permissionError('Only admin can create category');
   }
@@ -354,15 +376,15 @@ async function createCategory(data, context) {
 async function updateCategory(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, isAdmin, ...updateData } = data || {};
+  const { id, isAdmin: _clientIsAdmin, ...updateData } = data || {};
 
   console.log('[CATEGORY_MANAGEMENT] updateCategory:', {
     openid: OPENID,
-    categoryId: id,
-    isAdmin
+    categoryId: id
   });
 
-  // 权限检查 - 只有管理员可以更新分类
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
   if (!isAdmin) {
     console.warn('[CATEGORY_MANAGEMENT] updateCategory failed: No admin permission', { openid: OPENID, categoryId: id });
     return permissionError('Only admin can update category');
@@ -443,15 +465,15 @@ async function updateCategory(data, context) {
 async function batchUpdateCategorySort(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { items, isAdmin } = data || {};
+  const { items, isAdmin: _clientIsAdmin } = data || {};
 
   console.log('[CATEGORY_MANAGEMENT] batchUpdateCategorySort:', {
     openid: OPENID,
-    itemsCount: items?.length,
-    isAdmin
+    itemsCount: items?.length
   });
 
-  // 权限检查
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
   if (!isAdmin) {
     console.warn('[CATEGORY_MANAGEMENT] batchUpdateCategorySort failed: No admin permission', { openid: OPENID });
     return permissionError('Only admin can batch update category sort');
@@ -507,15 +529,15 @@ async function batchUpdateCategorySort(data, context) {
 async function deleteCategory(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, isAdmin } = data || {};
+  const { id, isAdmin: _clientIsAdmin } = data || {};
 
   console.log('[CATEGORY_MANAGEMENT] deleteCategory:', {
     openid: OPENID,
-    categoryId: id,
-    isAdmin
+    categoryId: id
   });
 
-  // 权限检查 - 只有管理员可以删除分类
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
   if (!isAdmin) {
     console.warn('[CATEGORY_MANAGEMENT] deleteCategory failed: No admin permission', { openid: OPENID, categoryId: id });
     return permissionError('Only admin can delete category');
@@ -588,12 +610,12 @@ async function migrateCategories(data, context) {
   const startTime = Date.now();
 
   console.log('[CATEGORY_MANAGEMENT] migrateCategories:', {
-    openid: OPENID,
-    isAdmin: data?.isAdmin
+    openid: OPENID
   });
 
-  // 权限检查 - 只有管理员可以执行迁移
-  if (!data?.isAdmin) {
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+  if (!isAdmin) {
     console.warn('[CATEGORY_MANAGEMENT] migrateCategories failed: No admin permission', { openid: OPENID });
     return permissionError('Only admin can migrate categories');
   }
@@ -683,12 +705,12 @@ async function cleanupRedCategories(data, context) {
   const startTime = Date.now();
 
   console.log('[CATEGORY_MANAGEMENT] cleanupRedCategories:', {
-    openid: OPENID,
-    isAdmin: data?.isAdmin
+    openid: OPENID
   });
 
-  // 权限检查 - 只有管理员可以执行清理
-  if (!data?.isAdmin) {
+  // 服务端权限检查 - 通过数据库验证管理员身份
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+  if (!isAdmin) {
     console.warn('[CATEGORY_MANAGEMENT] cleanupRedCategories failed: No admin permission', { openid: OPENID });
     return permissionError('Only admin can cleanup red categories');
   }

@@ -323,7 +323,7 @@ Page({
         sort: index + 1
       }));
       
-      await adminApi.batchUpdateSort({ items, isAdmin: true });
+      await adminApi.batchUpdateSort({ items });
       
       wx.hideLoading();
       wx.showToast({

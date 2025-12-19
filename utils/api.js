@@ -367,19 +367,19 @@ const adminApi = {
   },
 
   createProduct: async (data) => {
-    return await callCloudFunction('productManagement', 'createProduct', { ...data, isAdmin: true });
+    return await callCloudFunction('productManagement', 'createProduct', { ...data });
   },
 
   updateProduct: async (id, data) => {
-    return await callCloudFunction('productManagement', 'updateProduct', { id, ...data, isAdmin: true });
+    return await callCloudFunction('productManagement', 'updateProduct', { id, ...data });
   },
 
   deleteProduct: async (id) => {
-    return await callCloudFunction('productManagement', 'deleteProduct', { id, isAdmin: true });
+    return await callCloudFunction('productManagement', 'deleteProduct', { id });
   },
 
   updateStock: async (productId, stock) => {
-    return await callCloudFunction('productManagement', 'updateStock', { id: productId, stock, isAdmin: true });
+    return await callCloudFunction('productManagement', 'updateStock', { id: productId, stock });
   },
 
   // 分类管理 - 统一云函数调用
@@ -398,38 +398,38 @@ const adminApi = {
   },
 
   createCategory: async (data) => {
-    return await callCloudFunction('categoryManagement', 'createCategory', { ...data, isAdmin: true });
+    return await callCloudFunction('categoryManagement', 'createCategory', { ...data });
   },
 
   updateCategory: async (id, data) => {
-    return await callCloudFunction('categoryManagement', 'updateCategory', { id, ...data, isAdmin: true });
+    return await callCloudFunction('categoryManagement', 'updateCategory', { id, ...data });
   },
 
   deleteCategory: async (id) => {
-    return await callCloudFunction('categoryManagement', 'deleteCategory', { id, isAdmin: true });
+    return await callCloudFunction('categoryManagement', 'deleteCategory', { id });
   },
 
   // 批量更新分类排序
   batchUpdateSort: async (data) => {
-    return await callCloudFunction('categoryManagement', 'batchUpdateCategorySort', { ...data, isAdmin: true });
+    return await callCloudFunction('categoryManagement', 'batchUpdateCategorySort', { ...data });
   },
 
   // 分类数据迁移 - 将模拟数据迁移到数据库
   migrateCategories: async () => {
-    return await callCloudFunction('categoryManagement', 'migrateCategories', { isAdmin: true });
+    return await callCloudFunction('categoryManagement', 'migrateCategories', {});
   },
   
   // 订单管理 - 统一云函数调用
   getOrders: async (params) => {
-    return await callCloudFunction('orderManagement', 'getOrders', { ...params, isAdmin: true });
+    return await callCloudFunction('orderManagement', 'getOrders', { ...params });
   },
 
   getOrderDetail: async (orderNo) => {
-    return await callCloudFunction('orderManagement', 'getOrderDetail', { orderNo, isAdmin: true });
+    return await callCloudFunction('orderManagement', 'getOrderDetail', { orderNo });
   },
 
   updateOrderStatus: async (orderNo, status) => {
-    return await callCloudFunction('orderManagement', 'updateOrderStatus', { orderNo, status, isAdmin: true });
+    return await callCloudFunction('orderManagement', 'updateOrderStatus', { orderNo, status });
   },
 
   // 订单统计 - 暂未实现云函数版本
@@ -448,15 +448,15 @@ const adminApi = {
   },
 
   createProcessStep: async (data) => {
-    return await callCloudFunction('processManagement', 'createProcessStep', { ...data, isAdmin: true });
+    return await callCloudFunction('processManagement', 'createProcessStep', { ...data });
   },
 
   updateProcessStep: async (id, data) => {
-    return await callCloudFunction('processManagement', 'updateProcessStep', { id, ...data, isAdmin: true });
+    return await callCloudFunction('processManagement', 'updateProcessStep', { id, ...data });
   },
 
   deleteProcessStep: async (id) => {
-    return await callCloudFunction('processManagement', 'deleteProcessStep', { id, isAdmin: true });
+    return await callCloudFunction('processManagement', 'deleteProcessStep', { id });
   }
 }
 

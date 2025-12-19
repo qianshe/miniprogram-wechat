@@ -15,6 +15,25 @@ const db = cloud.database()
 const _ = db.command
 
 /**
+ * 通过openid验证用户是否为管理员
+ * @param {string} openid - 用户的openid
+ * @returns {Promise<boolean>} - 是否为管理员
+ */
+async function verifyAdminByOpenid(openid) {
+  if (!openid) return false;
+  try {
+    const userResult = await db.collection('users')
+      .where({ openid })
+      .field({ isAdmin: true })
+      .get();
+    return userResult.data.length > 0 && userResult.data[0].isAdmin === true;
+  } catch (err) {
+    console.error('[PROCESS] verifyAdminByOpenid error:', err);
+    return false;
+  }
+}
+
+/**
  * 检查集合是否存在
  */
 async function checkCollectionExists(collectionName) {
@@ -248,7 +267,10 @@ async function getStepDetail(data) {
  */
 async function createProcessStep(data) {
   const { OPENID } = cloud.getWXContext()
-  const { isAdmin } = data || {}
+  const { isAdmin: _clientIsAdmin } = data || {}
+
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID)
 
   console.log('[PROCESS] createProcessStep:', {
     openid: OPENID,
@@ -308,7 +330,10 @@ async function createProcessStep(data) {
  */
 async function updateProcessStep(data) {
   const { OPENID } = cloud.getWXContext()
-  const { id, isAdmin, ...updateData } = data || {}
+  const { id, isAdmin: _clientIsAdmin, ...updateData } = data || {}
+
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID)
 
   console.log('[PROCESS] updateProcessStep:', {
     openid: OPENID,
@@ -350,7 +375,10 @@ async function updateProcessStep(data) {
  */
 async function deleteProcessStep(data) {
   const { OPENID } = cloud.getWXContext()
-  const { id, isAdmin } = data || {}
+  const { id, isAdmin: _clientIsAdmin } = data || {}
+
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID)
 
   console.log('[PROCESS] deleteProcessStep:', {
     openid: OPENID,

@@ -72,20 +72,24 @@ const requireAdmin = async (event, context, db = null) => {
     return loginResult
   }
   
-  // 检查事件参数中是否标记为管理员请求
-  if (!event._isAdmin) {
-    return {
-      valid: false,
-      error: {
-        code: ErrorCodes.ADMIN_REQUIRED,
-        message: ErrorMessages[ErrorCodes.ADMIN_REQUIRED]
-      }
-    }
-  }
-  
-  // 如果提供了数据库实例，可以进一步验证
+  // 服务端验证管理员身份 - 不信任客户端传来的 _isAdmin
+  // 必须通过数据库查询验证
   if (db) {
     try {
+      // 优先查询 users 集合的 isAdmin 字段
+      const userRecord = await db.collection('users')
+        .where({ openid: loginResult.identity.openid })
+        .field({ isAdmin: true })
+        .get()
+      
+      if (userRecord.data.length > 0 && userRecord.data[0].isAdmin === true) {
+        return {
+          valid: true,
+          identity: loginResult.identity
+        }
+      }
+      
+      // 回退：查询 admins 集合
       const adminRecord = await db.collection('admins')
         .where({ openid: loginResult.identity.openid })
         .get()
@@ -100,8 +104,24 @@ const requireAdmin = async (event, context, db = null) => {
         }
       }
     } catch (e) {
-      // 如果admins集合不存在，回退到基本验证
-      console.warn('admins集合不存在，使用基本验证')
+      console.warn('管理员验证失败:', e.message)
+      return {
+        valid: false,
+        error: {
+          code: ErrorCodes.ADMIN_REQUIRED,
+          message: ErrorMessages[ErrorCodes.ADMIN_REQUIRED]
+        }
+      }
+    }
+  } else {
+    // 没有提供数据库实例，无法验证管理员身份
+    console.warn('requireAdmin: 未提供数据库实例，无法验证管理员身份')
+    return {
+      valid: false,
+      error: {
+        code: ErrorCodes.ADMIN_REQUIRED,
+        message: '无法验证管理员身份'
+      }
     }
   }
   
@@ -161,14 +181,8 @@ const requireOwnershipOrAdmin = async (event, context, resourceOwnerId) => {
     }
   }
   
-  // 检查是否是管理员
-  if (event._isAdmin) {
-    return {
-      valid: true,
-      identity: loginResult.identity,
-      isAdmin: true
-    }
-  }
+  // 注意：不再信任客户端传来的 _isAdmin
+  // 如果需要验证管理员身份，应该使用 requireAdmin 函数并传入 db 实例
   
   return {
     valid: false,

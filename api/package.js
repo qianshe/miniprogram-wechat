@@ -88,8 +88,7 @@ const getByType = (type, data = {}, options = {}) => {
  */
 const adminGetList = (data = {}, options = {}) => {
   return call(FUNCTION_NAME, 'getPackages', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '加载中...',
@@ -106,8 +105,7 @@ const adminGetList = (data = {}, options = {}) => {
  */
 const adminGetDetail = (data = {}, options = {}) => {
   return call(FUNCTION_NAME, 'getPackageDetail', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '加载中...',

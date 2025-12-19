@@ -107,8 +107,7 @@ const getChildren = (parentId, options = {}) => {
  */
 const adminGetList = (data = {}, options = {}) => {
   return call(FUNCTION_NAME, 'getCategories', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '加载中...',
@@ -122,9 +121,7 @@ const adminGetList = (data = {}, options = {}) => {
  * @returns {Promise<Object>} 分类树
  */
 const adminGetTree = (options = {}) => {
-  return call(FUNCTION_NAME, 'getCategoryTree', {
-    isAdmin: true
-  }, {
+  return call(FUNCTION_NAME, 'getCategoryTree', {}, {
     showLoading: false,
     ...options
   })
@@ -139,8 +136,7 @@ const adminGetTree = (options = {}) => {
  */
 const adminGetDetail = (data = {}, options = {}) => {
   return call(FUNCTION_NAME, 'getCategoryDetail', {
-    ...data,
-    isAdmin: true
+    ...data
   }, {
     showLoading: true,
     loadingText: '加载中...',

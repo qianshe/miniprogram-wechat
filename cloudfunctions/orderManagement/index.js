@@ -26,6 +26,25 @@ cloud.init({
 const db = cloud.database();
 const _ = db.command;
 
+/**
+ * 通过openid验证用户是否为管理员
+ * @param {string} openid - 用户的openid
+ * @returns {Promise<boolean>} - 是否为管理员
+ */
+async function verifyAdminByOpenid(openid) {
+  if (!openid) return false;
+  try {
+    const userResult = await db.collection('users')
+      .where({ openid })
+      .field({ isAdmin: true })
+      .get();
+    return userResult.data.length > 0 && userResult.data[0].isAdmin === true;
+  } catch (err) {
+    console.error('[ORDER] verifyAdminByOpenid error:', err);
+    return false;
+  }
+}
+
 // 订单状态枚举
 const ORDER_STATUS = {
   PENDING: 0,      // 待支付
@@ -178,8 +197,11 @@ async function getOrders(data, context, logger) {
     size = 10,
     status,
     userId,
-    isAdmin = false
+    isAdmin: _clientIsAdmin
   } = data;
+
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID);
 
   logger.info('Getting orders', { page, size, status, isAdmin });
   
@@ -249,7 +271,10 @@ async function getOrders(data, context, logger) {
  */
 async function getOrderDetail(data, context, logger) {
   const { OPENID } = cloud.getWXContext();
-  const { orderNo, isAdmin = false } = data;
+  const { orderNo, isAdmin: _clientIsAdmin } = data;
+
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID);
 
   logger.info('Getting order detail', { orderNo, isAdmin });
 
@@ -322,7 +347,10 @@ async function getOrderDetail(data, context, logger) {
  */
 async function updateOrderStatus(data, context, logger) {
   const { OPENID } = cloud.getWXContext();
-  const { orderNo, status, isAdmin = false } = data;
+  const { orderNo, status, isAdmin: _clientIsAdmin } = data;
+
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID);
 
   logger.info('Updating order status', { orderNo, targetStatus: status, isAdmin });
   
@@ -459,7 +487,10 @@ async function bindOrder(data, context, logger) {
  */
 async function deleteOrder(data, context, logger) {
   const { OPENID } = cloud.getWXContext();
-  const { orderNo, isAdmin = false } = data;
+  const { orderNo, isAdmin: _clientIsAdmin } = data;
+
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID);
 
   logger.info('Deleting order', { orderNo, isAdmin });
 

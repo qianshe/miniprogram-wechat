@@ -201,6 +201,7 @@ const handler = async (event, context) => {
  * @param {boolean} data.isAdmin - 是否管理员请求
  */
 async function getPackages(data, context) {
+  const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
   const { 
     page = 1, 
@@ -208,10 +209,13 @@ async function getPackages(data, context) {
     type, 
     keyword, 
     status, 
-    isAdmin = false,
+    isAdmin: _clientIsAdmin,
     orderBy = 'sort',
     orderDirection = 'asc'
   } = data || {};
+  
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID);
   
   console.log('[PACKAGE_MANAGEMENT] getPackages:', {
     page, size, type, keyword, status, isAdmin, orderBy, orderDirection
@@ -317,8 +321,12 @@ async function getPackages(data, context) {
  * @param {boolean} data.isAdmin - 是否管理员请求
  */
 async function getPackageDetail(data, context) {
+  const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, isAdmin = false } = data || {};
+  const { id, isAdmin: _clientIsAdmin } = data || {};
+  
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID);
   
   console.log('[PACKAGE_MANAGEMENT] getPackageDetail:', { packageId: id, isAdmin });
   
