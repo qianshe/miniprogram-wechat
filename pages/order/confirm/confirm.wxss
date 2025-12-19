@@ -182,21 +182,21 @@
   margin: 0;
   font-size: 30rpx;
   font-weight: 600;
-  background: var(--wechat-green);
-  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
+  background: linear-gradient(135deg, var(--package-accent, #c9a86c) 0%, var(--primary-color, #b8865c) 100%);
+  box-shadow: 0 8rpx 24rpx rgba(184, 134, 92, 0.3);
   transition: all 0.3s;
 }
 
 .submit-btn:active {
   transform: scale(0.98);
-  background: var(--wechat-green-dark);
-  box-shadow: 0 4rpx 10rpx rgba(7, 193, 96, 0.2);
+  opacity: 0.9;
+  background: linear-gradient(135deg, var(--package-accent, #c9a86c) 0%, var(--primary-color, #b8865c) 100%);
 }
 
 /* 白事系统提交按钮 */
 .white-theme .submit-btn {
-  background: var(--wechat-green);
-  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
+  background: linear-gradient(135deg, var(--package-accent, #c9a86c) 0%, var(--primary-color, #b8865c) 100%);
+  box-shadow: 0 8rpx 24rpx rgba(184, 134, 92, 0.3);
 }
 
 /* 红事系统提交按钮 */
@@ -210,9 +210,9 @@
   box-shadow: none;
 }
 
-/* 按钮 loading 状态样式 - 保持背景色 */
+/* 按钮 loading 状态样式 */
 .submit-btn[loading] {
-  background: var(--wechat-green);
+  background: linear-gradient(135deg, var(--package-accent, #c9a86c) 0%, var(--primary-color, #b8865c) 100%);
   opacity: 0.8;
 }
 

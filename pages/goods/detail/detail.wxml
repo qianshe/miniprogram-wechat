@@ -12,7 +12,7 @@
 
   <view class="goods-info">
     <view class="goods-name">{{goods.name}}</view>
-    <view class="goods-price">{{goods.displayPrice}}</view>
+    <view class="goods-price">¥{{goods.displayPrice}}</view>
     <view class="goods-stock">库存：{{goods.stock}}</view>
   </view>
 
@@ -49,7 +49,7 @@
       <view class="sku-header">
         <image src="{{goods.image}}" mode="aspectFill" class="sku-image" />
         <view class="sku-info">
-          <view class="sku-price">{{goods.displayPrice}}</view>
+          <view class="sku-price">¥{{goods.displayPrice}}</view>
           <view class="sku-stock">库存：{{goods.stock}}</view>
         </view>
       </view>
@@ -72,4 +72,4 @@
   </view>
 </view>
 
-<view class="loading" wx:if="{{loading}}">加载中...</view>
+

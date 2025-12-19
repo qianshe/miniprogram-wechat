@@ -11,6 +11,25 @@
 
   <!-- Main Content -->
   <block wx:else>
+    <!-- Address Section -->
+    <view class="section address-section" bindtap="selectAddress">
+      <view class="section-header">
+        <text class="section-title">收货地址</text>
+      </view>
+      <view wx:if="{{address}}" class="address-info">
+        <view class="address-user">
+          <text class="address-name">{{address.userName}}</text>
+          <text class="address-phone">{{address.telNumber}}</text>
+          <text class="address-tag" wx:if="{{address.isDefault}}">默认</text>
+        </view>
+        <view class="address-detail">{{address.fullAddress}}</view>
+      </view>
+      <view wx:else class="no-address">
+        <text>点击选择收货地址</text>
+      </view>
+      <view class="address-arrow">></view>
+    </view>
+
     <!-- Package Info Card -->
     <view class="section package-section">
       <view class="section-header">
@@ -44,7 +63,7 @@
         </view>
       </view>
       <view class="items-list">
-        <view class="item-row {{item.isCustomized ? 'customized' : ''}}" wx:for="{{items}}" wx:key="categoryId">
+        <view class="item-row {{item.isCustomized ? 'customized' : ''}}" wx:for="{{items}}" wx:key="productId">
           <view class="item-image-wrap">
             <image 
               class="item-image" 
@@ -100,7 +119,7 @@
         <view class="price-row total">
           <text class="price-label">应付金额</text>
           <view class="price-value-wrap">
-            <text class="currency">CNY</text>
+            <text class="currency">¥</text>
             <text class="price-value total-price">{{displayTotalPrice}}</text>
           </view>
         </view>
@@ -115,7 +134,7 @@
       <view class="bottom-left">
         <text class="total-label">合计:</text>
         <view class="total-amount">
-          <text class="total-currency">CNY</text>
+          <text class="total-currency">¥</text>
           <text class="total-value">{{displayTotalPrice}}</text>
         </view>
       </view>
@@ -129,4 +148,46 @@
       </view>
     </view>
   </block>
+</view>
+
+<!-- Address Selection Modal -->
+<view class="address-modal-mask" wx:if="{{showAddressModal}}" bindtap="hideAddressModal"></view>
+<view class="address-modal" wx:if="{{showAddressModal}}" catchtap="preventBubble">
+  <view class="modal-header">
+    <text class="modal-title">选择收货地址</text>
+    <view class="modal-close" bindtap="hideAddressModal">×</view>
+  </view>
+  
+  <view class="modal-body">
+    <!-- Saved address list -->
+    <view wx:if="{{addressList.length > 0}}" class="saved-address-list">
+      <view 
+        class="saved-address-item {{address.id === item.id ? 'selected' : ''}}" 
+        wx:for="{{addressList}}" 
+        wx:key="id"
+        bindtap="onSelectAddress"
+        data-index="{{index}}"
+      >
+        <view class="address-item-info">
+          <view class="address-item-header">
+            <text class="address-item-name">{{item.userName}}</text>
+            <text class="address-item-phone">{{item.telNumber}}</text>
+            <text class="address-item-tag" wx:if="{{item.isDefault}}">默认</text>
+          </view>
+          <view class="address-item-detail">{{item.fullAddress}}</view>
+        </view>
+        <view class="address-item-check" wx:if="{{address.id === item.id}}">✓</view>
+      </view>
+    </view>
+    
+    <!-- No address hint -->
+    <view wx:else class="no-saved-address">
+      <text>暂无保存的收货地址</text>
+    </view>
+  </view>
+  
+  <view class="modal-footer">
+    <view class="modal-btn wechat-btn" bindtap="useWechatAddress">使用微信地址</view>
+    <view class="modal-btn manage-btn" bindtap="goToAddressManage">管理地址</view>
+  </view>
 </view>

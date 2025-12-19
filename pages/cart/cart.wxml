@@ -37,7 +37,7 @@
           <view class="item-name">{{item.name}}</view>
           <view class="item-row">
             <view class="price-block">
-              <text class="item-price {{systemType}}-price">{{item.displayPrice}}</text>
+              <text class="item-price {{systemType}}-price">¥{{item.displayPrice}}</text>
             </view>
             <view class="quantity-stepper">
               <view class="step-btn" data-index="{{index}}" bindtap="decreaseQuantity">-</view>
@@ -61,15 +61,16 @@
     </label>
     <view class="total-info">
       <text>小计：</text>
-      <text class="total-price {{systemType}}-price">{{totalAmount}}</text>
+      <text class="total-price {{systemType}}-price">¥{{totalAmount}}</text>
     </view>
-    <t-button
-      theme="primary"
-      size="large"
-      disabled="{{!selectedCount}}"
+    <view 
+      class="checkout-btn {{!selectedCount ? 'disabled' : ''}}"
       bindtap="checkout"
+      role="button"
+      aria-disabled="{{!selectedCount}}"
+      aria-label="确认下单，已选{{selectedCount}}件商品"
     >
-      确认下单({{selectedCount}})
-    </t-button>
+      <text class="btn-text">确认下单({{selectedCount}})</text>
+    </view>
   </view>
 </view>

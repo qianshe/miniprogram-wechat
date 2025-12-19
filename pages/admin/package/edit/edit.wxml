@@ -16,6 +16,8 @@
         placeholder="请输入套餐名称"
         bind:change="onInputChange"
         data-field="name"
+        t-class="input-override"
+        t-class-input="input-control"
       />
     </view>
 
@@ -29,18 +31,22 @@
         data-field="description"
         maxlength="500"
         autosize
+        t-class="textarea-override"
+        t-class-textarea="textarea-control"
       />
     </view>
 
     <!-- 原价 -->
     <view class="form-item">
-      <view class="form-label">原价(元) <text class="required">*</text></view>
+      <view class="form-label">原价(元)</view>
       <t-input
         value="{{priceDisplay}}"
-        placeholder="请输入原价"
+        placeholder="不填则默认使用商品总价"
         type="digit"
         bind:change="onPriceChange"
         data-field="price"
+        t-class="input-override"
+        t-class-input="input-control"
       />
     </view>
 
@@ -53,6 +59,8 @@
         type="digit"
         bind:change="onPriceChange"
         data-field="discountPrice"
+        t-class="input-override"
+        t-class-input="input-control"
       />
     </view>
 
@@ -82,6 +90,8 @@
         type="number"
         bind:change="onInputChange"
         data-field="sort"
+        t-class="input-override"
+        t-class-input="input-control"
       />
     </view>
 
@@ -124,9 +134,7 @@
         <view class="template-field">
           <view class="field-label">选择分类</view>
           <view class="category-picker" bindtap="showCategoryPicker" data-index="{{slotIndex}}">
-            <text class="picker-text {{slot.categoryId ? '' : 'placeholder'}}">
-              {{slot.categoryName || '请选择分类'}}
-            </text>
+            <text class="picker-text {{slot.categoryId ? '' : 'placeholder'}}">{{slot.categoryName || '请选择分类'}}</text>
             <t-icon name="chevron-right" size="32rpx" color="#999" />
           </view>
         </view>
@@ -169,7 +177,7 @@
                     data-product-index="{{productIndex}}" 
                     data-delta="{{-1}}"
                   >
-                    <t-icon name="remove" size="28rpx" color="{{product.quantity <= 1 ? '#ccc' : '#666'}}" />
+                    <t-icon name="minus" size="32rpx" color="{{product.quantity <= 1 ? '#ccc' : '#666'}}" />
                   </view>
                   <text class="quantity-value">{{product.quantity}}</text>
                   <view 
@@ -179,7 +187,7 @@
                     data-product-index="{{productIndex}}" 
                     data-delta="{{1}}"
                   >
-                    <t-icon name="add" size="28rpx" color="#b8865c" />
+                    <t-icon name="add" size="32rpx" color="#b8865c" />
                   </view>
                 </view>
                 <!-- 删除按钮 -->
@@ -189,7 +197,7 @@
                   data-slot-index="{{slotIndex}}" 
                   data-product-index="{{productIndex}}"
                 >
-                  <t-icon name="close" size="28rpx" color="#e53935" />
+                  <t-icon name="close" size="32rpx" color="#e53935" />
                 </view>
               </view>
             </view>
@@ -220,14 +228,18 @@
       theme="light" 
       size="large" 
       class="cancel-btn"
+      t-class="cancel-btn"
       bindtap="onCancel"
+      style="--td-button-border-width: 0;"
     >取消</t-button>
     <t-button 
       theme="primary" 
       size="large" 
       class="save-btn"
+      t-class="save-btn"
       loading="{{saving}}"
       bindtap="onSave"
+      style="--td-button-border-width: 0; --td-button-primary-border-color: transparent;"
     >保存</t-button>
   </view>
 

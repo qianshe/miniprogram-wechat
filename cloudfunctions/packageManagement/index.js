@@ -13,6 +13,28 @@ const db = cloud.database();
 const _ = db.command;
 
 /**
+ * 服务端验证管理员身份
+ * 通过查询数据库中的用户记录来验证，而不是信任客户端传来的 isAdmin
+ * @param {string} openid - 用户的 openid
+ * @returns {Promise<boolean>} 是否为管理员
+ */
+async function verifyAdminByOpenid(openid) {
+  if (!openid) return false;
+  
+  try {
+    const userResult = await db.collection('users')
+      .where({ openid })
+      .field({ isAdmin: true })
+      .get();
+    
+    return userResult.data.length > 0 && userResult.data[0].isAdmin === true;
+  } catch (err) {
+    console.error('[PACKAGE_MANAGEMENT] verifyAdminByOpenid error:', err);
+    return false;
+  }
+}
+
+/**
  * 将旧格式模板转换为新格式
  * 新格式: template[].products[] 包含多个商品
  * 旧格式: template[].defaultProductId 只有一个默认商品
@@ -358,12 +380,13 @@ async function getPackageDetail(data, context) {
         });
         
         // 组装模板数据，为每个商品补充详细信息
+        // 注意：将 product.price 从"分"转换为"元"
         templateWithProducts = normalizedTemplate.map(category => ({
           ...category,
           products: (category.products || []).map(product => ({
             ...product,
+            price: product.price ? product.price / 100 : 0,  // 转换为"元"
             productDetail: productsMap[product.productId] || null,
-            // 价格转换为元显示
             displayPrice: product.price ? (product.price / 100).toFixed(2) : '0.00'
           }))
         }));
@@ -414,12 +437,12 @@ async function createPackage(data, context) {
 
   console.log('[PACKAGE_MANAGEMENT] createPackage:', {
     openid: OPENID,
-    packageName: data?.name,
-    isAdmin: data?.isAdmin
+    packageName: data?.name
   });
 
-  // 权限检查 - 只有管理员可以创建套餐
-  if (!data?.isAdmin) {
+  // 权限检查 - 服务端验证管理员身份（不信任客户端传来的 isAdmin）
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+  if (!isAdmin) {
     console.warn('[PACKAGE_MANAGEMENT] createPackage failed: No admin permission', { openid: OPENID });
     return permissionError('Only admin can create package');
   }
@@ -452,12 +475,13 @@ async function createPackage(data, context) {
     const normalizedTemplate = normalizeTemplate(data.template || []);
     
     // 构建套餐数据
+    // 注意：前端已经将价格转换为"分"，这里直接存储
     const packageData = {
       name: data.name,
       description: data.description || '',
       type: packageType, // 默认为'white'
-      price: Math.round(data.price * 100), // 转换为分
-      discountPrice: data.discountPrice ? Math.round(data.discountPrice * 100) : null,
+      price: Math.round(data.price), // 前端已转换为分，直接存储
+      discountPrice: data.discountPrice ? Math.round(data.discountPrice) : null,
       imageUrl: data.imageUrl || '',
       status: data.status !== undefined ? data.status : 1,
       sort: data.sort || 0,
@@ -509,12 +533,12 @@ async function updatePackage(data, context) {
 
   console.log('[PACKAGE_MANAGEMENT] updatePackage:', {
     openid: OPENID,
-    packageId: id,
-    isAdmin
+    packageId: id
   });
 
-  // 权限检查 - 只有管理员可以更新套餐
-  if (!isAdmin) {
+  // 权限检查 - 服务端验证管理员身份（不信任客户端传来的 isAdmin）
+  const isAdminVerified = await verifyAdminByOpenid(OPENID);
+  if (!isAdminVerified) {
     console.warn('[PACKAGE_MANAGEMENT] updatePackage failed: No admin permission', { openid: OPENID, packageId: id });
     return permissionError('Only admin can update package');
   }
@@ -552,10 +576,12 @@ async function updatePackage(data, context) {
       updateFields.type = updateData.type || 'white';
     }
     if (updateData.price !== undefined) {
-      updateFields.price = Math.round(updateData.price * 100);
+      // 前端已转换为分，直接存储
+      updateFields.price = Math.round(updateData.price);
     }
     if (updateData.discountPrice !== undefined) {
-      updateFields.discountPrice = updateData.discountPrice ? Math.round(updateData.discountPrice * 100) : null;
+      // 前端已转换为分，直接存储
+      updateFields.discountPrice = updateData.discountPrice ? Math.round(updateData.discountPrice) : null;
     }
     if (updateData.imageUrl !== undefined) {
       updateFields.imageUrl = updateData.imageUrl;
@@ -608,12 +634,12 @@ async function deletePackage(data, context) {
 
   console.log('[PACKAGE_MANAGEMENT] deletePackage:', {
     openid: OPENID,
-    packageId: id,
-    isAdmin
+    packageId: id
   });
 
-  // 权限检查 - 只有管理员可以删除套餐
-  if (!isAdmin) {
+  // 权限检查 - 服务端验证管理员身份（不信任客户端传来的 isAdmin）
+  const isAdminVerified = await verifyAdminByOpenid(OPENID);
+  if (!isAdminVerified) {
     console.warn('[PACKAGE_MANAGEMENT] deletePackage failed: No admin permission', { openid: OPENID, packageId: id });
     return permissionError('Only admin can delete package');
   }
@@ -661,12 +687,12 @@ async function updatePackageStatus(data, context) {
   console.log('[PACKAGE_MANAGEMENT] updatePackageStatus:', {
     openid: OPENID,
     packageId: id,
-    newStatus: status,
-    isAdmin
+    newStatus: status
   });
 
-  // 权限检查 - 只有管理员可以更新状态
-  if (!isAdmin) {
+  // 权限检查 - 服务端验证管理员身份（不信任客户端传来的 isAdmin）
+  const isAdminVerified = await verifyAdminByOpenid(OPENID);
+  if (!isAdminVerified) {
     console.warn('[PACKAGE_MANAGEMENT] updatePackageStatus failed: No admin permission', { openid: OPENID, packageId: id });
     return permissionError('Only admin can update package status');
   }

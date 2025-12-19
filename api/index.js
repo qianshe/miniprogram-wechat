@@ -23,6 +23,7 @@ const order = require('./order.js')
 const product = require('./product.js')
 const category = require('./category.js')
 const process = require('./process.js')
+const packageApi = require('./package.js')
 
 // 导入云函数调用工具（用于高级使用场景）
 const cloudFunction = require('../utils/cloudFunction.js')
@@ -110,6 +111,20 @@ const api = {
   process,
   
   /**
+   * 套餐模块
+   * - getList() 获取套餐列表
+   * - getDetail() 获取套餐详情
+   * - getById() 根据ID获取套餐
+   * - adminGetList() 管理员获取列表
+   * - create() 创建套餐
+   * - update() 更新套餐
+   * - remove() 删除套餐
+   * - enable() 启用套餐
+   * - disable() 禁用套餐
+   */
+  package: packageApi,
+  
+  /**
    * 云函数工具（高级用法）
    * 提供底层云函数调用能力
    * - call() 调用云函数
@@ -140,6 +155,7 @@ module.exports.order = order
 module.exports.product = product
 module.exports.category = category
 module.exports.process = process
+module.exports.package = packageApi
 module.exports.cloudFunction = api.cloudFunction
 
 /**

@@ -9,8 +9,6 @@
     "t-input": "tdesign-miniprogram/input/input",
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-loading": "tdesign-miniprogram/loading/loading",
-    "t-empty": "tdesign-miniprogram/empty/empty",
-    "t-dropdown-menu": "tdesign-miniprogram/dropdown-menu/dropdown-menu",
-    "t-dropdown-item": "tdesign-miniprogram/dropdown-item/dropdown-item"
+    "t-empty": "tdesign-miniprogram/empty/empty"
   }
 }

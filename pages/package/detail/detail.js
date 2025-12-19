@@ -4,7 +4,9 @@
  * 支持多商品数据结构
  */
 
+const packageApi = require('../../../api/package.js');
 const productApi = require('../../../api/product.js');
+const { normalizePrice } = require('../../../utils/util.js');
 
 // 默认图片路径
 const DEFAULT_PACKAGE_IMAGE = 'https://tdesign.gtimg.com/mobile/demos/example1.png';
@@ -17,7 +19,7 @@ const DEFAULT_PRODUCT_IMAGE = 'https://tdesign.gtimg.com/mobile/demos/example1.p
  */
 function normalizeTemplate(template) {
   if (!template || !Array.isArray(template)) return [];
-  
+
   return template.map(item => {
     // 新格式：已有 products 数组
     if (item.products && Array.isArray(item.products)) {
@@ -33,7 +35,7 @@ function normalizeTemplate(template) {
         }))
       };
     }
-    
+
     // 旧格式：转换为新格式
     const products = [];
     if (item.defaultProductId || item.selectedProduct) {
@@ -46,7 +48,7 @@ function normalizeTemplate(template) {
         imageUrl: selectedProduct.imageUrl || DEFAULT_PRODUCT_IMAGE
       });
     }
-    
+
     return {
       categoryId: item.categoryId,
       categoryName: item.categoryName,
@@ -55,100 +57,24 @@ function normalizeTemplate(template) {
   });
 }
 
-// Mock data for development - 使用新的多商品数据结构
-const MOCK_PACKAGE = {
-  _id: 'pkg_white_001',
-  name: '基础套餐',
-  description: '适合简单仪式，包含基本殡葬用品。我们精心挑选了高品质的产品，确保仪式庄重得体。',
-  type: 'white',
-  price: 299900,
-  discountPrice: 259900,
-  imageUrl: DEFAULT_PACKAGE_IMAGE,
-  status: 1,
-  sort: 1,
-  template: [
-    {
-      categoryId: 'cat_001',
-      categoryName: '花圈',
-      products: [
-        {
-          productId: 'prod_001',
-          productName: '白色菊花花圈',
-          price: 29900,
-          quantity: 2,
-          imageUrl: DEFAULT_PRODUCT_IMAGE
-        }
-      ]
-    },
-    {
-      categoryId: 'cat_002',
-      categoryName: '骨灰盒',
-      products: [
-        {
-          productId: 'prod_010',
-          productName: '紫檀木骨灰盒',
-          price: 89900,
-          quantity: 1,
-          imageUrl: DEFAULT_PRODUCT_IMAGE
-        }
-      ]
-    },
-    {
-      categoryId: 'cat_003',
-      categoryName: '寿衣',
-      products: [
-        {
-          productId: 'prod_020',
-          productName: '传统寿衣套装',
-          price: 59900,
-          quantity: 1,
-          imageUrl: DEFAULT_PRODUCT_IMAGE
-        }
-      ]
-    }
-  ]
-};
-
-// Mock products for development (when API is not connected)
-const MOCK_PRODUCTS_BY_CATEGORY = {
-  'cat_001': [
-    { _id: 'prod_001', name: '白色菊花花圈', price: 29900, imageUrl: DEFAULT_PRODUCT_IMAGE },
-    { _id: 'prod_002', name: '黄色菊花花圈', price: 25900, imageUrl: DEFAULT_PRODUCT_IMAGE },
-    { _id: 'prod_003', name: '混合鲜花花圈', price: 35900, imageUrl: DEFAULT_PRODUCT_IMAGE },
-    { _id: 'prod_004', name: '高档玫瑰花圈', price: 49900, imageUrl: DEFAULT_PRODUCT_IMAGE }
-  ],
-  'cat_002': [
-    { _id: 'prod_010', name: '紫檀木骨灰盒', price: 89900, imageUrl: DEFAULT_PRODUCT_IMAGE },
-    { _id: 'prod_011', name: '黑檀木骨灰盒', price: 79900, imageUrl: DEFAULT_PRODUCT_IMAGE },
-    { _id: 'prod_012', name: '金丝楠木骨灰盒', price: 129900, imageUrl: DEFAULT_PRODUCT_IMAGE },
-    { _id: 'prod_013', name: '陶瓷骨灰盒', price: 59900, imageUrl: DEFAULT_PRODUCT_IMAGE }
-  ],
-  'cat_003': [
-    { _id: 'prod_020', name: '传统寿衣套装', price: 59900, imageUrl: DEFAULT_PRODUCT_IMAGE },
-    { _id: 'prod_021', name: '现代寿衣套装', price: 49900, imageUrl: DEFAULT_PRODUCT_IMAGE },
-    { _id: 'prod_022', name: '高档丝绸寿衣', price: 89900, imageUrl: DEFAULT_PRODUCT_IMAGE },
-    { _id: 'prod_023', name: '简约寿衣套装', price: 39900, imageUrl: DEFAULT_PRODUCT_IMAGE }
-  ]
-};
-
 Page({
   data: {
     // Package data
     packageId: '',
     packageInfo: null,
-    
+
     // Customization items - 新结构：每个分类包含 products 数组
     items: [],
-    
+
     // Price calculation
     totalPrice: 0,
     originalPrice: 0,
     savedAmount: 0,
-    
+
     // Loading states
     loading: true,
     submitting: false,
-    
+
     // Product Replacer Popup
     showReplacer: false,
     loadingProducts: false,
@@ -176,61 +102,77 @@ Page({
   },
 
   /**
+   * Prevent background scroll when popup is open
+   */
+  preventTouchMove() {
+    // Do nothing
+  },
+
+  /**
    * Load package detail
    */
   async loadPackageDetail(id) {
     this.setData({ loading: true });
-    
+
     try {
-      // TODO: Replace with actual API call when cloud function is ready
-      // const result = await packageApi.getDetail({ id });
+      const packageInfo = await packageApi.getDetail({ id });
       
-      // Using mock data for now
-      await this.simulateApiCall();
-      
-      const packageInfo = { ...MOCK_PACKAGE, _id: id };
-      
+      if (!packageInfo) {
+        throw new Error('Package not found');
+      }
+
       // 使用 normalizeTemplate 处理模板数据，兼容新旧格式
       const normalizedTemplate = normalizeTemplate(packageInfo.template);
-      
+
+      // 标准化套餐价格（可能是"分"或"元"）
+      packageInfo.price = normalizePrice(packageInfo.price);
+      packageInfo.discountPrice = normalizePrice(packageInfo.discountPrice);
+
       // Initialize items with products - 新的多商品结构
+      // 使用 normalizePrice 统一处理价格单位
       const items = normalizedTemplate.map(item => {
-        // 计算该分类下所有商品的小计
-        const categorySubtotal = item.products.reduce((sum, product) => {
+        // 先标准化所有商品价格
+        const productsNormalized = item.products.map(product => ({
+          ...product,
+          price: normalizePrice(product.price) || 0
+        }));
+
+        // 计算该分类下所有商品的小计（单位：元）
+        const categorySubtotal = productsNormalized.reduce((sum, product) => {
           return sum + (product.price * product.quantity);
         }, 0);
-        
+
         // 为每个商品添加显示用的格式化价格
-        const productsWithDisplay = item.products.map(product => ({
+        const productsWithDisplay = productsNormalized.map(product => ({
           ...product,
-          displayPrice: (product.price / 100).toFixed(2),
+          displayPrice: product.price.toFixed(2),
           subtotal: product.price * product.quantity,
-          displaySubtotal: ((product.price * product.quantity) / 100).toFixed(2)
+          displaySubtotal: (product.price * product.quantity).toFixed(2)
         }));
-        
+
         return {
           ...item,
           products: productsWithDisplay,
           categorySubtotal,
-          displayCategorySubtotal: (categorySubtotal / 100).toFixed(2)
+          displayCategorySubtotal: categorySubtotal.toFixed(2)
         };
       });
-      
+
       // Calculate prices
       const priceInfo = this.calculatePrices(items, packageInfo);
-      
+
       this.setData({
         packageInfo,
         items,
         ...priceInfo,
         loading: false
       });
-      
+
       // Update navigation title
       wx.setNavigationBarTitle({
         title: packageInfo.name
       });
-      
+
     } catch (err) {
       console.error('Failed to load package detail:', err);
       this.setData({ loading: false });
@@ -242,50 +184,46 @@ Page({
   },
 
   /**
-   * Simulate API call delay
-   */
-  simulateApiCall() {
-    return new Promise(resolve => {
-      setTimeout(resolve, 300);
-    });
-  },
-
-  /**
    * Calculate total prices - 支持多商品结构
+   * 注意：所有价格单位都是"元"（通过 normalizePrice 统一转换）
    */
   calculatePrices(items, packageInfo) {
-    // Calculate total from all products in all categories
+    // Calculate total from all products in all categories（单位：元）
     const itemsTotal = items.reduce((sum, item) => {
       const categoryTotal = item.products.reduce((catSum, product) => {
         return catSum + (product.price * product.quantity);
       }, 0);
       return sum + categoryTotal;
     }, 0);
-    
-    // Use package discount price as base, adjust based on item changes
-    const originalPrice = packageInfo.price;
-    const baseDiscountPrice = packageInfo.discountPrice;
-    
+
+    // packageInfo.price 和 discountPrice 已经在 loadPackageDetail 中通过 normalizePrice 转换为"元"
+    // 如果没有设置套餐原价，使用商品总价作为原价
+    const originalPrice = packageInfo.price || itemsTotal;
+    // 如果没有设置优惠价，使用商品总价（即无优惠）
+    const baseDiscountPrice = packageInfo.discountPrice || itemsTotal;
+
     // Calculate the difference from default items - 使用标准化后的模板
+    // 注意：模板中的价格需要通过 normalizePrice 转换
     const normalizedDefault = normalizeTemplate(packageInfo.template);
     const defaultTotal = normalizedDefault.reduce((sum, item) => {
       const categoryTotal = item.products.reduce((catSum, product) => {
-        return catSum + (product.price * product.quantity);
+        const priceInYuan = normalizePrice(product.price) || 0;
+        return catSum + (priceInYuan * product.quantity);
       }, 0);
       return sum + categoryTotal;
     }, 0);
-    
+
     const priceDiff = itemsTotal - defaultTotal;
     const totalPrice = baseDiscountPrice + priceDiff;
     const savedAmount = originalPrice - totalPrice;
-    
+
     return {
       totalPrice,
       originalPrice,
       savedAmount,
-      displayTotalPrice: (totalPrice / 100).toFixed(2),
-      displayOriginalPrice: (originalPrice / 100).toFixed(2),
-      displaySavedAmount: (savedAmount / 100).toFixed(2),
+      displayTotalPrice: totalPrice.toFixed(2),  // 已经是"元"
+      displayOriginalPrice: originalPrice.toFixed(2),  // 已经是"元"
+      displaySavedAmount: savedAmount.toFixed(2),  // 已经是"元"
       hasSaved: savedAmount > 0
     };
   },
@@ -299,7 +237,7 @@ Page({
     const items = [...this.data.items];
     const category = items[categoryIndex];
     const product = category.products[productIndex];
-    
+
     if (action === 'increase') {
       product.quantity += 1;
     } else if (action === 'decrease' && product.quantity > 1) {
@@ -307,20 +245,20 @@ Page({
     } else {
       return;
     }
-    
-    // Recalculate product subtotal
+
+    // Recalculate product subtotal（单位：元）
     product.subtotal = product.price * product.quantity;
-    product.displaySubtotal = (product.subtotal / 100).toFixed(2);
-    
-    // Recalculate category subtotal
+    product.displaySubtotal = product.subtotal.toFixed(2);  // 已经是"元"
+
+    // Recalculate category subtotal（单位：元）
     category.categorySubtotal = category.products.reduce((sum, p) => {
       return sum + (p.price * p.quantity);
     }, 0);
-    category.displayCategorySubtotal = (category.categorySubtotal / 100).toFixed(2);
-    
+    category.displayCategorySubtotal = category.categorySubtotal.toFixed(2);  // 已经是"元"
+
     // Recalculate total prices
     const priceInfo = this.calculatePrices(items, this.data.packageInfo);
-    
+
     this.setData({
       items,
       ...priceInfo
@@ -335,7 +273,7 @@ Page({
     const { categoryIndex, productIndex, categoryId, categoryName } = e.currentTarget.dataset;
     const currentItem = this.data.items[categoryIndex];
     const currentProduct = currentItem.products[productIndex];
-    
+
     this.setData({
       showReplacer: true,
       currentItem,
@@ -346,7 +284,7 @@ Page({
       availableProducts: [],
       loadingProducts: true
     });
-    
+
     // Fetch products by category
     this.fetchProductsByCategory(categoryId, currentProduct);
   },
@@ -380,50 +318,49 @@ Page({
    */
   async fetchProductsByCategory(categoryId, currentProduct) {
     try {
-      // Try to use API first
+      // 调用 API 获取该分类下的商品
       let products = [];
-      
+
       try {
         const result = await productApi.getByCategory(categoryId, { page: 1, size: 50 }, { showLoading: false });
-        if (result && result.list && result.list.length > 0) {
-          products = result.list;
+        // API 返回的数据结构是 { records, total }
+        if (result && result.records && result.records.length > 0) {
+          products = result.records;
         }
       } catch (apiErr) {
-        console.log('API not available, using mock data');
+        console.error('获取商品列表失败:', apiErr);
       }
-      
-      // Fallback to mock data if API fails or returns empty
-      if (products.length === 0) {
-        products = MOCK_PRODUCTS_BY_CATEGORY[categoryId] || [];
-      }
-      
+
       // Calculate price difference for each product
-      const currentPrice = currentProduct ? currentProduct.price : 0;
+      // 注意：后端返回的 product.price 是"元"，currentProduct.price 也是"元"（已在loadPackageDetail中转换）
+      const currentPriceYuan = currentProduct ? currentProduct.price : 0;
       const processedProducts = products.map(product => {
-        const priceDiff = product.price - currentPrice;
+        // product.price 是"元"（云函数已转换）
+        const productPriceYuan = product.price || 0;
+        const priceDiff = productPriceYuan - currentPriceYuan;
         let priceDiffText = '';
-        
+
         if (priceDiff > 0) {
-          priceDiffText = '+' + (priceDiff / 100).toFixed(2);
+          priceDiffText = '+' + priceDiff.toFixed(2);
         } else if (priceDiff < 0) {
-          priceDiffText = (priceDiff / 100).toFixed(2);
+          priceDiffText = priceDiff.toFixed(2);
         } else {
           priceDiffText = '0';
         }
-        
+
         return {
           ...product,
-          displayPrice: (product.price / 100).toFixed(2),
-          priceDiff,
+          displayPrice: productPriceYuan.toFixed(2),
+          priceDiff: priceDiff,  // 保持"元"单位
           priceDiffText
         };
       });
-      
+
       this.setData({
         availableProducts: processedProducts,
         loadingProducts: false
       });
-      
+
     } catch (err) {
       console.error('Failed to fetch products:', err);
       this.setData({
@@ -453,13 +390,13 @@ Page({
   onConfirmReplace() {
     const { selectedProductId, currentItemIndex, currentProductIndex, availableProducts, items, currentItem } = this.data;
     const currentProduct = currentItem.products[currentProductIndex];
-    
+
     // Check if selection changed
     if (!selectedProductId || selectedProductId === currentProduct.productId) {
       this.onCloseReplacer();
       return;
     }
-    
+
     // Find the selected product
     const newProduct = availableProducts.find(p => p._id === selectedProductId);
     if (!newProduct) {
@@ -469,42 +406,43 @@ Page({
       });
       return;
     }
-    
+
     // Update the item with new product
     const updatedItems = [...items];
     const category = updatedItems[currentItemIndex];
     const oldProduct = category.products[currentProductIndex];
-    
+
     // Update the product in the products array
+    // 注意：newProduct.price 已经是"元"（云函数已转换）
     category.products[currentProductIndex] = {
       ...oldProduct,
       productId: newProduct._id,
       productName: newProduct.name,
-      price: newProduct.price,
+      price: newProduct.price,  // 已经是"元"
       imageUrl: newProduct.imageUrl,
-      displayPrice: (newProduct.price / 100).toFixed(2),
+      displayPrice: newProduct.price.toFixed(2),  // 已经是"元"
       subtotal: newProduct.price * oldProduct.quantity,
-      displaySubtotal: ((newProduct.price * oldProduct.quantity) / 100).toFixed(2),
+      displaySubtotal: (newProduct.price * oldProduct.quantity).toFixed(2),  // 已经是"元"
       isCustomized: true
     };
-    
-    // Recalculate category subtotal
+
+    // Recalculate category subtotal（单位：元）
     category.categorySubtotal = category.products.reduce((sum, p) => {
       return sum + (p.price * p.quantity);
     }, 0);
-    category.displayCategorySubtotal = (category.categorySubtotal / 100).toFixed(2);
-    
+    category.displayCategorySubtotal = category.categorySubtotal.toFixed(2);  // 已经是"元"
+
     // Recalculate prices
     const priceInfo = this.calculatePrices(updatedItems, this.data.packageInfo);
-    
+
     this.setData({
       items: updatedItems,
       ...priceInfo
     });
-    
+
     // Close popup and show feedback
     this.onCloseReplacer();
-    
+
     wx.showToast({
       title: '已替换商品',
       icon: 'success'
@@ -516,9 +454,9 @@ Page({
    */
   onConfirm() {
     if (this.data.submitting) return;
-    
+
     const { packageInfo, items, totalPrice, originalPrice, savedAmount } = this.data;
-    
+
     // Prepare order data with customization info - 新的多商品结构
     const orderData = {
       packageId: this.data.packageId,
@@ -548,11 +486,11 @@ Page({
       originalPrice: originalPrice,
       savedAmount: savedAmount > 0 ? savedAmount : 0
     };
-    
+
     // Store in global data
     const app = getApp();
     app.globalData.pendingPackageOrder = orderData;
-    
+
     wx.navigateTo({
       url: '/pages/package/confirm/confirm',
       fail: (err) => {

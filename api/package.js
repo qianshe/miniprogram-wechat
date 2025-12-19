@@ -121,8 +121,8 @@ const adminGetDetail = (data = {}, options = {}) => {
  * @param {string} data.name - 套餐名称
  * @param {string} data.description - 套餐描述
  * @param {string} data.type - 套餐类型 (white/red)
- * @param {number} data.price - 原价(分)
- * @param {number} data.discountPrice - 折扣价(分)
+ * @param {number} data.price - 原价(分，前端已转换)
+ * @param {number} data.discountPrice - 折扣价(分，前端已转换)
  * @param {string} data.imageUrl - 图片URL
  * @param {Array} data.template - 套餐模板
  * @param {Object} options - 调用选项
@@ -143,8 +143,8 @@ const create = (data = {}, options = {}) => {
  * @param {string} data.name - 套餐名称
  * @param {string} data.description - 套餐描述
  * @param {string} data.type - 套餐类型
- * @param {number} data.price - 原价(分)
- * @param {number} data.discountPrice - 折扣价(分)
+ * @param {number} data.price - 原价(分，前端已转换)
+ * @param {number} data.discountPrice - 折扣价(分，前端已转换)
  * @param {string} data.imageUrl - 图片URL
  * @param {Array} data.template - 套餐模板
  * @param {Object} options - 调用选项

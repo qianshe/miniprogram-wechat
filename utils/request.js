@@ -7,6 +7,19 @@
 const apiConfig = require('../config/api.config.js')
 const { safeLog, safeError } = require('./sensitive.js')
 
+// ============ 调试配置 ============
+// 根据小程序环境自动判断是否启用调试日志
+// envVersion: 'develop' | 'trial' | 'release'
+const getDebugMode = () => {
+  try {
+    const accountInfo = wx.getAccountInfoSync()
+    return accountInfo.miniProgram.envVersion !== 'release'
+  } catch (e) {
+    return false
+  }
+}
+const DEBUG = getDebugMode()
+
 // ============ 默认配置 ============
 const DEFAULT_CONFIG = {
   // 默认超时时间（毫秒）
@@ -46,7 +59,7 @@ const errorInterceptors = []
 const addRequestInterceptor = (interceptor) => {
   if (typeof interceptor !== 'function') {
     console.warn('[Request] addRequestInterceptor: interceptor must be a function')
-    return () => {}
+    return () => { }
   }
   requestInterceptors.push(interceptor)
   return () => {
@@ -65,7 +78,7 @@ const addRequestInterceptor = (interceptor) => {
 const addResponseInterceptor = (interceptor) => {
   if (typeof interceptor !== 'function') {
     console.warn('[Request] addResponseInterceptor: interceptor must be a function')
-    return () => {}
+    return () => { }
   }
   responseInterceptors.push(interceptor)
   return () => {
@@ -84,7 +97,7 @@ const addResponseInterceptor = (interceptor) => {
 const addErrorInterceptor = (interceptor) => {
   if (typeof interceptor !== 'function') {
     console.warn('[Request] addErrorInterceptor: interceptor must be a function')
-    return () => {}
+    return () => { }
   }
   errorInterceptors.push(interceptor)
   return () => {
@@ -184,10 +197,10 @@ const calculateRetryDelay = (attempt, baseDelay, maxDelay) => {
  */
 const isRetryableError = (error) => {
   if (!error) return false
-  
+
   const errorMessage = (error.message || '').toLowerCase()
   const errorCode = error.errCode || error.code || ''
-  
+
   // 可重试的错误关键词
   const retryableMessages = [
     'request_timeout',
@@ -205,7 +218,7 @@ const isRetryableError = (error) => {
     'bad gateway',
     'gateway timeout'
   ]
-  
+
   // 可重试的错误码
   const retryableCodes = [
     'ECONNRESET',
@@ -219,16 +232,16 @@ const isRetryableError = (error) => {
     504, // Gateway Timeout
     408 // Request Timeout
   ]
-  
+
   // 检查错误消息
   const messageMatch = retryableMessages.some(msg =>
     errorMessage.includes(msg)
   )
-  
+
   // 检查错误码
   const codeMatch = retryableCodes.includes(errorCode) ||
     retryableCodes.includes(Number(errorCode))
-  
+
   return messageMatch || codeMatch
 }
 
@@ -258,7 +271,7 @@ const createTimeoutPromise = (timeout, type = 'Request') => {
  */
 const formatError = (error, context = {}) => {
   const formattedError = error instanceof Error ? error : new Error(String(error))
-  
+
   // 附加上下文信息
   formattedError.requestContext = {
     name: context.name,
@@ -266,7 +279,7 @@ const formatError = (error, context = {}) => {
     attempt: context.attempt,
     timestamp: Date.now()
   }
-  
+
   // 设置错误码
   if (!formattedError.code) {
     if (formattedError.message === 'REQUEST_TIMEOUT') {
@@ -277,7 +290,7 @@ const formatError = (error, context = {}) => {
       formattedError.code = 'UNKNOWN_ERROR'
     }
   }
-  
+
   return formattedError
 }
 
@@ -302,10 +315,10 @@ const callCloudFunction = async (name, data = {}, options = {}) => {
     name,
     data
   }
-  
+
   let lastError = null
   const startTime = Date.now()
-  
+
   for (let attempt = 0; attempt <= config.retryCount; attempt++) {
     try {
       // 执行请求拦截器
@@ -316,9 +329,9 @@ const callCloudFunction = async (name, data = {}, options = {}) => {
         attempt,
         startTime
       })
-      
-      // 日志记录（非静默模式）
-      if (!config.silent) {
+
+      // 调试日志（仅在开发/体验版环境启用）
+      if (DEBUG && !config.silent) {
         safeLog('[CloudFunction Request]', {
           name: requestConfig.name,
           data: requestConfig.data,
@@ -326,7 +339,7 @@ const callCloudFunction = async (name, data = {}, options = {}) => {
           maxAttempts: config.retryCount + 1
         })
       }
-      
+
       // 执行云函数调用，带超时控制
       const result = await Promise.race([
         wx.cloud.callFunction({
@@ -335,35 +348,35 @@ const callCloudFunction = async (name, data = {}, options = {}) => {
         }),
         createTimeoutPromise(config.timeout, 'CloudFunction')
       ])
-      
+
       // 执行响应拦截器
       const response = await runResponseInterceptors({
         ...result,
         requestConfig,
         duration: Date.now() - startTime
       })
-      
-      // 日志记录（非静默模式）
-      if (!config.silent) {
+
+      // 调试日志（仅在开发/体验版环境启用）
+      if (DEBUG && !config.silent) {
         safeLog('[CloudFunction Response]', {
           name: requestConfig.name,
           result: response.result,
           duration: Date.now() - startTime
         })
       }
-      
+
       return response.result
-      
+
     } catch (error) {
       lastError = formatError(error, { name, attempt: attempt + 1 })
-      
+
       // 日志记录
       safeError('[CloudFunction Error]', lastError, {
         name,
         attempt: attempt + 1,
         maxAttempts: config.retryCount + 1
       })
-      
+
       // 判断是否需要重试
       if (attempt < config.retryCount && isRetryableError(lastError)) {
         const retryDelay = calculateRetryDelay(
@@ -371,7 +384,7 @@ const callCloudFunction = async (name, data = {}, options = {}) => {
           config.retryDelay,
           config.maxRetryDelay || DEFAULT_CONFIG.maxRetryDelay
         )
-        
+
         if (!config.silent) {
           safeLog('[CloudFunction Retry]', {
             name,
@@ -380,11 +393,11 @@ const callCloudFunction = async (name, data = {}, options = {}) => {
             retryDelay: Math.round(retryDelay)
           })
         }
-        
+
         await delay(retryDelay)
         continue
       }
-      
+
       // 不可重试或已达最大重试次数，执行错误拦截器
       try {
         return await runErrorInterceptors(lastError, { name, data, config })
@@ -393,7 +406,7 @@ const callCloudFunction = async (name, data = {}, options = {}) => {
       }
     }
   }
-  
+
   throw lastError
 }
 
@@ -423,13 +436,13 @@ const request = async (options = {}) => {
     retryDelay = HTTP_DEFAULT_CONFIG.retryDelay,
     silent = false
   } = options
-  
+
   // 合并请求头
   const requestHeader = {
     ...apiConfig.header,
     ...header
   }
-  
+
   const config = {
     url,
     method,
@@ -440,10 +453,10 @@ const request = async (options = {}) => {
     retryDelay,
     maxRetryDelay: HTTP_DEFAULT_CONFIG.maxRetryDelay
   }
-  
+
   let lastError = null
   const startTime = Date.now()
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // 执行请求拦截器
@@ -453,7 +466,7 @@ const request = async (options = {}) => {
         startTime,
         type: 'HTTP'
       })
-      
+
       // 日志记录
       if (!silent) {
         safeLog('[HTTP Request]', {
@@ -462,7 +475,7 @@ const request = async (options = {}) => {
           attempt: attempt + 1
         })
       }
-      
+
       // 执行HTTP请求，带超时控制
       const response = await Promise.race([
         new Promise((resolve, reject) => {
@@ -482,7 +495,7 @@ const request = async (options = {}) => {
         }),
         createTimeoutPromise(timeout, 'HTTP')
       ])
-      
+
       // 检查HTTP状态码
       if (response.statusCode < 200 || response.statusCode >= 300) {
         const error = new Error(`HTTP Error: ${response.statusCode}`)
@@ -490,7 +503,7 @@ const request = async (options = {}) => {
         error.response = response.data
         throw error
       }
-      
+
       // 执行响应拦截器
       const processedResponse = await runResponseInterceptors({
         data: response.data,
@@ -499,7 +512,7 @@ const request = async (options = {}) => {
         requestConfig,
         duration: Date.now() - startTime
       })
-      
+
       // 日志记录
       if (!silent) {
         safeLog('[HTTP Response]', {
@@ -508,23 +521,23 @@ const request = async (options = {}) => {
           duration: Date.now() - startTime
         })
       }
-      
+
       return processedResponse.data
-      
+
     } catch (error) {
       lastError = formatError(error, {
         name: url,
         action: method,
         attempt: attempt + 1
       })
-      
+
       // 日志记录
       safeError('[HTTP Error]', lastError, {
         url,
         method,
         attempt: attempt + 1
       })
-      
+
       // 判断是否需要重试
       if (attempt < retryCount && isRetryableError(lastError)) {
         const calculatedDelay = calculateRetryDelay(
@@ -532,7 +545,7 @@ const request = async (options = {}) => {
           retryDelay,
           config.maxRetryDelay
         )
-        
+
         if (!silent) {
           safeLog('[HTTP Retry]', {
             url,
@@ -540,11 +553,11 @@ const request = async (options = {}) => {
             retryDelay: Math.round(calculatedDelay)
           })
         }
-        
+
         await delay(calculatedDelay)
         continue
       }
-      
+
       // 执行错误拦截器
       try {
         return await runErrorInterceptors(lastError, { url, method, data, config })
@@ -553,7 +566,7 @@ const request = async (options = {}) => {
       }
     }
   }
-  
+
   throw lastError
 }
 
@@ -570,9 +583,9 @@ const get = (url, params = {}, options = {}) => {
     .filter(key => params[key] !== undefined && params[key] !== null && params[key] !== '')
     .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
     .join('&')
-  
+
   const fullUrl = queryString ? `${url}?${queryString}` : url
-  
+
   return request({
     url: fullUrl,
     method: 'GET',
@@ -663,7 +676,7 @@ const clearAllInterceptors = () => {
 module.exports = {
   // 云函数调用
   callCloudFunction,
-  
+
   // HTTP请求
   request,
   get,
@@ -671,18 +684,18 @@ module.exports = {
   put,
   del,
   delete: del, // 别名
-  
+
   // 拦截器管理
   addRequestInterceptor,
   addResponseInterceptor,
   addErrorInterceptor,
   clearAllInterceptors,
   getInterceptorCount,
-  
+
   // 工具函数
   isRetryableError,
   getDefaultConfig,
-  
+
   // 配置常量（只读）
   DEFAULT_CONFIG: Object.freeze({ ...DEFAULT_CONFIG }),
   HTTP_DEFAULT_CONFIG: Object.freeze({ ...HTTP_DEFAULT_CONFIG })

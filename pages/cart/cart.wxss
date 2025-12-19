@@ -223,31 +223,33 @@
 }
 
 .checkout-btn {
-  width: 220rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-  text-align: center;
-  background: #ddd;
-  color: #fff;
+  padding: 20rpx 48rpx;
+  background: linear-gradient(135deg, var(--package-accent, #c9a86c) 0%, var(--primary-color, #b8865c) 100%);
   border-radius: 40rpx;
-  font-size: 30rpx;
-  font-weight: 600;
-  transition: all 0.3s;
-}
-
-.checkout-btn.active {
-  background: var(--primary-color);
-  box-shadow: 0 8rpx 20rpx rgba(184, 134, 92, 0.32);
-}
-
-.red-theme .checkout-btn.active {
-  background: var(--danger-color);
-  box-shadow: 0 8rpx 20rpx rgba(210, 75, 65, 0.32);
+  text-align: center;
+  box-shadow: 0 8rpx 24rpx rgba(184, 134, 92, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .checkout-btn:active {
   transform: scale(0.98);
   opacity: 0.9;
+}
+
+.checkout-btn.disabled {
+  background: #ccc;
+  box-shadow: none;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.btn-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .empty-cart {
@@ -283,15 +285,4 @@
   color: var(--text-sub);
 }
 
-/* TDesign Button WeChat Green Override */
-.footer t-button[theme="primary"] {
-  --td-button-primary-bg-color: var(--wechat-green);
-  --td-button-primary-border-color: var(--wechat-green);
-  --td-button-primary-active-bg-color: var(--wechat-green-dark);
-  --td-button-primary-active-border-color: var(--wechat-green-dark);
-}
 
-.footer t-button[theme="primary"][disabled] {
-  --td-button-primary-disabled-bg: #ccc;
-  --td-button-primary-disabled-border-color: #ccc;
-}

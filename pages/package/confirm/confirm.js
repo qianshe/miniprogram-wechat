@@ -3,7 +3,9 @@
  * Order confirmation before submission
  */
 
-const orderApi = require('../../../api/order.js');
+const { api } = require('../../../utils/api.js');
+
+const ADDRESS_STORAGE_KEY = 'addressList';
 
 Page({
   data: {
@@ -25,13 +27,105 @@ Page({
     // Remarks
     remarks: '',
     // Submit state
-    submitting: false
+    submitting: false,
+    // Address selection
+    address: null,
+    showAddressModal: false,
+    addressList: []
   },
 
   onLoad(options) {
     // Get package data from previous page or global state
     this.loadOrderData(options);
+    // Load address list
+    this.loadAddressList();
   },
+
+  onShow() {
+    // Reload address list when page shows (user may have added new address)
+    this.loadAddressList();
+  },
+
+  // Load address list from localStorage
+  loadAddressList() {
+    const addressList = wx.getStorageSync(ADDRESS_STORAGE_KEY) || [];
+    
+    // Convert address format (address management format -> order format)
+    const formattedList = addressList.map(addr => ({
+      id: addr.id,
+      userName: addr.name,
+      telNumber: addr.phone,
+      provinceName: addr.province,
+      cityName: addr.city,
+      countyName: addr.district,
+      detailInfo: addr.detail,
+      fullAddress: `${addr.province}${addr.city}${addr.district}${addr.detail}`,
+      isDefault: addr.isDefault
+    }));
+    
+    this.setData({ addressList: formattedList });
+    
+    // Auto-select default address or first address if no address selected
+    if (!this.data.address && formattedList.length > 0) {
+      const defaultAddr = formattedList.find(addr => addr.isDefault) || formattedList[0];
+      this.setData({ address: defaultAddr });
+    }
+  },
+
+  // Show address selection modal
+  selectAddress() {
+    this.setData({ showAddressModal: true });
+  },
+
+  // Hide address selection modal
+  hideAddressModal() {
+    this.setData({ showAddressModal: false });
+  },
+
+  // Select an address from list
+  onSelectAddress(e) {
+    const { index } = e.currentTarget.dataset;
+    const selectedAddress = this.data.addressList[index];
+    
+    this.setData({
+      address: selectedAddress,
+      showAddressModal: false
+    });
+  },
+
+  // Use WeChat address
+  useWechatAddress() {
+    wx.chooseAddress({
+      success: (res) => {
+        this.setData({
+          address: {
+            userName: res.userName,
+            telNumber: res.telNumber,
+            provinceName: res.provinceName,
+            cityName: res.cityName,
+            countyName: res.countyName,
+            detailInfo: res.detailInfo,
+            fullAddress: `${res.provinceName}${res.cityName}${res.countyName}${res.detailInfo}`
+          },
+          showAddressModal: false
+        });
+      },
+      fail: (err) => {
+        console.error('选择微信地址失败：', err);
+      }
+    });
+  },
+
+  // Go to address management page
+  goToAddressManage() {
+    this.setData({ showAddressModal: false });
+    wx.navigateTo({
+      url: '/pages/address/address'
+    });
+  },
+
+  // Prevent event bubbling
+  preventBubble() {},
 
   /**
    * Load order data from global state
@@ -51,29 +145,47 @@ Page({
       return;
     }
 
-    // Process items for display
-    const processedItems = orderData.items.map(item => ({
-      ...item,
-      displayUnitPrice: (item.unitPrice / 100).toFixed(2),
-      displaySubtotal: (item.subtotal / 100).toFixed(2)
-    }));
+    // Flatten items from category structure to product list
+    // orderData.items is array of categories with products array
+    const flattenedItems = [];
+    if (Array.isArray(orderData.items)) {
+      orderData.items.forEach(category => {
+        if (category.products && Array.isArray(category.products)) {
+          category.products.forEach(product => {
+            flattenedItems.push({
+              categoryId: category.categoryId,
+              categoryName: category.categoryName,
+              productId: product.productId,
+              productName: product.productName,
+              productImage: product.productImage,
+              unitPrice: product.unitPrice,
+              quantity: product.quantity,
+              subtotal: product.subtotal,
+              isCustomized: product.isCustomized || false,
+              displayUnitPrice: product.unitPrice.toFixed(2),
+              displaySubtotal: product.subtotal.toFixed(2)
+            });
+          });
+        }
+      });
+    }
 
     // Count customized items
-    const customizedItems = processedItems.filter(item => item.isCustomized);
+    const customizedItems = flattenedItems.filter(item => item.isCustomized);
     const hasCustomizedItems = customizedItems.length > 0;
     const customizedCount = customizedItems.length;
 
-    // Calculate display prices
-    const displayOriginalPrice = (orderData.originalPrice / 100).toFixed(2);
-    const displayTotalPrice = (orderData.totalPrice / 100).toFixed(2);
-    const displaySavedAmount = (orderData.savedAmount / 100).toFixed(2);
+    // Calculate display prices (prices are already in yuan, no need to divide by 100)
+    const displayOriginalPrice = orderData.originalPrice.toFixed(2);
+    const displayTotalPrice = orderData.totalPrice.toFixed(2);
+    const displaySavedAmount = orderData.savedAmount.toFixed(2);
     const hasSaved = orderData.savedAmount > 0;
 
     this.setData({
       loading: false,
       packageInfo: orderData.packageInfo,
       packageId: orderData.packageId,
-      items: processedItems,
+      items: flattenedItems,
       originalPrice: orderData.originalPrice,
       totalPrice: orderData.totalPrice,
       savedAmount: orderData.savedAmount,
@@ -104,7 +216,24 @@ Page({
    * Validate order data
    */
   validateOrder() {
-    const { packageInfo, items, totalPrice } = this.data;
+    const { packageInfo, items, totalPrice, address } = this.data;
+
+    // Validate address
+    if (!address) {
+      wx.showToast({
+        title: '请选择收货地址',
+        icon: 'none'
+      });
+      return false;
+    }
+
+    if (!address.userName || !address.telNumber) {
+      wx.showToast({
+        title: '收货地址信息不完整',
+        icon: 'none'
+      });
+      return false;
+    }
 
     if (!packageInfo || !packageInfo._id) {
       wx.showToast({
@@ -148,30 +277,29 @@ Page({
     this.setData({ submitting: true });
 
     try {
-      // Prepare order data for API
+      // Prepare order data matching orderManagement.createOrder protocol
+      // Expected: totalAmount (yuan), address object, items with productId/productName/price/quantity/productImage
       const orderData = {
-        type: 'package',
-        packageId: this.data.packageId,
-        packageName: this.data.packageInfo.name,
         items: this.data.items.map(item => ({
-          categoryId: item.categoryId,
-          categoryName: item.categoryName,
           productId: item.productId,
           productName: item.productName,
-          productImage: item.productImage,
-          unitPrice: item.unitPrice,
+          price: item.unitPrice,
           quantity: item.quantity,
-          subtotal: item.subtotal,
-          isCustomized: item.isCustomized || false
+          productImage: item.productImage || ''
         })),
+        totalAmount: this.data.totalPrice.toFixed(2),
+        address: this.data.address,
+        remark: this.data.remarks || '',
+        // Package-specific fields for reference
+        orderType: 'package',
+        packageId: this.data.packageId,
+        packageName: this.data.packageInfo.name,
         originalPrice: this.data.originalPrice,
-        totalPrice: this.data.totalPrice,
-        savedAmount: this.data.savedAmount,
-        remarks: this.data.remarks || ''
+        savedAmount: this.data.savedAmount
       };
 
-      // Call order API
-      const result = await orderApi.create(orderData);
+      // Call unified API to create order
+      const result = await api.createOrder(orderData);
 
       // Clear pending order data
       const app = getApp();
@@ -179,22 +307,34 @@ Page({
         app.globalData.pendingPackageOrder = null;
       }
 
+      const { orderNo } = result;
+
       wx.showToast({
         title: '订单提交成功',
         icon: 'success'
       });
 
-      // Navigate to order list or success page
+      // Navigate to order detail or list page
       setTimeout(() => {
-        // Try to navigate to order list, fallback to home if not exists
-        wx.redirectTo({
-          url: '/pages/order/list/list',
-          fail: () => {
-            wx.switchTab({
-              url: '/pages/index/index'
-            });
-          }
-        });
+        if (orderNo) {
+          wx.redirectTo({
+            url: `/pages/order/detail/detail?orderNo=${orderNo}`,
+            fail: () => {
+              wx.redirectTo({
+                url: '/pages/order/list/list'
+              });
+            }
+          });
+        } else {
+          wx.redirectTo({
+            url: '/pages/order/list/list',
+            fail: () => {
+              wx.switchTab({
+                url: '/pages/index/index'
+              });
+            }
+          });
+        }
       }, 1500);
 
     } catch (error) {

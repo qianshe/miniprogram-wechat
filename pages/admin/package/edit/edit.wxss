@@ -1,7 +1,7 @@
 /* 套餐编辑页面样式 */
 .container {
   min-height: 100vh;
-  background-color: #f6f0e7;
+  background-color: var(--bg-color);
   padding-bottom: 180rpx;
 }
 
@@ -57,8 +57,9 @@
 .form-label {
   font-size: 28rpx;
   color: #333333;
-  margin-bottom: 12rpx;
-  font-weight: 500;
+  margin-bottom: 16rpx;
+  font-weight: 600;
+  margin-left: 8rpx;
 }
 
 .form-item-inline .form-label {
@@ -89,8 +90,8 @@
 }
 
 .type-option.active {
-  background-color: rgba(184, 134, 92, 0.1);
-  border-color: #b8865c;
+  background-color: var(--package-accent-light, #f5efe3);
+  border-color: var(--primary-color);
 }
 
 .type-text {
@@ -158,9 +159,9 @@
   display: flex;
   align-items: center;
   gap: 8rpx;
-  padding: 12rpx 20rpx;
-  background-color: rgba(184, 134, 92, 0.1);
-  border-radius: 8rpx;
+  padding: 12rpx 24rpx;
+  background-color: var(--package-accent-light, #f5efe3);
+  border-radius: 30rpx;
 }
 
 .add-slot-text {
@@ -203,17 +204,15 @@
 
 /* 模板字段 */
 .template-field {
-  margin-bottom: 16rpx;
-}
-
-.template-field:last-child {
-  margin-bottom: 0;
+  margin-bottom: 24rpx;
 }
 
 .field-label {
-  font-size: 26rpx;
-  color: #666666;
-  margin-bottom: 8rpx;
+  font-size: 28rpx;
+  color: #333333;
+  margin-bottom: 16rpx;
+  font-weight: 600;
+  margin-left: 8rpx;
 }
 
 /* 选择器 */
@@ -222,14 +221,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #ffffff;
-  padding: 20rpx 24rpx;
-  border-radius: 12rpx;
+  background-color: #f7f8fa;
+  border: 2rpx solid #e5e7eb;
+  padding: 0 32rpx; /* Remove vertical padding, rely on height + flex */
+  border-radius: 16rpx;
+  height: 96rpx;     /* Fixed height */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .picker-text {
   font-size: 28rpx;
   color: #333333;
+  flex: 1;
+  margin-right: 16rpx;
+  /* 确保文字过长能截断，防止撑破布局 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .picker-text.placeholder {
@@ -421,6 +430,7 @@
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   background-color: #ffffff;
   box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  z-index: 900;
 }
 
 .cancel-btn {
@@ -434,8 +444,14 @@
   flex: 2;
   height: 88rpx !important;
   border-radius: 44rpx !important;
-  background: linear-gradient(135deg, #b8865c 0%, #c9a86c 100%) !important;
+  background: linear-gradient(135deg, var(--package-accent, #c9a86c) 0%, var(--primary-color) 100%) !important;
   font-size: 30rpx !important;
+  box-shadow: 0 8rpx 24rpx rgba(184, 134, 92, 0.3) !important;
+  border: none !important;
+}
+
+.save-btn::after {
+  border: none !important;
 }
 
 /* 选择弹窗 */
@@ -567,20 +583,28 @@
 }
 
 /* TDesign组件样式覆盖 */
-.form-item .t-input {
-  background-color: #f6f0e7 !important;
-  border-radius: 12rpx !important;
-  padding: 20rpx 24rpx !important;
+.input-override {
+  background-color: #f7f8fa !important;
+  border: 2rpx solid #e5e7eb !important;
+  border-radius: 16rpx !important;
+  padding: 24rpx 32rpx !important;
+  color: #333 !important;
+  overflow: hidden !important;
 }
 
-.form-item .t-textarea {
-  background-color: #f6f0e7 !important;
-  border-radius: 12rpx !important;
-  padding: 20rpx 24rpx !important;
+.textarea-override {
+  background-color: #f7f8fa !important;
+  border: 2rpx solid #e5e7eb !important;
+  border-radius: 16rpx !important;
+  padding: 24rpx 32rpx !important;
+  color: #333 !important;
+  overflow: hidden !important;
 }
 
-.template-field .t-input {
-  background-color: #ffffff !important;
-  border-radius: 12rpx !important;
-  padding: 20rpx 24rpx !important;
+.input-control {
+  color: #333 !important;
+}
+
+.textarea-control {
+  background-color: transparent !important;
 }

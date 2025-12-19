@@ -43,7 +43,18 @@ Page({
     // 保存状态
     saving: false,
     // 套餐总价（动态计算）
-    calculatedTotalPrice: 0
+    calculatedTotalPrice: 0,
+    // 标记用户是否手动修改过原价
+    priceManuallyEdited: false
+  },
+
+  // 价格单位归一化：后端商品价格存储为"元"，统一转换为"分"（整数）
+  normalizeFen(raw) {
+    if (raw === null || raw === undefined || raw === '') return 0
+    const num = typeof raw === 'number' ? raw : parseFloat(String(raw).trim())
+    if (isNaN(num)) return 0
+    // 后端商品价格是"元"，统一乘以100转为"分"
+    return Math.round(num * 100)
   },
 
   // 将旧格式模板数据转换为新格式（兼容性处理）
@@ -143,7 +154,7 @@ Page({
         _id: p._id,
         id: p._id,
         name: p.name,
-        price: p.price,
+        price: this.normalizeFen(p.price),  // 统一转换为分
         thumb: p.thumb || p.imageUrl
       }))
       
@@ -183,6 +194,7 @@ Page({
             const productInfo = products.find(p => p._id === template[i].products[j].productId)
             if (productInfo) {
               template[i].products[j].productName = productInfo.name
+              // 注意：productInfo.price 已经在 loadProductsByCategory 中被转换为"分"了，不需要再转换
               template[i].products[j].price = productInfo.price || 0
               template[i].products[j].imageUrl = productInfo.thumb || ''
             }
@@ -430,14 +442,10 @@ Page({
 
   // 提交表单
   async onSubmit() {
-    const { formData, isEdit, id } = this.data
+    const { formData, isEdit, id, calculatedTotalPrice } = this.data
 
     if (!formData.name) {
       wx.showToast({ title: '请输入套餐名称', icon: 'none' })
-      return
-    }
-    if (!formData.price) {
-      wx.showToast({ title: '请输入价格', icon: 'none' })
       return
     }
 
@@ -446,12 +454,19 @@ Page({
     try {
       wx.showLoading({ title: '保存中...' })
 
+      // 计算最新的商品总价
+      const totalFen = calculatedTotalPrice || this.calculateTotalPrice()
+      
+      // 原价：用户填写则转换为分，否则使用商品总价
+      const priceStr = String(formData.price || '').trim()
+      const priceFen = priceStr ? Math.round(parseFloat(priceStr) * 100) : totalFen
+
       // 转换价格为分，使用新的模板格式
       const submitData = {
         name: formData.name,
         description: formData.description,
         type: formData.type,
-        price: Math.round(parseFloat(formData.price) * 100),
+        price: priceFen,
         discountPrice: formData.discountPrice ? Math.round(parseFloat(formData.discountPrice) * 100) : null,
         imageUrl: formData.imageUrl,
         status: formData.status,
@@ -679,6 +694,7 @@ Page({
         template[index].products[existingIndex].quantity += 1
       } else {
         // 不存在则添加新商品
+        // 注意：item.price 已经在 loadProductsByCategory 中被转换为"分"了，不需要再转换
         template[index].products.push({
           productId: item._id,
           productName: item.name,

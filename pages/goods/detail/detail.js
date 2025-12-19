@@ -30,6 +30,7 @@ Page({
   async loadGoodsDetail(id) {
     try {
       this.setData({ loading: true });
+      wx.showLoading({ title: '加载中' });
       const goods = await api.getProductDetail(id);
       const parsedPrice = Number(goods.price || 0);
       const goodsData = {
@@ -45,6 +46,7 @@ Page({
         goods: goodsData,
         loading: false
       });
+      wx.hideLoading();
     } catch (err) {
       console.error('[goods/detail] Load goods detail failed:', err);
       wx.showToast({
@@ -52,6 +54,7 @@ Page({
         icon: 'none'
       });
       this.setData({ loading: false });
+      wx.hideLoading();
     }
   },
 

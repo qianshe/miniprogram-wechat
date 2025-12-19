@@ -146,7 +146,7 @@
     <view class="price-display">
       <text class="price-label">合计</text>
       <view class="price-amount">
-        <text class="currency">Y</text>
+        <text class="currency">¥</text>
         <text class="amount">{{displayTotalPrice}}</text>
       </view>
     </view>
@@ -156,7 +156,7 @@
   </view>
 
   <!-- Product Replacer Popup -->
-  <view class="popup-overlay {{showReplacer ? 'visible' : ''}}" bindtap="onCloseReplacer">
+  <view class="popup-overlay {{showReplacer ? 'visible' : ''}}" bindtap="onCloseReplacer" catchtouchmove="preventTouchMove">
     <view class="popup-container {{showReplacer ? 'visible' : ''}}" catchtap="onPopupTap">
       <!-- Popup Header -->
       <view class="popup-header">
@@ -192,7 +192,7 @@
       <view class="available-products" wx:if="{{!loadingProducts && availableProducts.length > 0}}">
         <text class="available-label">可选商品 ({{currentCategoryName}})</text>
         <scroll-view class="products-scroll" scroll-y="true">
-          <view class="products-grid">
+          <view class="products-list">
             <view
               class="product-option {{item._id === selectedProductId ? 'selected' : ''}}"
               wx:for="{{availableProducts}}"
@@ -200,18 +200,22 @@
               bindtap="onSelectReplacement"
               data-product="{{item}}"
             >
-              <view class="option-check" wx:if="{{item._id === selectedProductId}}">
-                <text class="check-icon">v</text>
-              </view>
               <image
                 class="option-image"
                 src="{{item.imageUrl}}"
                 mode="aspectFill"
               />
-              <text class="option-name">{{item.name}}</text>
-              <text class="option-price">{{item.displayPrice}}</text>
-              <view class="price-diff {{item.priceDiff > 0 ? 'positive' : item.priceDiff < 0 ? 'negative' : 'zero'}}">
-                <text class="diff-text">{{item.priceDiffText}}</text>
+              <view class="option-info">
+                <view class="option-main-info">
+                  <text class="option-name">{{item.name}}</text>
+                  <view class="price-diff {{item.priceDiff > 0 ? 'positive' : item.priceDiff < 0 ? 'negative' : 'zero'}}" wx:if="{{item.priceDiff !== 0}}">
+                    <text class="diff-text">{{item.priceDiffText}}</text>
+                  </view>
+                </view>
+                <text class="option-price">{{item.displayPrice}}</text>
+              </view>
+              <view class="option-check" wx:if="{{item._id === selectedProductId}}">
+                <text class="check-icon">v</text>
               </view>
             </view>
           </view>

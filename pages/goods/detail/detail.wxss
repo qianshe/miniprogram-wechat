@@ -127,9 +127,9 @@
   font-size: 30rpx;
   font-weight: 600;
   border: none;
-  box-shadow: 0 8rpx 20rpx rgba(184, 134, 92, 0.3);
+  box-shadow: 0 8rpx 24rpx rgba(184, 134, 92, 0.3);
   transition: all 0.25s;
-  background: var(--primary-color);
+  background: linear-gradient(135deg, var(--package-accent, #c9a86c) 0%, var(--primary-color, #b8865c) 100%);
 }
 
 .add-cart-btn:active {
@@ -257,12 +257,12 @@
   width: 100%;
   height: 88rpx;
   line-height: 88rpx;
-  background: var(--primary-color);
+  background: linear-gradient(135deg, var(--package-accent, #c9a86c) 0%, var(--primary-color, #b8865c) 100%);
   color: #fff;
   border-radius: 44rpx;
   font-size: 30rpx;
   font-weight: 600;
-  box-shadow: 0 10rpx 22rpx rgba(184, 134, 92, 0.32);
+  box-shadow: 0 8rpx 24rpx rgba(184, 134, 92, 0.3);
 }
 
 .red-theme .confirm-btn,

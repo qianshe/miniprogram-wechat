@@ -18,7 +18,7 @@
     </view>
 
     <view class="card-list" wx:if="{{hasUserInfo}}">
-      <view class="list-item" wx:if="{{!isAdmin}}" bindtap="toOrders">
+      <view class="list-item" bindtap="toOrders">
         <view class="item-left">
           <view class="item-icon">
             <text class="icon-text">单</text>
@@ -27,7 +27,7 @@
         </view>
         <view class="item-arrow">></view>
       </view>
-      <view class="list-item" wx:if="{{!isAdmin}}" bindtap="toAddress">
+      <view class="list-item" bindtap="toAddress">
         <view class="item-left">
           <view class="item-icon">
             <text class="icon-text">址</text>
@@ -45,7 +45,7 @@
         </view>
         <view class="item-arrow">></view>
       </view>
-      <view class="list-item" bindtap="toCreateOrder">
+      <view class="list-item" wx:if="{{isAdmin}}" bindtap="toCreateOrder">
         <view class="item-left">
           <view class="item-icon">
             <text class="icon-text">建</text>
@@ -54,7 +54,7 @@
         </view>
         <view class="item-arrow">></view>
       </view>
-      <view class="list-item" bindtap="toManagePage">
+      <view class="list-item" wx:if="{{isAdmin}}" bindtap="toManagePage">
         <view class="item-left">
           <view class="item-icon">
             <text class="icon-text">管</text>

@@ -3,62 +3,10 @@
  * 展示白事套餐列表
  */
 
+const packageApi = require('../../../api/package.js');
+const { normalizePrice } = require('../../../utils/util.js');
+
 const PAGE_SIZE = 10;
-
-// Mock data for development (仅保留白事套餐)
-// 默认图片路径
-const DEFAULT_PACKAGE_IMAGE = 'https://tdesign.gtimg.com/mobile/demos/example1.png';
-
-const MOCK_PACKAGES = [
-  {
-    _id: 'pkg_white_001',
-    name: '基础套餐',
-    description: '适合简单仪式，包含基本殡葬用品',
-    type: 'white',
-    price: 299900,
-    discountPrice: 259900,
-    imageUrl: DEFAULT_PACKAGE_IMAGE,
-    status: 1,
-    sort: 1,
-    template: [
-      { categoryId: 'cat_001', categoryName: '花圈', quantity: 2, defaultProductId: 'prod_001' },
-      { categoryId: 'cat_002', categoryName: '骨灰盒', quantity: 1, defaultProductId: 'prod_010' }
-    ]
-  },
-  {
-    _id: 'pkg_white_002',
-    name: '标准套餐',
-    description: '适合中等规模仪式，包含完整殡葬用品',
-    type: 'white',
-    price: 599900,
-    discountPrice: 499900,
-    imageUrl: DEFAULT_PACKAGE_IMAGE,
-    status: 1,
-    sort: 2,
-    template: [
-      { categoryId: 'cat_001', categoryName: '花圈', quantity: 4, defaultProductId: 'prod_001' },
-      { categoryId: 'cat_002', categoryName: '骨灰盒', quantity: 1, defaultProductId: 'prod_011' },
-      { categoryId: 'cat_003', categoryName: '寿衣', quantity: 1, defaultProductId: 'prod_020' }
-    ]
-  },
-  {
-    _id: 'pkg_white_003',
-    name: '豪华套餐',
-    description: '适合大型仪式，包含高端殡葬用品及服务',
-    type: 'white',
-    price: 999900,
-    discountPrice: 899900,
-    imageUrl: DEFAULT_PACKAGE_IMAGE,
-    status: 1,
-    sort: 3,
-    template: [
-      { categoryId: 'cat_001', categoryName: '花圈', quantity: 8, defaultProductId: 'prod_002' },
-      { categoryId: 'cat_002', categoryName: '骨灰盒', quantity: 1, defaultProductId: 'prod_012' },
-      { categoryId: 'cat_003', categoryName: '寿衣', quantity: 1, defaultProductId: 'prod_021' },
-      { categoryId: 'cat_004', categoryName: '灵堂布置', quantity: 1, defaultProductId: 'prod_030' }
-    ]
-  }
-];
 
 Page({
   data: {
@@ -106,32 +54,32 @@ Page({
     this.setData({ loading: true });
     
     try {
-      // TODO: Replace with actual API call when cloud function is ready
-      // const result = await packageApi.getList({
-      //   type: 'white', // 固定查询白事套餐
-      //   page,
-      //   size: PAGE_SIZE
-      // });
+      const result = await packageApi.getList({
+        type: 'white',
+        page,
+        size: PAGE_SIZE
+      });
       
-      // Using mock data for now
-      await this.simulateApiCall();
-      
-      const mockData = MOCK_PACKAGES;
-      const startIndex = (page - 1) * PAGE_SIZE;
-      const endIndex = startIndex + PAGE_SIZE;
-      const newPackages = mockData.slice(startIndex, endIndex);
+      const { records: list = [], total = 0 } = result || {};
       
       // Format packages for display
-      const formattedPackages = newPackages.map(pkg => ({
-        ...pkg,
-        displayPrice: (pkg.discountPrice / 100).toFixed(2),
-        displayOriginalPrice: (pkg.price / 100).toFixed(2),
-        hasDiscount: pkg.discountPrice < pkg.price,
-        itemCount: pkg.template ? pkg.template.length : 0
-      }));
+      // 使用 normalizePrice 统一处理价格单位
+      const formattedPackages = list.map(pkg => {
+        const priceInYuan = normalizePrice(pkg.price) || 0;
+        const discountPriceInYuan = normalizePrice(pkg.discountPrice);
+        return {
+          ...pkg,
+          price: priceInYuan,
+          discountPrice: discountPriceInYuan,
+          displayPrice: (discountPriceInYuan || priceInYuan).toFixed(2),
+          displayOriginalPrice: priceInYuan.toFixed(2),
+          hasDiscount: discountPriceInYuan && discountPriceInYuan < priceInYuan,
+          itemCount: pkg.template ? pkg.template.length : 0
+        };
+      });
       
       const packages = isRefresh ? formattedPackages : [...this.data.packages, ...formattedPackages];
-      const hasMore = endIndex < mockData.length;
+      const hasMore = packages.length < total;
       const isEmpty = packages.length === 0;
       
       this.setData({
@@ -150,15 +98,6 @@ Page({
         icon: 'none'
       });
     }
-  },
-
-  /**
-   * Simulate API call delay
-   */
-  simulateApiCall() {
-    return new Promise(resolve => {
-      setTimeout(resolve, 300);
-    });
   },
 
   /**
