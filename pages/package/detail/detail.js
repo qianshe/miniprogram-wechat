@@ -83,10 +83,15 @@ Page({
     currentProductIndex: -1,     // 当前商品在 products 数组中的索引
     currentCategoryName: '',
     availableProducts: [],
-    selectedProductId: ''
+    selectedProductId: '',
+
+    // 性能优化：低端设备禁用毛玻璃效果
+    enableBlur: true
   },
 
   onLoad(options) {
+    // 检测设备性能，低端设备禁用毛玻璃效果
+    this.checkDevicePerformance();
     if (options.id) {
       this.setData({ packageId: options.id });
       this.loadPackageDetail(options.id);
@@ -197,10 +202,10 @@ Page({
     }, 0);
 
     // packageInfo.price 和 discountPrice 已经在 loadPackageDetail 中通过 normalizePrice 转换为"元"
-    // 如果没有设置套餐原价，使用商品总价作为原价
-    const originalPrice = packageInfo.price || itemsTotal;
-    // 如果没有设置优惠价，使用商品总价（即无优惠）
-    const baseDiscountPrice = packageInfo.discountPrice || itemsTotal;
+    // 如果没有设置套餐原价，使用商品总价作为原价（使用 ?? 处理 null 值）
+    const originalPrice = packageInfo.price ?? itemsTotal;
+    // 如果没有设置优惠价，使用商品总价（即无优惠）（使用 ?? 处理 null 值，避免 NaN）
+    const baseDiscountPrice = packageInfo.discountPrice ?? itemsTotal;
 
     // Calculate the difference from default items - 使用标准化后的模板
     // 注意：模板中的价格需要通过 normalizePrice 转换
@@ -511,5 +516,28 @@ Page({
       title: `${this.data.packageInfo?.name || '精选套餐'} - 为您精心搭配`,
       path: `/pages/package/detail/detail?id=${this.data.packageId}`
     };
+  },
+
+  /**
+   * 检测设备性能，低端设备禁用毛玻璃效果
+   * 判断依据：Android + 低内存/低性能设备
+   */
+  checkDevicePerformance() {
+    try {
+      const systemInfo = wx.getSystemInfoSync();
+      const { platform, system, benchmarkLevel } = systemInfo;
+      
+      // benchmarkLevel: -1未知, 0-50低端机
+      // Android低端机禁用毛玻璃
+      const isAndroid = platform === 'android';
+      const isLowEnd = benchmarkLevel !== undefined && benchmarkLevel >= 0 && benchmarkLevel < 30;
+      
+      if (isAndroid && isLowEnd) {
+        this.setData({ enableBlur: false });
+        console.log('[Performance] Disabled blur effect for low-end device:', { platform, system, benchmarkLevel });
+      }
+    } catch (err) {
+      console.warn('[Performance] Failed to check device performance:', err);
+    }
   }
 });

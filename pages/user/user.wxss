@@ -1,13 +1,13 @@
 /** index.wxss */
 page {
-  background: #f6f0e7;
+  background: var(--bg-color);
 }
 
 .scrollarea {
   flex: 1;
   display: block;
   overflow-y: hidden;
-  background: #f6f0e7;
+  background: var(--bg-color);
 }
 
 .page-body {
@@ -20,10 +20,10 @@ page {
 }
 
 .hero-card {
-  background: linear-gradient(180deg, #faf7f2 0%, #ffffff 60%, #faf7f2 100%);
+  background: linear-gradient(180deg, var(--card-bg) 0%, #ffffff 60%, var(--card-bg) 100%);
   border-radius: 28rpx;
   padding: 32rpx 24rpx 40rpx;
-  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
 }
@@ -39,7 +39,7 @@ page {
 
 .hero-text {
   text-align: center;
-  color: #2c3e50;
+  color: var(--text-main);
   margin-bottom: 24rpx;
   text-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.12);
 }
@@ -53,7 +53,7 @@ page {
 
 .hero-subtitle {
   font-size: 26rpx;
-  color: #4f5b62;
+  color: var(--text-sub);
   opacity: 0.9;
   line-height: 1.5;
 }
@@ -73,7 +73,7 @@ page {
   width: 168rpx;
   height: 168rpx;
   border-radius: 50%;
-  box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-md);
   border: 6rpx solid #fff;
   background: #f0f0f0;
 }
@@ -81,7 +81,7 @@ page {
 .userinfo-nickname {
   font-size: 34rpx;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-main);
 }
 
 .white-avatar {
@@ -89,7 +89,7 @@ page {
 }
 
 .white-text {
-  color: #2c3e50;
+  color: var(--text-main);
 }
 
 .red-avatar {
@@ -97,12 +97,12 @@ page {
 }
 
 .red-text {
-  color: #c0392b;
+  color: var(--danger-color);
 }
 
 .login-tip {
   font-size: 28rpx;
-  color: #5f6368;
+  color: var(--text-sub);
   margin: 8rpx 0;
 }
 
@@ -118,22 +118,22 @@ page {
   padding: 0;
   font-weight: 600;
   border: none;
-  box-shadow: 0 12rpx 24rpx rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-md);
   transition: all 0.25s ease;
 }
 
 .login-btn:active {
   transform: scale(0.98);
   opacity: 0.92;
-  box-shadow: 0 8rpx 18rpx rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .white-btn {
-  background: #d9b78c;
+  background: var(--package-accent);
 }
 
 .red-btn {
-  background: #d24b41;
+  background: var(--danger-color);
 }
 
 .login-btn::after {
@@ -142,11 +142,11 @@ page {
 
 .card-list {
   width: 100%;
-  border-radius: 24rpx;
+  border-radius: var(--package-card-radius);
   overflow: hidden;
-  box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   background: #fff;
-  border: 1rpx solid #efe7dc;
+  border: 1rpx solid var(--package-border);
 }
 
 .list-item {
@@ -154,11 +154,11 @@ page {
   align-items: center;
   justify-content: space-between;
   padding: 26rpx 24rpx;
-  color: #2c3e50;
+  color: var(--text-main);
 }
 
 .list-item + .list-item {
-  border-top: 1rpx solid #f2ede5;
+  border-top: 1rpx solid var(--package-border);
 }
 
 .item-left {
@@ -170,9 +170,9 @@ page {
 .item-icon {
   width: 56rpx;
   height: 56rpx;
-  border-radius: 16rpx;
-  background: #f5ede2;
-  color: #b8865c;
+  border-radius: var(--package-item-radius);
+  background: var(--package-accent-light);
+  color: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -182,17 +182,17 @@ page {
 .icon-text {
   font-size: 26rpx;
   font-weight: 600;
-  color: #b8865c;
+  color: var(--primary-color);
 }
 
 .item-title {
   font-size: 30rpx;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-main);
 }
 
 .item-arrow {
   font-size: 32rpx;
-  color: #c0b6a8;
+  color: var(--package-accent);
   padding-left: 12rpx;
 }

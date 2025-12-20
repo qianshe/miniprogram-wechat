@@ -22,30 +22,21 @@ Page({
     categories: [],
     // 商品数据（按分类分组）
     productsByCategory: {},
-    // 模板配置弹窗
-    templateVisible: false,
-    currentTemplateIndex: -1,
-    currentTemplateItem: null,
     // 分类选择弹窗
-    categoryPickerVisible: false,
     showCategoryModal: false,
     selectedCategoryId: '',
     currentSlotIndex: -1,
     // 商品选择弹窗
-    productPickerVisible: false,
     showProductModal: false,
     selectedProductId: '',
     categoryProducts: [],
-    currentCategoryProducts: [],
     // 价格显示
     priceDisplay: '',
     discountPriceDisplay: '',
     // 保存状态
     saving: false,
     // 套餐总价（动态计算）
-    calculatedTotalPrice: 0,
-    // 标记用户是否手动修改过原价
-    priceManuallyEdited: false
+    calculatedTotalPrice: 0
   },
 
   // 价格单位归一化：后端商品价格存储为"元"，统一转换为"分"（整数）
@@ -202,21 +193,22 @@ Page({
         }
       }
 
+      // 注意：云函数 getPackageDetail 已将价格从"分"转换为"元"，无需再次转换
       this.setData({
         formData: {
           name: pkg.name || '',
           description: pkg.description || '',
           type: 'white', // 固定为白事类型
-          price: pkg.price ? (pkg.price / 100).toString() : '',
-          discountPrice: pkg.discountPrice ? (pkg.discountPrice / 100).toString() : '',
+          price: pkg.price ? pkg.price.toString() : '',
+          discountPrice: pkg.discountPrice ? pkg.discountPrice.toString() : '',
           imageUrl: imageUrl,
           status: pkg.status !== undefined ? pkg.status : 1,
           sort: pkg.sort || 0,
           template: template
         },
         fileList: imageUrl ? [{ url: imageUrl }] : [],
-        priceDisplay: pkg.price ? (pkg.price / 100).toString() : '',
-        discountPriceDisplay: pkg.discountPrice ? (pkg.discountPrice / 100).toString() : ''
+        priceDisplay: pkg.price ? pkg.price.toString() : '',
+        discountPriceDisplay: pkg.discountPrice ? pkg.discountPrice.toString() : ''
       })
 
       // 计算总价
@@ -233,27 +225,6 @@ Page({
   getCategoryName(categoryId) {
     const category = this.data.categories.find(c => c._id === categoryId)
     return category ? category.name : '未知分类'
-  },
-
-  // 表单字段变更处理
-  onNameChange(e) {
-    this.setData({ 'formData.name': e.detail.value })
-  },
-
-  onDescriptionChange(e) {
-    this.setData({ 'formData.description': e.detail.value })
-  },
-
-  onPriceChange(e) {
-    this.setData({ 'formData.price': e.detail.value })
-  },
-
-  onDiscountPriceChange(e) {
-    this.setData({ 'formData.discountPrice': e.detail.value })
-  },
-
-  onSortChange(e) {
-    this.setData({ 'formData.sort': parseInt(e.detail.value) || 0 })
   },
 
   onStatusChange(e) {
@@ -303,140 +274,10 @@ Page({
     }
   },
 
-  onPreviewImage(e) {
-    const url = e.currentTarget.dataset.url
-    wx.previewImage({
-      current: url,
-      urls: [url]
-    })
-  },
-
   onRemoveImage() {
     this.setData({
       fileList: [],
       'formData.imageUrl': ''
-    })
-  },
-
-  // 模板配置
-  addTemplateItem() {
-    this.setData({
-      currentTemplateIndex: -1,
-      currentTemplateItem: {
-        categoryId: '',
-        categoryName: '',
-        quantity: 1,
-        defaultProductId: '',
-        defaultProductName: ''
-      },
-      templateVisible: true
-    })
-  },
-
-  editTemplateItem(e) {
-    const index = e.currentTarget.dataset.index
-    const item = this.data.formData.template[index]
-    this.setData({
-      currentTemplateIndex: index,
-      currentTemplateItem: { ...item },
-      templateVisible: true
-    })
-  },
-
-  removeTemplateItem(e) {
-    const index = e.currentTarget.dataset.index
-    const template = [...this.data.formData.template]
-    template.splice(index, 1)
-    this.setData({ 'formData.template': template })
-  },
-
-  onTemplateCancel() {
-    this.setData({ templateVisible: false })
-  },
-
-  onTemplateSave() {
-    const { currentTemplateIndex, currentTemplateItem } = this.data
-    
-    if (!currentTemplateItem.categoryId) {
-      wx.showToast({ title: '请选择分类', icon: 'none' })
-      return
-    }
-    
-    if (!currentTemplateItem.quantity || currentTemplateItem.quantity < 1) {
-      wx.showToast({ title: '数量至少为1', icon: 'none' })
-      return
-    }
-
-    const template = [...this.data.formData.template]
-    
-    if (currentTemplateIndex === -1) {
-      // 新增
-      template.push(currentTemplateItem)
-    } else {
-      // 编辑
-      template[currentTemplateIndex] = currentTemplateItem
-    }
-
-    this.setData({
-      'formData.template': template,
-      templateVisible: false
-    })
-  },
-
-  onTemplateQuantityChange(e) {
-    this.setData({
-      'currentTemplateItem.quantity': parseInt(e.detail.value) || 1
-    })
-  },
-
-  // 分类选择
-  showCategoryPicker() {
-    this.setData({ categoryPickerVisible: true })
-  },
-
-  onCategoryPickerCancel() {
-    this.setData({ categoryPickerVisible: false })
-  },
-
-  onSelectCategory(e) {
-    const { value, label } = e.currentTarget.dataset
-    this.setData({
-      'currentTemplateItem.categoryId': value,
-      'currentTemplateItem.categoryName': label,
-      'currentTemplateItem.defaultProductId': '',
-      'currentTemplateItem.defaultProductName': '',
-      categoryPickerVisible: false
-    })
-    
-    // 预加载该分类的商品
-    this.loadProductsByCategory(value)
-  },
-
-  // 商品选择
-  async showProductPicker() {
-    const categoryId = this.data.currentTemplateItem.categoryId
-    if (!categoryId) {
-      wx.showToast({ title: '请先选择分类', icon: 'none' })
-      return
-    }
-
-    const products = await this.loadProductsByCategory(categoryId)
-    this.setData({
-      currentCategoryProducts: products,
-      productPickerVisible: true
-    })
-  },
-
-  onProductPickerCancel() {
-    this.setData({ productPickerVisible: false })
-  },
-
-  onSelectProduct(e) {
-    const { value, label } = e.currentTarget.dataset
-    this.setData({
-      'currentTemplateItem.defaultProductId': value,
-      'currentTemplateItem.defaultProductName': label,
-      productPickerVisible: false
     })
   },
 
@@ -609,13 +450,6 @@ Page({
     this.setData({ 'formData.template': template })
   },
 
-  // 模板数量变更（更新版本，支持直接修改 template 数组）
-  onTemplateQuantityChange(e) {
-    const index = e.currentTarget.dataset.index
-    const value = parseInt(e.detail.value) || 1
-    this.setData({ [`formData.template[${index}].quantity`]: value })
-  },
-
   // 显示分类选择弹窗
   showCategoryPicker(e) {
     const index = e.currentTarget.dataset.index
@@ -650,25 +484,6 @@ Page({
       // 预加载该分类的商品
       this.loadProductsByCategory(item._id)
     }
-  },
-
-  // 显示商品选择弹窗
-  async showProductPicker(e) {
-    const index = e.currentTarget.dataset.index
-    const currentItem = this.data.formData.template[index]
-    
-    if (!currentItem || !currentItem.categoryId) {
-      wx.showToast({ title: '请先选择分类', icon: 'none' })
-      return
-    }
-
-    const products = await this.loadProductsByCategory(currentItem.categoryId)
-    this.setData({
-      showProductModal: true,
-      currentSlotIndex: index,
-      categoryProducts: products,
-      selectedProductId: currentItem.defaultProductId || ''
-    })
   },
 
   // 隐藏商品选择弹窗

@@ -4,6 +4,8 @@
   },
   "scripts": {
     "patch:tdesign": "node scripts/patch-tdesign-icon-font.js",
-    "postinstall": "npm run patch:tdesign || exit 0"
+    "postinstall": "npm run patch:tdesign || exit 0",
+    "sync-shared": "node scripts/sync-cloud-shared.js",
+    "check-shared": "node scripts/sync-cloud-shared.js --check"
   }
 }

@@ -418,6 +418,13 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-top: 1rpx solid rgba(239, 231, 220, 0.6);
+}
+
+/* 低端设备禁用毛玻璃效果，使用纯色背景 */
+.bottom-bar.no-blur {
+  background: rgb(252, 251, 248);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
 }
 

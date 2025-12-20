@@ -1,11 +1,13 @@
 const { api } = require('../../../utils/api.js');
 const mockData = require('../../../config/mock.js');
+const contactConfig = require('../../../config/contact.js');
 
 Page({
   data: {
     steps: [],
     loading: true,
-    systemType: 'white'
+    systemType: 'white',
+    servicePhone: contactConfig.servicePhone
   },
 
   onLoad(options) {
@@ -71,7 +73,7 @@ Page({
 
   onCallService() {
     wx.makePhoneCall({
-      phoneNumber: '15025963707',
+      phoneNumber: this.data.servicePhone,
       fail: () => {
         wx.showToast({
           title: '拨打电话失败',

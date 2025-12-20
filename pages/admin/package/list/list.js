@@ -77,12 +77,13 @@ Page({
       const newPage = this.data.page + 1
 
       // 处理数据
+      // 注意：云函数已将价格从"分"转换为"元"，无需再次转换
       const processedRecords = records.map(item => ({
         ...item,
         id: item._id || item.id,
-        // 格式化价格显示
-        priceDisplay: (item.price / 100).toFixed(2),
-        discountPriceDisplay: item.discountPrice ? (item.discountPrice / 100).toFixed(2) : null
+        // 格式化价格显示（云函数返回的已是"元"）
+        priceDisplay: (item.price || 0).toFixed(2),
+        discountPriceDisplay: item.discountPrice ? item.discountPrice.toFixed(2) : null
       }))
 
       this.setData({

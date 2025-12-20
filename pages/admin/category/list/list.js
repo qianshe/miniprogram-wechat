@@ -1,6 +1,9 @@
 const app = getApp();
 const { adminApi } = require('../../../../utils/api.js');
 
+// 列表项高度配置 (rpx) - 与 list.wxss 中 .category-item 的高度保持同步
+const ITEM_HEIGHT_RPX = 240;
+
 Page({
   data: {
     categories: [],
@@ -19,12 +22,19 @@ Page({
     deleteCategoryId: '',
     deleteCategoryName: '',
     isSorting: false, // 是否处于排序模式
-    itemHeight: 240, // 每一项的高度 (rpx)
+    itemHeight: ITEM_HEIGHT_RPX,
+    itemHeightPx: 0, // 将在 onLoad 中计算
     movableAreaHeight: 0, // 拖拽区域总高度
     dragIndex: -1 // 当前拖拽的索引
   },
 
   onLoad(options) {
+    // 计算 rpx 到 px 的转换
+    const systemInfo = wx.getSystemInfoSync();
+    const scale = systemInfo.windowWidth / 750;
+    this.setData({
+      itemHeightPx: ITEM_HEIGHT_RPX * scale
+    });
     this.loadCategories(true);
   },
 
@@ -277,10 +287,10 @@ Page({
   onDragEnd(e) {
     const { y } = e.detail;
     const { index } = e.currentTarget.dataset;
-    const { itemHeight, categories } = this.data;
+    const { itemHeightPx, itemHeight, categories } = this.data;
 
-    // 计算目标索引
-    let targetIndex = Math.round(y / itemHeight);
+    // 使用像素值计算目标索引（e.detail.y 单位是 px）
+    let targetIndex = Math.round(y / itemHeightPx);
 
     // 边界检查
     if (targetIndex < 0) targetIndex = 0;

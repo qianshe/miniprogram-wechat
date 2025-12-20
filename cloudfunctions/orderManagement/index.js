@@ -17,6 +17,7 @@ const {
   createFilterOptions,
   Roles
 } = require('./_shared/fieldFilter');
+const config = require('./config');
 
 // 初始化云开发环境
 cloud.init({
@@ -575,7 +576,7 @@ async function generateQRCode(orderNo) {
 
     if (result.errCode !== 0) {
       console.error('[QRCode] Failed to generate QR code', result);
-      return `cloud://miniprogram1-7g9dmu6h0a6c181c.6d69-miniprogram1-7g9dmu6h0a6c181c-1330048123/qrcodes/default.png`;
+      return config.storage.defaultQRCodePath;
     }
 
     // 将生成的小程序码上传到云存储
@@ -588,11 +589,11 @@ async function generateQRCode(orderNo) {
       return uploadResult.fileID;
     } else {
       console.error('[QRCode] Failed to upload QR code', uploadResult);
-      return `cloud://miniprogram1-7g9dmu6h0a6c181c.6d69-miniprogram1-7g9dmu6h0a6c181c-1330048123/qrcodes/default.png`;
+      return config.storage.defaultQRCodePath;
     }
   } catch (err) {
     console.error('[QRCode] QR code generation error', err.message);
-    return `cloud://miniprogram1-7g9dmu6h0a6c181c.6d69-miniprogram1-7g9dmu6h0a6c181c-1330048123/qrcodes/default.png`;
+    return config.storage.defaultQRCodePath;
   }
 }
 

@@ -15,14 +15,14 @@
   </view>
 
   <!-- 筛选面板 -->
-  <view class="filter-mask" wx:if="{{showFilterPanel}}" catchtap="toggleFilterPanel"></view>
-  <view class="filter-drawer" wx:if="{{showFilterPanel}}" catchtouchmove="true">
+  <view class="filter-mask" wx:if="{{showFilterPanel}}" catchtap="toggleFilterPanel" catchtouchmove="true"></view>
+  <view class="filter-drawer" wx:if="{{showFilterPanel}}">
     <view class="filter-panel">
       <view class="filter-header">
         <text>筛选条件</text>
         <t-icon name="close" size="20" bindtap="toggleFilterPanel" />
       </view>
-      <view class="filter-content">
+      <scroll-view scroll-y class="filter-content">
         <view class="filter-item">
           <text class="filter-label">订单时间</text>
           <view class="date-range">
@@ -53,7 +53,7 @@
             />
           </view>
         </view>
-      </view>
+      </scroll-view>
       <view class="filter-footer">
         <t-button theme="default" bindtap="resetFilter">重置</t-button>
         <t-button theme="primary" bindtap="applyFilter">确定</t-button>

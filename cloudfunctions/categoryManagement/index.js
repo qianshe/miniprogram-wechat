@@ -439,13 +439,58 @@ async function updateCategory(data, context) {
       data: updateFields
     });
 
+    // 如果更新了分类名称，同步更新所有关联产品的 categoryName
+    let productsUpdated = 0;
+    if (updateData.name && updateData.name !== existingResult.data.name) {
+      console.log('[CATEGORY_MANAGEMENT] Category name changed, syncing products categoryName:', {
+        categoryId: id,
+        oldName: existingResult.data.name,
+        newName: updateData.name
+      });
+
+      const productsCollection = db.collection('products');
+      let hasMore = true;
+
+      while (hasMore) {
+        const products = await productsCollection
+          .where({ category: id })
+          .limit(100)
+          .get();
+
+        if (products.data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        for (const product of products.data) {
+          if (product.categoryName !== updateData.name) {
+            await productsCollection.doc(product._id).update({
+              data: { 
+                categoryName: updateData.name,
+                updateTime: new Date()
+              }
+            });
+            productsUpdated++;
+          }
+        }
+
+        if (products.data.length < 100) hasMore = false;
+      }
+
+      console.log('[CATEGORY_MANAGEMENT] Products categoryName synced:', {
+        categoryId: id,
+        productsUpdated
+      });
+    }
+
     const executionTime = Date.now() - startTime;
     console.log('[CATEGORY_MANAGEMENT] updateCategory success:', {
       categoryId: id,
+      productsUpdated,
       executionTime: `${executionTime}ms`
     });
 
-    return success(null, 'Update category success');
+    return success({ productsUpdated }, 'Update category success');
   } catch (err) {
     const executionTime = Date.now() - startTime;
     console.error('[CATEGORY_MANAGEMENT] updateCategory failed:', {
@@ -486,22 +531,29 @@ async function batchUpdateCategorySort(data, context) {
   }
 
   try {
-    // 批量更新
-    const updatePromises = items.map(item => {
-      if (!item.id || item.sort === undefined) {
-        return Promise.reject(new Error('Each item must have id and sort'));
-      }
-      
-      return db.collection('categories').doc(item.id).update({
-        data: {
-          sort: parseInt(item.sort),
-          updateTime: new Date(),
-          updaterOpenid: OPENID
-        }
-      });
-    });
+    // 分块处理，每批最多处理 BATCH_SIZE 条
+    const BATCH_SIZE = 10;
+    let updatedCount = 0;
 
-    await Promise.all(updatePromises);
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+      const batch = items.slice(i, i + BATCH_SIZE);
+      const updatePromises = batch.map(item => {
+        if (!item.id || item.sort === undefined) {
+          return Promise.reject(new Error('Each item must have id and sort'));
+        }
+        
+        return db.collection('categories').doc(item.id).update({
+          data: {
+            sort: parseInt(item.sort),
+            updateTime: new Date(),
+            updaterOpenid: OPENID
+          }
+        });
+      });
+      
+      await Promise.all(updatePromises);
+      updatedCount += batch.length;
+    }
 
     const executionTime = Date.now() - startTime;
     console.log('[CATEGORY_MANAGEMENT] batchUpdateCategorySort success:', {

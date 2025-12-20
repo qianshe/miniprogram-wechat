@@ -142,7 +142,7 @@
   </block>
 
   <!-- Bottom Action Bar -->
-  <view class="bottom-bar" wx:if="{{!loading}}">
+  <view class="bottom-bar {{enableBlur ? '' : 'no-blur'}}" wx:if="{{!loading}}">
     <view class="price-display">
       <text class="price-label">合计</text>
       <view class="price-amount">

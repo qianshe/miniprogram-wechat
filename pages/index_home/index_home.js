@@ -1,7 +1,10 @@
 // pages/index_home/index_home.js
+const assetsConfig = require('../../config/assets.config.js')
+
 Page({
   data: {
-    isAnimating: false
+    isAnimating: false,
+    homeImageUrl: assetsConfig.homePageBanner
   },
 
   onTapOpen() {

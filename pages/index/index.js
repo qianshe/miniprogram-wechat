@@ -1,9 +1,11 @@
 const { api, priceToYuan } = require('../../utils/api.js');
 const mockData = require('../../config/mock.js');
+const assetsConfig = require('../../config/assets.config.js');
 
 Page({
   data: {
     systemType: 'white', // 默认白事
+    homeImage: assetsConfig.homeImage,
   },
 
   onLoad(options) {

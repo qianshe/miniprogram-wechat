@@ -155,6 +155,7 @@ Page({
             // 获取文件ID
             const fileID = uploadResult.fileID;
 
+            // 单图模式：新图片替换旧图片
             this.setData({
                 'formData.thumb': fileID,
                 fileList: [{ url: fileID }]
