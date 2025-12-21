@@ -1,5 +1,8 @@
-const { api } = require('../../utils/api.js');
+// pages/cart/cart.js
+const cartApi = require('../../api/cart.js');
 const auth = require('../../utils/auth.js');
+
+const LOCAL_STORAGE_KEY = 'cartListLocal';
 
 Page({
   data: {
@@ -14,98 +17,119 @@ Page({
     systemType: 'white',
     startX: 0,
     startY: 0,
-    resetTimer: null
+    resetTimer: null,
+    isLoggedIn: false
   },
 
   onShow() {
     this.setData({ loading: true });
-    this.loadCartItems();
+    this.checkLoginAndLoad();
   },
 
-  async loadCartItems() {
-    try {
-      // 只从本地缓存加载
-      // 数据迁移：将旧的 cartList 迁移到 cartListLocal
-      const oldCart = wx.getStorageSync('cartList');
-      if (oldCart && oldCart.length > 0) {
-        const existingCart = wx.getStorageSync('cartListLocal') || [];
-        if (existingCart.length === 0) {
-          // 只在 cartListLocal 为空时迁移
-          wx.setStorageSync('cartListLocal', oldCart);
-          wx.removeStorageSync('cartList'); // 迁移完成后删除旧数据
-        }
-      }
-      const localList = wx.getStorageSync('cartListLocal') || [];
-      
-      // 过滤掉无效数据（null、undefined、或缺少必要字段的对象）
-      const validList = localList.filter(item => 
-        item && 
-        item.id && 
-        item.name && 
-        item.price != null && 
-        typeof item.quantity === 'number' && 
-        item.quantity > 0
-      );
+  checkLoginAndLoad() {
+    const isLoggedIn = auth.checkAuth();
+    this.setData({ isLoggedIn });
+    
+    if (isLoggedIn) {
+      this.loadCartFromCloud();
+    } else {
+      this.loadCartFromLocal();
+    }
+  },
 
-      const cartItems = validList.map(item => ({
-        ...item,
-        displayPrice: Number(item.price || 0).toFixed(2),
-        selected: item.selected || false
+  async loadCartFromCloud() {
+    try {
+      const result = await cartApi.getList();
+      const cloudItems = result || [];
+      
+      const cartItems = cloudItems.map(item => ({
+        _id: item._id,
+        id: item.productId,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: item.quantity,
+        selected: item.selected || false,
+        displayPrice: Number(item.price || 0).toFixed(2)
       }));
 
-      this.setData({
-        cartItems,
-        loading: false
-      }, () => {
+      this.setData({ cartItems, loading: false }, () => {
         this.updateTotalAmount();
       });
+      
+      wx.setStorageSync(LOCAL_STORAGE_KEY, cartItems);
     } catch (error) {
-      console.error('加载清单失败:', error);
-      this.setData({ loading: false, cartItems: [] });
+      console.error('从云端加载购物车失败:', error);
+      this.loadCartFromLocal();
     }
+  },
+
+  loadCartFromLocal() {
+    const oldCart = wx.getStorageSync('cartList');
+    if (oldCart && oldCart.length > 0) {
+      const existingCart = wx.getStorageSync(LOCAL_STORAGE_KEY) || [];
+      if (existingCart.length === 0) {
+        wx.setStorageSync(LOCAL_STORAGE_KEY, oldCart);
+        wx.removeStorageSync('cartList');
+      }
+    }
+    
+    const localList = wx.getStorageSync(LOCAL_STORAGE_KEY) || [];
+    const validList = localList.filter(item => 
+      item && item.id && item.name && item.price != null && 
+      typeof item.quantity === 'number' && item.quantity > 0
+    );
+
+    const cartItems = validList.map(item => ({
+      ...item,
+      displayPrice: Number(item.price || 0).toFixed(2),
+      selected: item.selected || false
+    }));
+
+    this.setData({ cartItems, loading: false }, () => {
+      this.updateTotalAmount();
+    });
+  },
+
+  async syncToCloud() {
+    if (!this.data.isLoggedIn) return;
+    
+    try {
+      await cartApi.sync(this.data.cartItems);
+    } catch (error) {
+      console.error('同步购物车到云端失败:', error);
+    }
+  },
+
+  saveToLocal() {
+    wx.setStorageSync(LOCAL_STORAGE_KEY, this.data.cartItems);
   },
 
   onCheckboxChange(e) {
     const index = e.currentTarget.dataset.index;
     const selected = e.detail.value.length > 0;
-    this.setData({
-      [`cartItems[${index}].selected`]: selected
-    });
+    this.setData({ [`cartItems[${index}].selected`]: selected });
     this.updateTotalAmount();
   },
 
   toggleSelect(e) {
     const index = e.currentTarget.dataset.index;
     const selected = !this.data.cartItems[index].selected;
-    this.setData({
-      [`cartItems[${index}].selected`]: selected
-    });
+    this.setData({ [`cartItems[${index}].selected`]: selected });
     this.updateTotalAmount();
   },
 
   onSelectAllChange(e) {
     const allSelected = e.detail.value.length > 0;
-    const cartItems = this.data.cartItems.map(item => ({
-      ...item,
-      selected: allSelected
-    }));
-    this.setData({
-      allSelected,
-      cartItems
-    });
+    const cartItems = this.data.cartItems.map(item => ({ ...item, selected: allSelected }));
+    this.setData({ allSelected, cartItems });
     this.updateTotalAmount();
   },
 
   toggleSelectAll() {
     const allSelected = !this.data.allSelected;
-    const cartItems = this.data.cartItems.map(item => ({
-      ...item,
-      selected: allSelected
-    }));
-    this.setData({
-      allSelected,
-      cartItems
-    });
+    const cartItems = this.data.cartItems.map(item => ({ ...item, selected: allSelected }));
+    this.setData({ allSelected, cartItems });
     this.updateTotalAmount();
   },
 
@@ -120,10 +144,7 @@ Page({
     const item = this.data.cartItems[index];
     if (!item) return;
     if (item.quantity >= this.data.maxQuantity) {
-      wx.showToast({
-        title: `单件最多可选${this.data.maxQuantity}件`,
-        icon: 'none'
-      });
+      wx.showToast({ title: `单件最多可选${this.data.maxQuantity}件`, icon: 'none' });
       return;
     }
     this.updateQuantity(index, item.quantity + 1);
@@ -134,31 +155,28 @@ Page({
     const item = this.data.cartItems[index];
     if (!item) return;
     if (item.quantity <= this.data.minQuantity) {
-      wx.showToast({
-        title: `至少选择${this.data.minQuantity}件`,
-        icon: 'none'
-      });
+      wx.showToast({ title: `至少选择${this.data.minQuantity}件`, icon: 'none' });
       return;
     }
     this.updateQuantity(index, item.quantity - 1);
   },
 
-  async updateQuantity(index, quantity) {
+  updateQuantity(index, quantity) {
     const cartItems = [...this.data.cartItems];
     const item = cartItems[index];
     if (!item) return;
 
     const safeQuantity = Math.max(this.data.minQuantity, Math.min(quantity, this.data.maxQuantity));
-
-    // 直接更新本地数据，不调用API
     cartItems[index].quantity = safeQuantity;
+    
     this.setData({ cartItems }, () => {
       this.updateTotalAmount();
-      wx.setStorageSync('cartListLocal', this.data.cartItems);
+      this.saveToLocal();
+      this.syncToCloud();
     });
   },
 
-  async deleteItem(e) {
+  deleteItem(e) {
     const { index } = e.currentTarget.dataset;
     const cartItems = [...this.data.cartItems];
     const item = cartItems[index];
@@ -169,17 +187,13 @@ Page({
       content: '确认要删除该商品吗？',
       success: async (res) => {
         if (res.confirm) {
-          // 直接删除本地数据，不调用API
           cartItems.splice(index, 1);
           this.setData({ cartItems }, () => {
             this.updateTotalAmount();
-            wx.setStorageSync('cartListLocal', this.data.cartItems);
+            this.saveToLocal();
+            this.syncToCloud();
           });
-
-          wx.showToast({
-            title: '删除成功',
-            icon: 'success'
-          });
+          wx.showToast({ title: '删除成功', icon: 'success' });
         } else {
           this.resetTouchState(index);
         }
@@ -222,14 +236,8 @@ Page({
 
     const translateX = item.translateX || 0;
     if (translateX < -75) {
-      this.setData({
-        [`cartItems[${index}].translateX`]: -150
-      });
-      
-      const timer = setTimeout(() => {
-        this.resetTouchState(index);
-      }, 2000);
-      
+      this.setData({ [`cartItems[${index}].translateX`]: -150 });
+      const timer = setTimeout(() => { this.resetTouchState(index); }, 2000);
       this.setData({ resetTimer: timer });
     } else {
       this.resetTouchState(index);
@@ -270,19 +278,17 @@ Page({
 
     const selectedItems = this.data.cartItems.filter(item => item.selected);
     if (selectedItems.length === 0) {
-      wx.showToast({
-        title: '请选择商品',
-        icon: 'none'
-      });
+      wx.showToast({ title: '请选择商品', icon: 'none' });
       return;
     }
 
-    wx.showLoading({
-      title: '正在处理订单'
-    });
+    wx.showLoading({ title: '正在处理订单' });
 
     const remainingItems = this.data.cartItems.filter(item => !item.selected);
-    wx.setStorageSync('cartListLocal', remainingItems);
+    this.setData({ cartItems: remainingItems }, () => {
+      this.saveToLocal();
+      this.syncToCloud();
+    });
 
     wx.navigateTo({
       url: '../order/confirm/confirm',
@@ -291,17 +297,10 @@ Page({
           selectedItems,
           totalAmount: this.data.totalAmount
         });
-        this.setData({
-          cartItems: remainingItems
-        }, () => {
-          this.updateTotalAmount();
-        });
+        this.updateTotalAmount();
       },
       fail: () => {
-        wx.showToast({
-          title: '页面跳转失败',
-          icon: 'none'
-        });
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
       },
       complete: () => {
         wx.hideLoading();
@@ -309,29 +308,17 @@ Page({
     });
   },
 
-  handleError(error) {
-    console.error('清单操作异常', error);
-    wx.showToast({
-      title: '操作失败，请稍后重试',
-      icon: 'none'
-    });
-  },
-
   onHide() {
-    // 保存购物车数据到本地
-    wx.setStorageSync('cartListLocal', this.data.cartItems);
+    this.saveToLocal();
   },
 
   onUnload() {
-    // 清理定时器，防止内存泄漏
     if (this.data.resetTimer) {
       clearTimeout(this.data.resetTimer);
       this.setData({ resetTimer: null });
     }
-    
-    // 卸载时也保存一次
     if (this.data.cartItems && this.data.cartItems.length > 0) {
-      wx.setStorageSync('cartListLocal', this.data.cartItems);
+      this.saveToLocal();
     }
   }
 });

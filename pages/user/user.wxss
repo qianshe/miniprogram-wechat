@@ -100,10 +100,37 @@ page {
   color: var(--danger-color);
 }
 
-.login-tip {
-  font-size: 28rpx;
+.avatar-btn {
+  width: 168rpx;
+  height: 168rpx;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+}
+
+.avatar-btn::after {
+  border: none;
+}
+
+.nickname-input {
+  width: 340rpx;
+  height: 80rpx;
+  text-align: center;
+  font-size: 32rpx;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 40rpx;
+  margin: 16rpx 0;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  border: 2rpx solid var(--package-border);
+}
+
+.nickname-input::placeholder {
   color: var(--text-sub);
-  margin: 8rpx 0;
 }
 
 .login-btn {

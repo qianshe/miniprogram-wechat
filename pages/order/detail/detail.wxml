@@ -144,7 +144,6 @@
           <t-button theme="primary" bindtap="handlePay">立即支付</t-button>
         </block>
         <block wx:elif="{{orderInfo.status === 1 || orderInfo.status === 2}}">
-          <t-button theme="default" bindtap="contactService">联系客服</t-button>
           <t-button theme="danger" bindtap="applyRefund">申请退款</t-button>
         </block>
         <block wx:elif="{{orderInfo.status === 3 || orderInfo.status === 4}}">

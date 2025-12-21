@@ -7,8 +7,11 @@
       </view>
       <view class="userinfo">
         <block wx:if="{{!hasUserInfo}}">
-          <text class="login-tip">您尚未登录</text>
-          <button class="login-btn {{systemType}}-btn" bindtap="login">微信一键登录</button>
+          <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+            <image class="userinfo-avatar {{systemType}}-avatar" src="{{tempAvatarUrl}}" mode="cover"></image>
+          </button>
+          <input type="nickname" class="nickname-input" placeholder="请输入昵称" value="{{tempNickName}}" bindinput="onNicknameInput" bindblur="onNicknameBlur" />
+          <button class="login-btn {{systemType}}-btn" bindtap="login">确认登录</button>
         </block>
         <block wx:else>
           <image class="userinfo-avatar {{systemType}}-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>

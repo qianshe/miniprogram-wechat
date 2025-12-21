@@ -24,6 +24,8 @@ const product = require('./product.js')
 const category = require('./category.js')
 const process = require('./process.js')
 const packageApi = require('./package.js')
+const address = require('./address.js')
+const cart = require('./cart.js')
 
 // 导入云函数调用工具（用于高级使用场景）
 const cloudFunction = require('../utils/cloudFunction.js')
@@ -125,6 +127,27 @@ const api = {
   package: packageApi,
   
   /**
+   * 地址模块
+   * - getList() 获取地址列表
+   * - add() 添加地址
+   * - update() 更新地址
+   * - remove() 删除地址
+   * - setDefault() 设置默认地址
+   */
+  address,
+  
+  /**
+   * 购物车模块
+   * - getList() 获取购物车列表
+   * - sync() 同步购物车到云端
+   * - add() 添加商品到购物车
+   * - update() 更新购物车项
+   * - remove() 从购物车移除
+   * - clear() 清空购物车
+   */
+  cart,
+  
+  /**
    * 云函数工具（高级用法）
    * 提供底层云函数调用能力
    * - call() 调用云函数
@@ -156,6 +179,8 @@ module.exports.product = product
 module.exports.category = category
 module.exports.process = process
 module.exports.package = packageApi
+module.exports.address = address
+module.exports.cart = cart
 module.exports.cloudFunction = api.cloudFunction
 
 /**

@@ -211,16 +211,6 @@ Page({
     }
   },
 
-  // 联系客服
-  contactService() {
-    wx.showToast({
-      title: '正在连接客服...',
-      icon: 'loading',
-      duration: 1500
-    });
-    // 这里可以接入客服系统
-  },
-
   // 申请退款
   applyRefund() {
     wx.showModal({

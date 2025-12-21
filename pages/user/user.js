@@ -13,8 +13,10 @@ Page({
     },
     hasUserInfo: false,
     isAdmin: false,
-    systemType: 'white', // 默认为白事系统
-    themeColor: '#333333', // 默认主题色
+    systemType: 'white',
+    themeColor: '#333333',
+    tempAvatarUrl: defaultAvatarUrl,
+    tempNickName: ''
   },
   onLoad() {
     this.checkLoginStatus();
@@ -102,30 +104,55 @@ Page({
     });
   },
 
-  async login() {
-      // 获取用户信息
-      const { userInfo } = await new Promise((resolve, reject) => {
-        wx.getUserProfile({
-          desc: '用于完善会员资料',
-          success: resolve,
-          fail: reject
-        });
-      });
+  onChooseAvatar(e) {
+    const { avatarUrl } = e.detail;
+    this.setData({
+      tempAvatarUrl: avatarUrl
+    });
+  },
 
-      // 获取微信登录code
-      const { code } = await new Promise((resolve, reject) => {
-        wx.login({
-          success: resolve,
-          fail: reject
-        });
+  onNicknameInput(e) {
+    this.setData({
+      tempNickName: e.detail.value
+    });
+  },
+
+  onNicknameBlur(e) {
+    this.setData({
+      tempNickName: e.detail.value
+    });
+  },
+
+  async login() {
+    const { tempAvatarUrl, tempNickName } = this.data;
+    const defaultAvatar = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0';
+
+    if (!tempNickName || !tempNickName.trim()) {
+      wx.showToast({
+        title: '请输入昵称',
+        icon: 'none'
       });
+      return;
+    }
+
+    if (tempAvatarUrl === defaultAvatar) {
+      wx.showToast({
+        title: '请选择头像',
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.setData({ loading: true });
 
     try {
+      const userInfo = {
+        nickName: tempNickName.trim(),
+        avatarUrl: tempAvatarUrl
+      };
 
-      // 调用统一API登录
       const loginData = await api.login(userInfo);
 
-      // 保存用户信息（云开发不需要token管理）
       const userInfoWithRole = {
         ...userInfo,
         openid: loginData.openid,
@@ -134,14 +161,12 @@ Page({
       };
       wx.setStorageSync('userInfo', userInfoWithRole);
 
-      // 更新页面状态
       this.setData({
         userInfo: userInfoWithRole,
         hasUserInfo: true,
         isAdmin: userInfoWithRole.isAdmin
       });
 
-      // 更新全局用户信息
       app.globalData.userInfo = userInfoWithRole;
       app.globalData.isAdmin = userInfoWithRole.isAdmin;
 
@@ -151,7 +176,6 @@ Page({
       });
     } catch (err) {
       console.error('云函数登录失败:', err);
-
       wx.showToast({
         title: '登录失败，请重试',
         icon: 'none',
@@ -160,7 +184,6 @@ Page({
     } finally {
       this.setData({ loading: false });
     }
-
   },
 
   // 检查登录状态
