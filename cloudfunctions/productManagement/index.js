@@ -89,7 +89,10 @@ const handler = async (event, context) => {
  */
 async function getProducts(data, context) {
   const startTime = Date.now();
-  const { page = 1, size = 10, category, keyword, status, orderBy = 'createTime', orderDirection = 'desc' } = data || {};
+  const safeData = data || {};
+  const { page = 1, size = 10, keyword, status, orderBy = 'createTime', orderDirection = 'desc' } = safeData;
+  // 兼容 category 和 categoryId 两种参数名
+  const category = safeData.category ?? safeData.categoryId;
   
   console.log('[PRODUCT_MANAGEMENT] getProducts:', {
     page, size, category, keyword, status, orderBy, orderDirection

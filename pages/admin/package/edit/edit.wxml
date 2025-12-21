@@ -36,18 +36,10 @@
       />
     </view>
 
-    <!-- 原价 -->
-    <view class="form-item">
+    <!-- 原价（只读，自动计算） -->
+    <view class="form-item form-item-inline">
       <view class="form-label">原价(元)</view>
-      <t-input
-        value="{{priceDisplay}}"
-        placeholder="不填则默认使用商品总价"
-        type="digit"
-        bind:change="onPriceChange"
-        data-field="price"
-        t-class="input-override"
-        t-class-input="input-control"
-      />
+      <view class="price-display">{{calculatedTotalPrice / 100}}</view>
     </view>
 
     <!-- 优惠价 -->
@@ -109,7 +101,7 @@
   <view class="form-section">
     <view class="section-header">
       <text class="section-title">套餐模板配置</text>
-      <view class="add-slot-btn" bindtap="addTemplateSlot">
+      <view class="add-slot-btn {{!canAddSlot ? 'disabled' : ''}}" bindtap="addTemplateSlot">
         <t-icon name="add" size="32rpx" color="#b8865c" />
         <text class="add-slot-text">添加分类</text>
       </view>
@@ -126,7 +118,7 @@
         <view class="template-header">
           <text class="template-index">分类 {{slotIndex + 1}}</text>
           <view class="template-delete" bindtap="removeTemplateSlot" data-index="{{slotIndex}}">
-            <t-icon name="delete" size="36rpx" color="#e53935" />
+            <text class="delete-icon">×</text>
           </view>
         </view>
         
@@ -142,7 +134,7 @@
         <!-- 商品列表 -->
         <view class="products-section" wx:if="{{slot.categoryId}}">
           <view class="products-header">
-            <view class="field-label">已选商品 ({{slot.products.length || 0}})</view>
+            <view class="field-label">已选商品 ({{(slot.products && slot.products.length) || 0}})</view>
             <view class="add-product-btn" bindtap="addProductToSlot" data-slot-index="{{slotIndex}}">
               <t-icon name="add" size="28rpx" color="#b8865c" />
               <text class="add-product-text">添加商品</text>
@@ -168,37 +160,31 @@
                 <text class="product-card-price">{{product.price / 100}}元/件</text>
               </view>
               <view class="product-card-actions">
-                <!-- 数量调整 -->
-                <view class="quantity-control">
+                <!-- 数量调整 - 购物车风格 -->
+                <view class="quantity-stepper">
                   <view 
-                    class="quantity-btn minus {{product.quantity <= 1 ? 'disabled' : ''}}" 
+                    class="step-btn {{product.quantity <= 1 ? 'disabled' : ''}}" 
                     bindtap="updateProductQuantity" 
                     data-slot-index="{{slotIndex}}" 
                     data-product-index="{{productIndex}}" 
                     data-delta="{{-1}}"
-                  >
-                    <t-icon name="minus" size="32rpx" color="{{product.quantity <= 1 ? '#ccc' : '#666'}}" />
-                  </view>
-                  <text class="quantity-value">{{product.quantity}}</text>
+                  ><text>-</text></view>
+                  <text class="step-value">{{product.quantity}}</text>
                   <view 
-                    class="quantity-btn plus" 
+                    class="step-btn" 
                     bindtap="updateProductQuantity" 
                     data-slot-index="{{slotIndex}}" 
                     data-product-index="{{productIndex}}" 
                     data-delta="{{1}}"
-                  >
-                    <t-icon name="add" size="32rpx" color="#b8865c" />
-                  </view>
+                  ><text>+</text></view>
                 </view>
-                <!-- 删除按钮 -->
+                <!-- 删除按钮 - 购物车风格 -->
                 <view 
-                  class="product-delete-btn" 
+                  class="delete-btn" 
                   bindtap="removeProductFromSlot" 
                   data-slot-index="{{slotIndex}}" 
                   data-product-index="{{productIndex}}"
-                >
-                  <t-icon name="close" size="32rpx" color="#e53935" />
-                </view>
+                ><text>删除</text></view>
               </view>
             </view>
           </view>
@@ -254,8 +240,8 @@
       </view>
       <scroll-view class="picker-list" scroll-y>
         <view 
-          class="picker-item {{item._id === selectedCategoryId ? 'selected' : ''}}"
-          wx:for="{{categories}}"
+          class="picker-item {{item.disabled ? 'disabled' : ''}} {{item._id === selectedCategoryId ? 'selected' : ''}}"
+          wx:for="{{pickerCategories}}"
           wx:key="_id"
           bindtap="selectCategory"
           data-item="{{item}}"

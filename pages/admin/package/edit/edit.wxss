@@ -66,6 +66,13 @@
   margin-bottom: 0;
 }
 
+/* 原价只读显示 */
+.price-display {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #b8865c;
+}
+
 .required {
   color: #e53935;
   margin-left: 4rpx;
@@ -199,7 +206,35 @@
 }
 
 .template-delete {
-  padding: 8rpx;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--package-accent-light, #f5efe3);
+  border-radius: 50%;
+}
+
+.template-delete:active {
+  background: var(--package-border, #efe7dc);
+}
+
+.delete-icon {
+  font-size: 28rpx;
+  color: var(--text-sub, #6b6b6b);
+  font-weight: 600;
+}
+
+/* 添加分类按钮禁用状态 */
+.add-slot-btn.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* 分类选择项禁用状态 */
+.picker-item.disabled {
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 /* 模板字段 */
@@ -327,51 +362,65 @@
   flex-shrink: 0;
 }
 
-/* 数量控制 */
-.quantity-control {
+/* 商品数量控制器 - detail页面风格 */
+.quantity-stepper {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  background-color: #f6f0e7;
-  border-radius: 8rpx;
-  padding: 4rpx;
+  gap: 16rpx;
 }
 
-.quantity-btn {
+.step-btn {
   width: 48rpx;
   height: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6rpx;
-  background-color: #ffffff;
+  background: var(--package-accent-light, #f5efe3);
+  border-radius: 50%;
+  transition: all 0.2s ease;
 }
 
-.quantity-btn.disabled {
-  opacity: 0.5;
+.step-btn.disabled {
+  opacity: 0.4;
 }
 
-.quantity-btn.plus {
-  background-color: rgba(184, 134, 92, 0.15);
+.step-btn:active:not(.disabled) {
+  background: var(--package-accent, #c9a86c);
 }
 
-.quantity-value {
-  font-size: 26rpx;
-  color: #333333;
-  font-weight: 500;
+.step-btn:active:not(.disabled) text {
+  color: #ffffff;
+}
+
+.step-btn text {
+  font-size: 28rpx;
+  color: var(--primary-color, #b8865c);
+  font-weight: 600;
+}
+
+.step-value {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-main, #333);
   min-width: 40rpx;
   text-align: center;
 }
 
-/* 商品删除按钮 */
-.product-delete-btn {
-  width: 48rpx;
-  height: 48rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(229, 57, 53, 0.1);
-  border-radius: 8rpx;
+/* 商品删除按钮 - detail页面风格 */
+.delete-btn {
+  padding: 12rpx 24rpx;
+  background: var(--package-accent-light, #f5efe3);
+  border-radius: 24rpx;
+}
+
+.delete-btn:active {
+  background: var(--package-border, #efe7dc);
+}
+
+.delete-btn text {
+  font-size: 24rpx;
+  color: var(--primary-color, #b8865c);
+  font-weight: 500;
 }
 
 /* 空商品提示 */
