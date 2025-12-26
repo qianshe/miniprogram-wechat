@@ -1,0 +1,12 @@
+<!-- 数量选择器组件 -->
+<view class="c-stepper {{disabled ? 'disabled' : ''}}">
+  <view 
+    class="c-stepper-btn c-stepper-minus {{minusDisabled ? 'disabled' : ''}}" 
+    bindtap="onMinus"
+  >-</view>
+  <view class="c-stepper-value">{{value}}</view>
+  <view 
+    class="c-stepper-btn c-stepper-plus {{plusDisabled ? 'disabled' : ''}}" 
+    bindtap="onPlus"
+  >+</view>
+</view>

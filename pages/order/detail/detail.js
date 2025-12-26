@@ -1,4 +1,6 @@
 const { api, adminApi } = require('../../../utils/api.js');
+const { getOrderStatusInfo } = require('../../../config/constants.js');
+const { formatDate } = require('../../../utils/util.js');
 
 Page({
   data: {
@@ -35,7 +37,7 @@ Page({
       // 调用统一API获取订单详情
       const orderData = await api.getOrderDetail(this.data.orderNo, this.data.isAdmin || false);
 
-      const statusInfo = this.getStatusInfo(orderData.status);
+      const statusInfo = getOrderStatusInfo(orderData.status);
 
       // 格式化数据
       const items = Array.isArray(orderData.items) ? orderData.items : [];
@@ -79,11 +81,11 @@ Page({
         statusText: statusInfo.text,
         statusDesc: statusInfo.desc,
         statusClass: statusInfo.class,
-        createdTime: this.formatDate(orderData.createTime),
-        serviceTime: this.formatDate(orderData.serviceTime),
-        payTime: orderData.payTime ? this.formatDate(orderData.payTime) : '',
-        processTime: orderData.processTime ? this.formatDate(orderData.processTime) : '',
-        completeTime: orderData.completeTime ? this.formatDate(orderData.completeTime) : '',
+        createdTime: formatDate(orderData.createTime),
+        serviceTime: formatDate(orderData.serviceTime),
+        payTime: orderData.payTime ? formatDate(orderData.payTime) : '',
+        processTime: orderData.processTime ? formatDate(orderData.processTime) : '',
+        completeTime: orderData.completeTime ? formatDate(orderData.completeTime) : '',
         // 时间线专用的短格式时间 (MM-DD)
         timelineCreatedTime: this.formatShortDate(orderData.createTime),
         timelinePayTime: orderData.payTime ? this.formatShortDate(orderData.payTime) : '',
@@ -123,50 +125,6 @@ Page({
         icon: 'none'
       });
     }
-  },
-
-
-
-
-  getStatusInfo(status) {
-    const statusInfo = {
-      0: {
-        text: '待支付',
-        desc: '请尽快完成支付',
-        class: 'pending'
-      },
-      1: {
-        text: '已支付',
-        desc: '我们将尽快为您安排服务',
-        class: 'paid'
-      },
-      2: {
-        text: '处理中',
-        desc: '服务进行中，请留意通知',
-        class: 'processing'
-      },
-      3: {
-        text: '已完成',
-        desc: '服务已完成，感谢使用',
-        class: 'completed'
-      },
-      4: {
-        text: '已取消',
-        desc: '订单已取消',
-        class: 'cancelled'
-      }
-    };
-    return statusInfo[status] || {
-      text: '未知状态',
-      desc: '',
-      class: ''
-    };
-  },
-
-  formatDate(dateStr) {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   },
 
   // 短格式日期，用于时间线显示 (MM-DD)

@@ -163,6 +163,87 @@ const submitFeedback = async (data = {}, options = {}) => {
   }
 }
 
+// ============ 管理员用户管理API ============
+
+/**
+ * 管理员获取用户列表
+ * @param {Object} data - 查询参数
+ * @param {number} data.page - 页码
+ * @param {number} data.size - 每页数量
+ * @param {string} data.keyword - 搜索关键词
+ * @param {boolean} data.isAdmin - 筛选管理员
+ * @param {Object} options - 调用选项
+ * @returns {Promise<Object>} 用户列表
+ */
+const adminGetUsers = (data = {}, options = {}) => {
+  return call('userManagement', 'getUsers', data, {
+    showLoading: true,
+    loadingText: '加载中...',
+    ...options
+  })
+}
+
+/**
+ * 管理员获取用户详情
+ * @param {string} id - 用户ID
+ * @param {Object} options - 调用选项
+ * @returns {Promise<Object>} 用户详情
+ */
+const adminGetUserDetail = (id, options = {}) => {
+  return call('userManagement', 'getUserDetail', { id }, {
+    showLoading: true,
+    ...options
+  })
+}
+
+/**
+ * 设置/取消管理员权限
+ * @param {string} id - 用户ID
+ * @param {boolean} isAdmin - 是否设为管理员
+ * @param {Object} options - 调用选项
+ * @returns {Promise<Object>} 结果
+ */
+const adminSetAdminRole = (id, isAdmin, options = {}) => {
+  return call('userManagement', 'setAdminRole', { id, isAdmin }, {
+    showLoading: true,
+    loadingText: isAdmin ? '设置中...' : '取消中...',
+    ...options
+  })
+}
+
+/**
+ * 更新用户状态（启用/禁用）
+ * @param {string} id - 用户ID
+ * @param {number} status - 状态 0=禁用 1=启用
+ * @param {Object} options - 调用选项
+ * @returns {Promise<Object>} 结果
+ */
+const adminUpdateUserStatus = (id, status, options = {}) => {
+  return call('userManagement', 'updateUserStatus', { id, status }, {
+    showLoading: true,
+    loadingText: status === 1 ? '启用中...' : '禁用中...',
+    ...options
+  })
+}
+
+/**
+ * 获取用户总数（用于统计）
+ * @param {Object} options - 调用选项
+ * @returns {Promise<number>} 用户总数
+ */
+const adminGetUserCount = async (options = {}) => {
+  try {
+    const res = await call('userManagement', 'getUsers', { page: 1, size: 1 }, {
+      showLoading: false,
+      ...options
+    })
+    return (res.code === 0 || res.code === 200) ? (res.data?.total || 0) : 0
+  } catch (err) {
+    console.error('[User API] 获取用户数失败:', err)
+    return 0
+  }
+}
+
 // ============ 导出 ============
 
 module.exports = {
@@ -170,16 +251,23 @@ module.exports = {
   login,
   adminLogin,
   logout,
-  
+
   // 用户信息
   getCurrentUser,
   saveUserInfo,
   getOpenId,
-  
+
   // 状态检查
   isLoggedIn,
   isAdmin,
-  
+
   // 其他
-  submitFeedback
+  submitFeedback,
+
+  // 管理员用户管理
+  adminGetUsers,
+  adminGetUserDetail,
+  adminSetAdminRole,
+  adminUpdateUserStatus,
+  adminGetUserCount
 }

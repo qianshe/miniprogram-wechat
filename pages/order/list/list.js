@@ -1,12 +1,6 @@
 const { api } = require('../../../utils/api.js');
-
-const STATUS_TEXT_MAP = {
-  0: '待支付',
-  1: '已支付',
-  2: '处理中',
-  3: '已完成',
-  4: '已取消'
-};
+const { getOrderStatusText } = require('../../../config/constants.js');
+const { formatDate } = require('../../../utils/util.js');
 
 Page({
   data: {
@@ -211,9 +205,9 @@ Page({
 
       const formattedOrders = records.map(order => ({
         ...order,
-        statusText: this.getStatusText(order.status),
-        createdTime: this.formatDate(order.createTime),
-        serviceTime: this.formatDate(order.serviceTime),
+        statusText: getOrderStatusText(order.status),
+        createdTime: formatDate(order.createTime),
+        serviceTime: formatDate(order.serviceTime),
         totalAmount: Number(order.totalAmount).toFixed(2)
       }));
 
@@ -236,11 +230,6 @@ Page({
     }
   },
 
-  getStatusText(status) {
-    const statusValue = Number(status);
-    return STATUS_TEXT_MAP[statusValue] || '未知状态';
-  },
-
   getStatusByTab(tab) {
     const statusMap = {
       '0': undefined,
@@ -251,11 +240,6 @@ Page({
       '5': 4
     };
     return statusMap[tab];
-  },
-
-  formatDate(dateStr) {
-    if (!dateStr) return '';
-    return dateStr.split('T')[0];
   },
 
   onReachBottom() {

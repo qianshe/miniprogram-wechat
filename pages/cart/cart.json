@@ -4,6 +4,9 @@
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-stepper": "tdesign-miniprogram/stepper/stepper",
     "t-checkbox": "tdesign-miniprogram/checkbox/checkbox",
-    "t-button": "tdesign-miniprogram/button/button"
+    "t-button": "tdesign-miniprogram/button/button",
+    "c-loading": "/components/c-loading/c-loading",
+    "c-empty": "/components/c-empty/c-empty",
+    "c-price": "/components/c-price/c-price"
   }
 }

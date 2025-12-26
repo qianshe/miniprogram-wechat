@@ -1,6 +1,7 @@
 const { api, priceToYuan } = require('../../utils/api.js');
 const mockData = require('../../config/mock.js');
 const assetsConfig = require('../../config/assets.config.js');
+const { handlePageShow, handlePageLoad } = require('../../utils/tabbar.js');
 
 Page({
   data: {
@@ -9,35 +10,13 @@ Page({
   },
 
   onLoad(options) {
-    const app = getApp();
-    const systemType = app.globalData.systemType || 'white';
-
-    this.setData({
-      systemType,
-    });
+    // 使用工具函数处理系统类型
+    handlePageLoad(this, { updateTheme: false });
   },
 
   onShow() {
-    const app = getApp();
-    const systemType = app.globalData.systemType || 'white';
-
-    this.setData({
-      systemType,
-    });
-
-    // 更新TabBar
-    this.updateTabBar(systemType);
-  },
-
-  updateTabBar(systemType) {
-    setTimeout(() => {
-      if (typeof this.getTabBar === 'function') {
-        const tabBar = this.getTabBar();
-        if (tabBar?.updateTabList) {
-          tabBar.updateTabList(systemType);
-        }
-      }
-    }, 100);
+    // 使用工具函数处理 TabBar 更新
+    handlePageShow(this, { updateTheme: false });
   },
 
   // 一站式套餐

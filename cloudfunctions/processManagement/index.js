@@ -176,13 +176,17 @@ async function getProcessSteps(data) {
     const skip = (page - 1) * size
     query = query.skip(skip).limit(size)
 
-    const result = await query.get()
-
+    // 构建计数查询
     let countQuery = db.collection('processSteps')
     if (conditions.length > 0) {
       countQuery = countQuery.where(_.and(conditions))
     }
-    const countResult = await countQuery.count()
+
+    // 并行执行查询和计数，提升性能
+    const [result, countResult] = await Promise.all([
+      query.get(),
+      countQuery.count()
+    ])
 
     console.log('[PROCESS] getProcessSteps success:', {
       type,

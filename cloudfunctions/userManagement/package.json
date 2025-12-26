@@ -1,0 +1,21 @@
+{
+  "name": "userManagement",
+  "version": "1.0.0",
+  "description": "用户管理云函数 - 支持用户列表查询、管理员权限设置等功能",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  },
+  "keywords": [
+    "cloudfunction",
+    "user",
+    "management",
+    "admin"
+  ],
+  "author": "",
+  "license": "ISC"
+}
+

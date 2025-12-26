@@ -2,7 +2,18 @@
 
 ## 项目简介
 
-微信小程序 + 腾讯云开发（CloudBase）项目，提供白事服务的一站式小程序平台，集成商品展示、购物车、订单管理等功能。
+微信小程序 + 腾讯云开发（CloudBase）项目，提供白事/红事服务的一站式小程序平台，集成商品展示、服务套餐、购物车、订单管理、流程指导等功能。
+
+### 核心功能
+
+| 模块 | 功能描述 |
+|------|----------|
+| **白事服务** | 殡葬流程步骤指导、服务轮播图展示、治丧清单管理 |
+| **红事服务** | 婚礼/满月酒等庆典流程管理、事件步骤跟踪 |
+| **商品系统** | 商品分类浏览、商品详情、购物车、订单管理 |
+| **套餐系统** | 服务套餐展示、套餐详情、套餐订购 |
+| **用户中心** | 用户信息、收货地址、订单查询、意见反馈 |
+| **管理后台** | 商品/分类/订单/套餐的增删改查管理 |
 
 ## 快速开始
 
@@ -45,69 +56,149 @@ npm install --production
 2. 工具菜单栏 → 构建 npm
 3. 点击"编译"按钮启动开发模式
 
+## 技术栈
+
+| 类型 | 技术 |
+|------|------|
+| **前端框架** | 微信小程序原生开发 |
+| **UI 组件库** | TDesign Miniprogram |
+| **后端服务** | 腾讯云开发 CloudBase（Serverless） |
+| **数据库** | CloudBase NoSQL 数据库 |
+| **存储** | CloudBase 云存储 |
+
 ## 项目结构
 
 ```
 miniprogram1/
 ├── api/                          # 前端 API 封装
-├── assets/                       # 静态资源
+├── assets/                       # 静态资源（字体等）
+├── cloudbase/                    # CloudBase 配置
 ├── cloudfunctions/               # 云函数
 │   ├── _shared/                  # 云函数共享模块
-│   ├── login/                    # 管理员登录
+│   ├── login/                    # 管理员登录认证
 │   ├── orderManagement/          # 订单管理
 │   ├── productManagement/        # 商品管理
 │   ├── categoryManagement/       # 分类管理
-│   └── processManagement/        # 流程管理
+│   ├── processManagement/        # 流程管理
+│   ├── packageManagement/        # 套餐管理
+│   ├── userDataManagement/       # 用户数据管理
+│   └── wxpaycommon/              # 微信支付通用模块
+├── components/                   # 自定义组件
+│   ├── c-card/                   # 卡片组件
+│   └── c-page-header/            # 页面头部组件
 ├── config/                       # 配置文件
-├── custom-tab-bar/               # 自定义导航栏
+├── custom-tab-bar/               # 自定义底部导航栏
+├── database/                     # 数据库索引配置
+├── docs/                         # 项目文档
 ├── pages/                        # 页面文件
+│   ├── index_home/               # 启动页
+│   ├── index/                    # 首页
+│   ├── goods/                    # 商品（分类、详情）
+│   ├── cart/                     # 购物车（治丧清单）
+│   ├── order/                    # 订单（列表、详情、创建、确认）
+│   ├── package/                  # 套餐（列表、详情、确认）
+│   ├── process/                  # 流程（列表、详情）
+│   ├── user/                     # 用户中心
+│   ├── address/                  # 地址管理
+│   ├── feedback/                 # 意见反馈
+│   ├── scan-result/              # 扫码结果
+│   └── admin/                    # 管理后台（分包）
+├── rules/                        # CloudBase MCP 规则
+├── scripts/                      # 构建脚本
 ├── utils/                        # 前端工具模块
 ├── cloudbaserc.json              # CloudBase CLI 配置
 ├── project.config.json           # 微信开发者工具配置
 └── app.js                        # 小程序入口
 ```
 
-### 配置文件
+## 页面说明
+
+### 主包页面
+
+| 页面路径 | 说明 |
+|----------|------|
+| `pages/index_home` | 启动页/欢迎页 |
+| `pages/index` | 首页（服务入口、轮播图） |
+| `pages/goods/category` | 商品分类列表 |
+| `pages/goods/detail` | 商品详情 |
+| `pages/cart` | 购物车（治丧清单） |
+| `pages/order/list` | 订单列表 |
+| `pages/order/detail` | 订单详情 |
+| `pages/order/confirm` | 订单确认 |
+| `pages/order/create` | 创建订单 |
+| `pages/package/list` | 套餐列表 |
+| `pages/package/detail` | 套餐详情 |
+| `pages/package/confirm` | 套餐确认 |
+| `pages/process/list` | 流程列表 |
+| `pages/process/detail` | 流程详情 |
+| `pages/user` | 用户中心 |
+| `pages/address` | 地址管理 |
+| `pages/feedback` | 意见反馈 |
+| `pages/scan-result` | 扫码结果 |
+
+### 管理后台分包（pages/admin）
+
+| 页面路径 | 说明 |
+|----------|------|
+| `admin/login` | 管理员登录 |
+| `admin/index` | 管理后台首页 |
+| `admin/category/list` | 分类管理列表 |
+| `admin/category/edit` | 分类编辑 |
+| `admin/product/list` | 商品管理列表 |
+| `admin/product/create` | 商品创建 |
+| `admin/product/edit` | 商品编辑 |
+| `admin/product/scan` | 商品扫码 |
+| `admin/order/list` | 订单管理列表 |
+| `admin/order/create` | 订单创建 |
+| `admin/order/qr-code` | 订单二维码 |
+| `admin/package/list` | 套餐管理列表 |
+| `admin/package/edit` | 套餐编辑 |
+
+## 配置文件说明
 
 | 文件路径 | 说明 |
 |----------|------|
-| [`config/cloud.config.js`](config/cloud.config.js) | 云开发环境配置（环境ID等） |
-| [`config/api.config.js`](config/api.config.js) | API 配置（集合名、超时时间、分页等） |
-| [`config/field-permissions.js`](config/field-permissions.js) | 字段级权限配置 |
-| [`cloudbaserc.json`](cloudbaserc.json) | CloudBase CLI 配置 |
-| [`project.config.json`](project.config.json) | 微信开发者工具配置 |
+| `config/cloud.config.js` | 云开发环境配置（环境ID等） |
+| `config/api.config.js` | API 配置（集合名、超时时间、分页等） |
+| `config/field-permissions.js` | 字段级权限配置 |
+| `config/assets.config.js` | 静态资源配置 |
+| `config/contact.js` | 联系方式配置 |
+| `config/mock.js` | Mock 数据配置 |
+| `cloudbaserc.json` | CloudBase CLI 配置 |
+| `project.config.json` | 微信开发者工具配置 |
 
-### 前端工具模块（utils/）
+## 前端模块说明
 
-| 文件路径 | 说明 |
-|----------|------|
-| [`utils/request.js`](utils/request.js) | 增强版请求工具（重试、超时、拦截器） |
-| [`utils/cloudFunction.js`](utils/cloudFunction.js) | 云函数调用封装（缓存、重试、追踪） |
-| [`utils/trace.js`](utils/trace.js) | 请求追踪 ID 生成 |
-| [`utils/permission.js`](utils/permission.js) | 前端权限校验 |
-| [`utils/sensitive.js`](utils/sensitive.js) | 敏感数据脱敏 |
-| [`utils/fieldAccess.js`](utils/fieldAccess.js) | 字段访问控制 |
+### 工具模块（utils/）
 
-### 前端 API 封装（api/）
+| 文件 | 说明 |
+|------|------|
+| `request.js` | 增强版请求工具（重试、超时、拦截器） |
+| `cloudFunction.js` | 云函数调用封装（缓存、重试、追踪） |
+| `auth.js` | 用户认证工具 |
+| `trace.js` | 请求追踪 ID 生成 |
+| `permission.js` | 前端权限校验 |
+| `sensitive.js` | 敏感数据脱敏 |
+| `fieldAccess.js` | 字段访问控制 |
+| `errorHandler.js` | 错误处理工具 |
+| `validation.js` | 数据验证工具 |
+| `util.js` | 通用工具函数 |
 
-| 文件路径 | 说明 |
-|----------|------|
-| [`api/index.js`](api/index.js) | 统一 API 入口 |
-| [`api/user.js`](api/user.js) | 用户相关 API |
-| [`api/order.js`](api/order.js) | 订单相关 API |
-| [`api/product.js`](api/product.js) | 商品相关 API |
-| [`api/category.js`](api/category.js) | 分类相关 API |
-| [`api/process.js`](api/process.js) | 流程相关 API |
+### API 封装（api/）
 
-### 云函数共享模块（cloudfunctions/_shared/）
+| 文件 | 说明 |
+|------|------|
+| `index.js` | 统一 API 入口 |
+| `user.js` | 用户相关 API |
+| `order.js` | 订单相关 API |
+| `product.js` | 商品相关 API |
+| `category.js` | 分类相关 API |
+| `process.js` | 流程相关 API |
+| `package.js` | 套餐相关 API |
+| `cart.js` | 购物车相关 API |
+| `address.js` | 地址相关 API |
 
-| 文件路径 | 说明 |
-|----------|------|
-| [`cloudfunctions/_shared/errorHandler.js`](cloudfunctions/_shared/errorHandler.js) | 统一错误处理 |
-| [`cloudfunctions/_shared/logger.js`](cloudfunctions/_shared/logger.js) | 日志中间件（含 TraceID） |
-| [`cloudfunctions/_shared/permission.js`](cloudfunctions/_shared/permission.js) | 权限校验中间件 |
-| [`cloudfunctions/_shared/sensitive.js`](cloudfunctions/_shared/sensitive.js) | 敏感数据处理 |
-| [`cloudfunctions/_shared/fieldFilter.js`](cloudfunctions/_shared/fieldFilter.js) | 字段级过滤 |
+## 云函数说明
 
 ### 云函数列表
 
@@ -118,6 +209,19 @@ miniprogram1/
 | `productManagement` | 商品增删改查 |
 | `categoryManagement` | 分类增删改查 |
 | `processManagement` | 流程步骤管理 |
+| `packageManagement` | 套餐管理 |
+| `userDataManagement` | 用户数据管理 |
+| `wxpaycommon` | 微信支付通用模块 |
+
+### 共享模块（cloudfunctions/_shared/）
+
+| 文件 | 说明 |
+|------|------|
+| `errorHandler.js` | 统一错误处理 |
+| `logger.js` | 日志中间件（含 TraceID） |
+| `permission.js` | 权限校验中间件 |
+| `sensitive.js` | 敏感数据处理 |
+| `fieldFilter.js` | 字段级过滤 |
 
 ## 数据库集合
 
@@ -127,31 +231,12 @@ miniprogram1/
 | `orders` | 订单数据 |
 | `products` | 商品数据 |
 | `categories` | 分类数据 |
+| `packages` | 套餐数据 |
 | `processSteps` | 流程步骤 |
 | `addresses` | 收货地址 |
 | `carts` | 购物车 |
 | `feedback` | 用户反馈 |
 | `admins` | 管理员信息 |
-
-## 核心功能
-
-### 白事服务模块
-
-- 殡葬流程步骤指导
-- 服务轮播图展示
-
-### 红事服务模块
-
-- 婚礼/满月酒等庆典流程管理
-- 事件步骤跟踪
-
-### 通用功能
-
-- 商品详情查看
-- 购物车管理
-- 订单管理
-- 用户信息管理
-- 自定义导航栏
 
 ## 安全说明
 
@@ -171,13 +256,97 @@ miniprogram1/
 
 ### 字段级权限控制
 
-- 前端通过 [`config/field-permissions.js`](config/field-permissions.js) 配置字段访问权限
-- 云函数通过 [`cloudfunctions/_shared/fieldFilter.js`](cloudfunctions/_shared/fieldFilter.js) 实现字段过滤
-- 敏感数据通过 [`cloudfunctions/_shared/sensitive.js`](cloudfunctions/_shared/sensitive.js) 进行脱敏处理
+- 前端通过 `config/field-permissions.js` 配置字段访问权限
+- 云函数通过 `cloudfunctions/_shared/fieldFilter.js` 实现字段过滤
+- 敏感数据通过 `cloudfunctions/_shared/sensitive.js` 进行脱敏处理
+
+## 开发脚本
+
+```bash
+# 安装依赖
+npm install --production
+
+# 修补 TDesign 图标字体
+npm run patch:tdesign
+
+# 同步云函数共享模块
+npm run sync-shared
+
+# 检查共享模块同步状态
+npm run check-shared
+```
 
 ## 注意事项
 
-- 首次使用需要复制示例配置文件并填写实际配置
-- 云函数部署前需要在 CloudBase 控制台配置环境变量
-- 用户系统需要配置微信开放平台权限
-- API 接口使用云函数实现，确保已正确部署所有云函数
+1. **首次使用**：需要复制示例配置文件并填写实际配置
+2. **云函数部署**：部署前需要在 CloudBase 控制台配置环境变量
+3. **NPM 构建**：在微信开发者工具中需要先执行"构建 npm"
+4. **共享模块同步**：修改 `_shared` 目录后需运行 `npm run sync-shared` 同步到各云函数
+5. **权限配置**：用户系统需要配置微信开放平台权限
+
+## 相关文档
+
+- [API 接口文档](docs/api-documentation.md)
+- [管理后台 API](docs/admin-api.md)
+- [页面 API 使用说明](docs/page-api-usage.md)
+- [流程管理完整指南](docs/process-management-complete-guide.md)
+- [样式问题解决指南](docs/小程序样式问题解决指南.md)
+
+---
+
+## AI 开发规范：分块写入协议（Chunked Write Protocol）
+
+> ⚠️ **重要**：所有 AI 辅助开发工具在进行文件操作时必须遵循以下规范，违反规则会导致服务器超时和任务失败。
+
+### 绝对限制
+
+| 限制类型 | 行数 | 说明 |
+|----------|------|------|
+| **最大限制** | 350 行 | 单次写入/编辑操作的绝对上限，无例外 |
+| **推荐限制** | 300 行 | 最佳性能的推荐上限 |
+
+### 强制分块写入策略
+
+#### 新建文件（>300 行）
+
+1. **首次写入**：使用 `write_to_file`/`fsWrite` 写入前 250-300 行
+2. **追加内容**：使用文件追加操作，每次追加 250-300 行
+3. **重复操作**：继续追加直到完成
+
+#### 编辑现有文件
+
+1. 使用精确编辑（`apply_diff`/定向编辑）- 只修改需要的部分
+2. **禁止**重写整个文件 - 使用增量修改
+3. 将大型重构拆分为多个小的、聚焦的编辑
+
+#### 大型代码生成
+
+1. 按逻辑部分生成（imports、types、functions 分开）
+2. 每个部分作为单独的操作写入
+3. 后续部分使用追加操作
+
+### 正确与错误示例
+
+```
+✅ 正确：写入 600 行文件
+   - 操作 1：写入第 1-300 行（初始文件创建）
+   - 操作 2：追加第 301-600 行
+
+✅ 正确：编辑多个函数
+   - 操作 1：编辑函数 A
+   - 操作 2：编辑函数 B
+   - 操作 3：编辑函数 C
+
+❌ 错误：单次操作写入 500 行 → 超时
+❌ 错误：为了修改 5 行而重写整个文件 → 超时
+❌ 错误：生成大量代码块而不分块 → 超时
+```
+
+### 为什么这很重要
+
+- 服务器对操作有 2-3 分钟的超时限制
+- 大型写入会超过超时时间并**完全失败**
+- 分块写入更**快速**且更**可靠**
+- 失败的写入会浪费时间并需要重试
+
+> 💡 **记住**：如有疑问，每次操作写入**更少**内容。多个小操作 > 一个大操作。

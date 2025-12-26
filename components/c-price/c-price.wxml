@@ -1,0 +1,7 @@
+<!-- 价格展示组件 -->
+<view class="c-price {{sizeClass}}">
+  <text class="c-price-symbol" style="color: {{color}}">¥</text>
+  <text class="c-price-value" style="color: {{color}}">{{displayPrice}}</text>
+  <text class="c-price-unit" wx:if="{{unit}}">{{unit}}</text>
+  <text class="c-price-original" wx:if="{{showOriginal}}">¥{{displayOriginalPrice}}</text>
+</view>

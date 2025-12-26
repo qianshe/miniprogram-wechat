@@ -432,10 +432,9 @@ const adminApi = {
     return await callCloudFunction('orderManagement', 'updateOrderStatus', { orderNo, status });
   },
 
-  // 订单统计 - 暂未实现云函数版本
-  getOrderStatistics: async () => {
-    console.warn('adminApi.getOrderStatistics暂未实现云函数版本');
-    throw new Error('此功能暂未实现');
+  // 订单统计 - 云函数版本
+  getStatistics: async () => {
+    return await callCloudFunction('orderManagement', 'getStatistics', {});
   },
 
   // 流程管理 - 统一云函数调用

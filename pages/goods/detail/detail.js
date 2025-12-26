@@ -86,6 +86,7 @@ Page({
   },
 
   onQuantityChange(e) {
+    // 兼容 c-quantity-stepper 组件和 t-stepper 组件
     const value = Number(e.detail.value) || 1;
     const maxStock = this.data.goods?.stock || 999;
     const safeValue = Math.min(Math.max(value, 1), maxStock);

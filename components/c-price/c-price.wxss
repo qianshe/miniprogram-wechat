@@ -1,0 +1,68 @@
+/* 价格展示组件样式 */
+.c-price {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: nowrap;
+}
+
+.c-price-symbol {
+  font-weight: 600;
+}
+
+.c-price-value {
+  font-weight: 700;
+  font-family: DIN, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.c-price-unit {
+  color: var(--text-sub, #6b6b6b);
+  margin-left: 4rpx;
+}
+
+.c-price-original {
+  color: var(--text-sub, #999);
+  text-decoration: line-through;
+  margin-left: 12rpx;
+}
+
+/* 尺寸 - 小 */
+.c-price.size-small .c-price-symbol {
+  font-size: 22rpx;
+}
+.c-price.size-small .c-price-value {
+  font-size: 28rpx;
+}
+.c-price.size-small .c-price-unit {
+  font-size: 20rpx;
+}
+.c-price.size-small .c-price-original {
+  font-size: 22rpx;
+}
+
+/* 尺寸 - 中（默认） */
+.c-price.size-medium .c-price-symbol {
+  font-size: 26rpx;
+}
+.c-price.size-medium .c-price-value {
+  font-size: 36rpx;
+}
+.c-price.size-medium .c-price-unit {
+  font-size: 24rpx;
+}
+.c-price.size-medium .c-price-original {
+  font-size: 26rpx;
+}
+
+/* 尺寸 - 大 */
+.c-price.size-large .c-price-symbol {
+  font-size: 32rpx;
+}
+.c-price.size-large .c-price-value {
+  font-size: 48rpx;
+}
+.c-price.size-large .c-price-unit {
+  font-size: 28rpx;
+}
+.c-price.size-large .c-price-original {
+  font-size: 30rpx;
+}

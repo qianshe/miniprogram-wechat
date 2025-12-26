@@ -1,0 +1,13 @@
+<!-- 空状态组件 -->
+<view class="c-empty" wx:if="{{show}}">
+  <image 
+    class="c-empty-image" 
+    src="{{image || defaultImage}}" 
+    mode="aspectFit"
+  />
+  <text class="c-empty-title" wx:if="{{title}}">{{title}}</text>
+  <text class="c-empty-desc" wx:if="{{description}}">{{description}}</text>
+  <view class="c-empty-button" wx:if="{{showButton && buttonText}}" bindtap="onButtonTap">
+    {{buttonText}}
+  </view>
+</view>

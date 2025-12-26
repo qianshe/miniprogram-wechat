@@ -1,4 +1,6 @@
 const app = getApp()
+const { adminApi } = require('../../../utils/api')
+const { user: userApi } = require('../../../api/index')
 
 Page({
   /**
@@ -40,6 +42,13 @@ Page({
         path: '/pages/admin/package/list/list'
       },
       {
+        id: 'user',
+        name: '用户管理',
+        icon: '👥',
+        desc: '管理用户和权限',
+        path: '/pages/admin/user/list/list'
+      },
+      {
         id: 'create-order',
         name: '创建订单',
         icon: '➕',
@@ -57,9 +66,16 @@ Page({
     // 今日数据统计
     todayStats: {
       orders: 0,
-      sales: 0,
-      products: 0,
-      revenue: 0
+      sales: '0.00',
+      users: 0,
+      revenue: '0.00'
+    },
+    // 订单状态分布
+    orderStatus: {
+      pending: 0,
+      paid: 0,
+      processing: 0,
+      completed: 0
     },
     loading: false
   },
@@ -100,23 +116,45 @@ Page({
   async loadTodayStats() {
     this.setData({ loading: true });
     try {
-      // 这里可以调用API获取真实统计数据
-      const stats = {
-        orders: Math.floor(Math.random() * 50) + 10,
-        sales: (Math.random() * 10000 + 5000).toFixed(2),
-        products: Math.floor(Math.random() * 200) + 100,
-        revenue: (Math.random() * 15000 + 8000).toFixed(2)
-      };
+      // 并行调用统计API和用户统计
+      const [statsResult, usersResult] = await Promise.all([
+        adminApi.getStatistics(),
+        this.getUserCount()
+      ]);
 
-      this.setData({ todayStats: stats });
+      if (statsResult.code === 0 && statsResult.data) {
+        const { today, total, orderStatus } = statsResult.data;
+        this.setData({
+          todayStats: {
+            orders: today.orders || 0,
+            sales: (today.sales || 0).toFixed(2),
+            users: usersResult || 0,
+            revenue: (total.sales || 0).toFixed(2)
+          },
+          orderStatus: {
+            pending: orderStatus?.pending || 0,
+            paid: orderStatus?.paid || 0,
+            processing: orderStatus?.processing || 0,
+            completed: orderStatus?.completed || 0
+          },
+          fullStatistics: statsResult.data
+        });
+      } else {
+        console.error('获取统计数据失败:', statsResult.message);
+      }
     } catch (error) {
       console.error('加载统计数据失败:', error);
-      wx.showToast({
-        title: '加载数据失败',
-        icon: 'none'
-      });
     } finally {
       this.setData({ loading: false });
+    }
+  },
+
+  async getUserCount() {
+    try {
+      return await userApi.adminGetUserCount()
+    } catch (err) {
+      console.error('获取用户数失败:', err);
+      return 0;
     }
   },
 
@@ -144,13 +182,20 @@ Page({
       case 'orders':
         url = '/pages/admin/order/list/list';
         break;
-      case 'products':
-        url = '/pages/admin/product/list/list';
+      case 'users':
+        url = '/pages/admin/user/list/list';
         break;
       default:
         return;
     }
 
     wx.navigateTo({ url });
+  },
+
+  onStatusTap(e) {
+    const { status } = e.currentTarget.dataset;
+    wx.navigateTo({
+      url: `/pages/admin/order/list/list?status=${status}`
+    });
   }
-}) 
+})

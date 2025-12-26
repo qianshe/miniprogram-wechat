@@ -1,0 +1,86 @@
+<view class="user-list-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <t-search
+      value="{{keyword}}"
+      placeholder="搜索用户昵称"
+      bind:change="onSearchChange"
+      bind:submit="onSearch"
+      bind:clear="onSearchClear"
+    />
+  </view>
+
+  <!-- 筛选标签 -->
+  <view class="filter-tabs">
+    <t-tabs value="{{filterType}}" bind:change="onFilterChange">
+      <t-tab-panel label="全部" value="all" />
+      <t-tab-panel label="管理员" value="admin" />
+      <t-tab-panel label="普通用户" value="user" />
+    </t-tabs>
+  </view>
+
+  <!-- 用户列表 -->
+  <view class="user-list" wx:if="{{!loading && users.length > 0}}">
+    <view class="user-item" wx:for="{{users}}" wx:key="_id" bindtap="onUserTap" data-user="{{item}}">
+      <view class="user-avatar">
+        <t-avatar image="{{item.avatarUrl || ''}}" icon="user" size="large" />
+      </view>
+      <view class="user-info">
+        <view class="user-name">
+          <text>{{item.nickName || '未设置昵称'}}</text>
+          <t-tag wx:if="{{item.isAdmin}}" theme="primary" size="small" variant="light">管理员</t-tag>
+          <t-tag wx:if="{{item.status === 0}}" theme="danger" size="small" variant="light">已禁用</t-tag>
+        </view>
+        <view class="user-meta">
+          <text class="meta-item">ID: {{item.openid}}</text>
+        </view>
+        <view class="user-time">
+          <text>最近登录: {{item.loginTimeStr || '未知'}}</text>
+        </view>
+      </view>
+      <view class="user-action" catchtap="onActionTap" data-user="{{item}}">
+        <text class="action-icon">⋮</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <t-loading theme="circular" size="40rpx" text="加载中..." />
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-container" wx:if="{{!loading && users.length === 0}}">
+    <t-empty icon="user" description="暂无用户数据" />
+  </view>
+
+  <!-- 加载更多 -->
+  <view class="load-more" wx:if="{{!loading && hasMore}}">
+    <text bindtap="loadMore">加载更多</text>
+  </view>
+
+  <!-- 统计信息 -->
+  <view class="stats-bar" wx:if="{{total > 0}}">
+    <text>共 {{total}} 位用户</text>
+  </view>
+
+  <!-- 操作菜单 -->
+  <t-action-sheet
+    visible="{{showActionSheet}}"
+    items="{{actionItems}}"
+    bind:selected="onActionSelect"
+    bind:cancel="onActionCancel"
+  />
+
+  <!-- 确认对话框 -->
+  <t-dialog
+    visible="{{showDialog}}"
+    title="{{dialogTitle}}"
+    content="{{dialogContent}}"
+    confirm-btn="确定"
+    cancel-btn="取消"
+    bind:confirm="onDialogConfirm"
+    bind:cancel="onDialogCancel"
+  />
+</view>
+

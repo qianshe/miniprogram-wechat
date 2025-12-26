@@ -57,11 +57,12 @@
       <view class="sku-content">
         <view class="quantity-section">
           <text class="quantity-label">购买数量</text>
-          <view class="quantity-stepper">
-            <view class="step-btn" bindtap="decreaseQuantity">-</view>
-            <view class="step-value">{{quantity}}</view>
-            <view class="step-btn" bindtap="increaseQuantity">+</view>
-          </view>
+          <c-quantity-stepper
+            value="{{quantity}}"
+            min="1"
+            max="{{goods.stock}}"
+            bindchange="onQuantityChange"
+          />
         </view>
       </view>
 

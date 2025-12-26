@@ -1,0 +1,111 @@
+.user-list-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding-bottom: 40rpx;
+}
+
+.search-bar {
+  background-color: #fff;
+  padding: 16rpx 24rpx;
+}
+
+.filter-tabs {
+  background-color: #fff;
+  margin-bottom: 20rpx;
+}
+
+.user-list {
+  padding: 0 24rpx;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.user-avatar {
+  flex-shrink: 0;
+  margin-right: 24rpx;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.user-name text:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280rpx;
+}
+
+.user-meta {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 4rpx;
+}
+
+.meta-item {
+  margin-right: 16rpx;
+}
+
+.user-time {
+  font-size: 24rpx;
+  color: #bbb;
+}
+
+.user-action {
+  flex-shrink: 0;
+  padding: 16rpx;
+  margin-right: -16rpx;
+}
+
+.action-icon {
+  font-size: 40rpx;
+  color: #999;
+  font-weight: bold;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80rpx 0;
+}
+
+.empty-container {
+  padding: 120rpx 0;
+}
+
+.load-more {
+  text-align: center;
+  padding: 32rpx;
+  color: #0052d9;
+  font-size: 28rpx;
+}
+
+.stats-bar {
+  text-align: center;
+  padding: 24rpx;
+  font-size: 24rpx;
+  color: #999;
+  background-color: #fff;
+  margin-top: 20rpx;
+}
+

@@ -3,5 +3,9 @@
   "navigationBarBackgroundColor": "#f6f0e7",
   "navigationBarTextStyle": "black",
   "backgroundColor": "#f6f0e7",
-  "usingComponents": {}
+  "usingComponents": {
+    "c-loading": "/components/c-loading/c-loading",
+    "c-empty": "/components/c-empty/c-empty",
+    "c-price": "/components/c-price/c-price"
+  }
 }

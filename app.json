@@ -37,7 +37,8 @@
         "order/create/create",
         "order/qr-code/qr-code",
         "package/list/list",
-        "package/edit/edit"
+        "package/edit/edit",
+        "user/list/list"
       ]
     }
   ],

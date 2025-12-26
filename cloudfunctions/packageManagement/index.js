@@ -267,16 +267,18 @@ async function getPackages(data, context) {
     // 分页
     const skip = (page - 1) * size;
     query = query.skip(skip).limit(size);
-    
-    // 执行查询
-    const result = await query.get();
-    
-    // 获取总数
+
+    // 构建计数查询
     let countQuery = db.collection('packages');
     if (conditions.length > 0) {
       countQuery = countQuery.where(_.and(conditions));
     }
-    const countResult = await countQuery.count();
+
+    // 并行执行查询和计数，提升性能
+    const [result, countResult] = await Promise.all([
+      query.get(),
+      countQuery.count()
+    ]);
     
     // 格式化套餐数据
     const packages = result.data.map(pkg => ({

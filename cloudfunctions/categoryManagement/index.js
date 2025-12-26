@@ -97,7 +97,7 @@ const handler = async (event, context) => {
   console.log('[CATEGORY_MANAGEMENT] Request completed:', {
     action,
     executionTime: `${executionTime}ms`,
-    success: result.code === 0
+    success: result.code === 200
   });
 
   return result;
@@ -145,14 +145,18 @@ async function getCategories(data, context) {
 
     // 分页
     const skip = (page - 1) * size;
-    const categoriesResult = await query.skip(skip).limit(size).get();
 
-    // 获取总数
+    // 构建计数查询
     let countQuery = db.collection('categories');
     if (conditions.length > 0) {
       countQuery = countQuery.where(_.and(conditions));
     }
-    const countResult = await countQuery.count();
+
+    // 并行执行查询和计数，提升性能
+    const [categoriesResult, countResult] = await Promise.all([
+      query.skip(skip).limit(size).get(),
+      countQuery.count()
+    ]);
 
     // 格式化分类数据
     let categories = categoriesResult.data;

@@ -47,11 +47,11 @@
           
           <!-- Price Section -->
           <view class="price-section">
-            <view class="price-main">
-              <text class="currency">¥</text>
-              <text class="price-value">{{item.displayPrice}}</text>
-            </view>
-            <text class="price-original" wx:if="{{item.hasDiscount}}">¥{{item.displayOriginalPrice}}</text>
+            <c-price
+              price="{{item.discountPrice || item.price}}"
+              originalPrice="{{item.hasDiscount ? item.price : 0}}"
+              size="medium"
+            />
           </view>
 
           <!-- Action Hint -->
@@ -67,12 +67,9 @@
 
     <!-- Loading States -->
     <view class="loading-section">
-      <view class="loading-indicator" wx:if="{{loading}}">
-        <view class="loading-spinner"></view>
-        <text class="loading-text">加载中...</text>
-      </view>
-      
-      <view class="no-more" wx:elif="{{!hasMore && packages.length > 0}}">
+      <c-loading loading="{{loading}}" text="加载中..." />
+
+      <view class="no-more" wx:if="{{!loading && !hasMore && packages.length > 0}}">
         <view class="divider-line"></view>
         <text class="no-more-text">已加载全部套餐</text>
         <view class="divider-line"></view>
@@ -80,13 +77,11 @@
     </view>
 
     <!-- Empty State -->
-    <view class="empty-state" wx:if="{{isEmpty && !loading}}">
-      <view class="empty-icon">
-        <text class="empty-icon-text">!</text>
-      </view>
-      <text class="empty-title">暂无套餐</text>
-      <text class="empty-desc">暂无可用套餐</text>
-    </view>
+    <c-empty
+      show="{{isEmpty && !loading}}"
+      title="暂无套餐"
+      description="暂无可用套餐"
+    />
 
     <!-- Bottom Safe Area -->
     <view class="safe-area-bottom"></view>

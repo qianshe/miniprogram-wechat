@@ -1,0 +1,5 @@
+<!-- 加载状态组件 -->
+<view class="c-loading {{sizeClass}}" wx:if="{{loading}}">
+  <view class="c-loading-spinner"></view>
+  <text class="c-loading-text" wx:if="{{text}}">{{text}}</text>
+</view>

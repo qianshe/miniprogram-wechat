@@ -223,17 +223,17 @@ async function getOrders(data, context, logger) {
   if (conditions.length > 0) {
     query = query.where(_.and(conditions));
   }
-  
-  // 分页查询
+
+  // 分页查询 - 并行执行查询和计数，提升性能
   const skip = (page - 1) * size;
-  const ordersResult = await query
-    .orderBy('createTime', 'desc')
-    .skip(skip)
-    .limit(size)
-    .get();
-  
-  // 获取总数
-  const countResult = await query.count();
+  const [ordersResult, countResult] = await Promise.all([
+    query
+      .orderBy('createTime', 'desc')
+      .skip(skip)
+      .limit(size)
+      .get(),
+    query.count()
+  ]);
   
   // 构建字段过滤选项
   const filterOptions = {
@@ -540,6 +540,175 @@ async function deleteOrder(data, context, logger) {
 }
 
 /**
+ * 获取统计数据
+ * @param {object} data - 请求数据
+ * @param {object} context - 云函数上下文
+ * @param {object} logger - 追踪日志记录器
+ */
+async function getStatistics(data, context, logger) {
+  const { OPENID } = cloud.getWXContext();
+
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+
+  logger.info('Getting statistics', { isAdmin, openid: OPENID });
+
+  if (!isAdmin) {
+    return permissionError('仅管理员可查看统计数据');
+  }
+
+  try {
+    const now = new Date();
+
+    // 计算今日开始时间 (00:00:00)
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // 计算本周开始时间 (周一 00:00:00)
+    const dayOfWeek = now.getDay() || 7; // 周日为0，转为7
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(todayStart.getDate() - dayOfWeek + 1);
+
+    // 计算本月开始时间 (1号 00:00:00)
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // 并行查询各项统计数据
+    const [
+      todayOrdersResult,
+      weekOrdersResult,
+      monthOrdersResult,
+      allOrdersResult,
+      orderStatusResult,
+      productsResult,
+      activeProductsResult
+    ] = await Promise.all([
+      // 今日订单统计
+      db.collection('orders')
+        .aggregate()
+        .match({ createTime: _.gte(todayStart) })
+        .group({
+          _id: null,
+          count: _.aggregate.sum(1),
+          totalAmount: _.aggregate.sum('$totalAmount')
+        })
+        .end(),
+
+      // 本周订单统计
+      db.collection('orders')
+        .aggregate()
+        .match({ createTime: _.gte(weekStart) })
+        .group({
+          _id: null,
+          count: _.aggregate.sum(1),
+          totalAmount: _.aggregate.sum('$totalAmount')
+        })
+        .end(),
+
+      // 本月订单统计
+      db.collection('orders')
+        .aggregate()
+        .match({ createTime: _.gte(monthStart) })
+        .group({
+          _id: null,
+          count: _.aggregate.sum(1),
+          totalAmount: _.aggregate.sum('$totalAmount')
+        })
+        .end(),
+
+      // 全部订单统计
+      db.collection('orders')
+        .aggregate()
+        .group({
+          _id: null,
+          count: _.aggregate.sum(1),
+          totalAmount: _.aggregate.sum('$totalAmount')
+        })
+        .end(),
+
+      // 各状态订单数量
+      db.collection('orders')
+        .aggregate()
+        .group({
+          _id: '$status',
+          count: _.aggregate.sum(1)
+        })
+        .end(),
+
+      // 商品总数
+      db.collection('products').count(),
+
+      // 上架商品数
+      db.collection('products').where({ status: 1 }).count()
+    ]);
+
+    // 处理今日统计
+    const todayStats = todayOrdersResult.list[0] || { count: 0, totalAmount: 0 };
+
+    // 处理本周统计
+    const weekStats = weekOrdersResult.list[0] || { count: 0, totalAmount: 0 };
+
+    // 处理本月统计
+    const monthStats = monthOrdersResult.list[0] || { count: 0, totalAmount: 0 };
+
+    // 处理全部统计
+    const allStats = allOrdersResult.list[0] || { count: 0, totalAmount: 0 };
+
+    // 处理订单状态统计
+    const statusMap = {};
+    orderStatusResult.list.forEach(item => {
+      statusMap[item._id] = item.count;
+    });
+
+    const statistics = {
+      // 今日数据
+      today: {
+        orders: todayStats.count,
+        sales: todayStats.totalAmount / 100 // 转换为元
+      },
+      // 本周数据
+      week: {
+        orders: weekStats.count,
+        sales: weekStats.totalAmount / 100
+      },
+      // 本月数据
+      month: {
+        orders: monthStats.count,
+        sales: monthStats.totalAmount / 100
+      },
+      // 全部数据
+      total: {
+        orders: allStats.count,
+        sales: allStats.totalAmount / 100
+      },
+      // 订单状态分布
+      orderStatus: {
+        pending: statusMap[ORDER_STATUS.PENDING] || 0,      // 待支付
+        paid: statusMap[ORDER_STATUS.PAID] || 0,            // 已支付
+        processing: statusMap[ORDER_STATUS.PROCESSING] || 0, // 处理中
+        completed: statusMap[ORDER_STATUS.COMPLETED] || 0,   // 已完成
+        cancelled: statusMap[ORDER_STATUS.CANCELLED] || 0    // 已取消
+      },
+      // 商品统计
+      products: {
+        total: productsResult.total,
+        active: activeProductsResult.total
+      },
+      // 统计时间
+      statisticsTime: now
+    };
+
+    logger.info('Statistics retrieved successfully', {
+      todayOrders: statistics.today.orders,
+      totalOrders: statistics.total.orders
+    });
+
+    return success(statistics, '获取统计数据成功');
+  } catch (err) {
+    logger.error('Failed to get statistics', { error: err.message });
+    return error(ErrorCodes.DB_QUERY_ERROR, '获取统计数据失败', { originalError: err.message });
+  }
+}
+
+/**
  * 生成订单号
  */
 function generateOrderNo() {
@@ -622,6 +791,8 @@ const handler = async (event, context, logger) => {
       return await bindOrder(data, context, logger);
     case 'deleteOrder':
       return await deleteOrder(data, context, logger);
+    case 'getStatistics':
+      return await getStatistics(data, context, logger);
     default:
       logger.warn('Unknown action', { action });
       return paramError(`不支持的操作类型: ${action}`);

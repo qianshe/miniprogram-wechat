@@ -1,18 +1,13 @@
 <view class="cart-container {{systemType}}-theme">
   <!-- 加载状态 -->
-  <view class="loading-container" wx:if="{{loading || syncLoading}}">
-    <view class="loading-text">{{syncLoading ? '同步清单数据中...' : '加载中...'}}</view>
-  </view>
+  <c-loading loading="{{loading || syncLoading}}" text="{{syncLoading ? '同步清单数据中...' : '加载中...'}}" />
 
   <!-- 空清单显示 -->
-  <view class="empty-cart" wx:if="{{!cartItems.length && !loading}}">
-    <image 
-      class="empty-cart-image"
-      src="https://tdesign.gtimg.com/mobile/demos/example3.png" 
-      mode="aspectFit">
-    </image>
-    <text class="empty-cart-text">清单为空</text>
-  </view>
+  <c-empty
+    show="{{!cartItems.length && !loading && !syncLoading}}"
+    title="清单为空"
+    description="快去挑选商品吧"
+  />
 
   <!-- 清单列表 -->
   <view class="cart-list" wx:elif="{{cartItems.length}}">

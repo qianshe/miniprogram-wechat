@@ -2,6 +2,7 @@
 const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
 const { api } = require('../../utils/api.js');
 const auth = require('../../utils/auth.js');
+const { handlePageShow, handlePageLoad } = require('../../utils/tabbar.js');
 const app = getApp();
 
 Page({
@@ -22,39 +23,13 @@ Page({
     this.checkLoginStatus();
     this.checkUserRole();
 
-    // 获取当前系统类型
-    const systemType = app.globalData.systemType || 'white';
-
-    // 根据系统类型设置主题色
-    const themeColor = systemType === 'red' ? '#d32f2f' : '#333333';
-
-    this.setData({
-      systemType,
-      themeColor
-    });
+    // 使用工具函数处理系统类型和主题色
+    handlePageLoad(this);
   },
 
   onShow() {
-    // 获取当前系统类型并更新 tabBar
-    const systemType = app.globalData.systemType || 'white';
-
-    // 根据系统类型设置主题色
-    const themeColor = systemType === 'red' ? '#d32f2f' : '#333333';
-
-    this.setData({
-      systemType,
-      themeColor
-    });
-
-    // 使用延迟更新 TabBar
-    setTimeout(() => {
-      if (typeof this.getTabBar === 'function') {
-        const tabBar = this.getTabBar();
-        if (tabBar && typeof tabBar.updateTabList === 'function') {
-          tabBar.updateTabList(systemType);
-        }
-      }
-    }, 100);
+    // 使用工具函数处理 TabBar 更新
+    handlePageShow(this);
 
     // 检查登录状态
     this.checkLoginStatus();

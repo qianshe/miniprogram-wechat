@@ -27,11 +27,16 @@ const PAGE_PERMISSIONS = {
     'pages/admin/login/login',
     'pages/admin/order/list/list',
     'pages/admin/order/create/create',
+    'pages/admin/order/qr-code/qr-code',
     'pages/admin/product/list/list',
     'pages/admin/product/create/create',
     'pages/admin/product/edit/edit',
+    'pages/admin/product/scan/scan',
     'pages/admin/category/list/list',
-    'pages/admin/category/edit/edit'
+    'pages/admin/category/edit/edit',
+    'pages/admin/package/list/list',
+    'pages/admin/package/edit/edit',
+    'pages/admin/user/list/list'
   ]
 }
 
@@ -191,7 +196,10 @@ const checkPermission = (action, resource = null) => {
     'user:edit': () => {
       if (role === ROLES.ADMIN) return true
       return resource && resource.openid === user?.openid
-    }
+    },
+    'user:manage': () => role === ROLES.ADMIN,
+    'user:setAdmin': () => role === ROLES.ADMIN,
+    'user:disable': () => role === ROLES.ADMIN
   }
   
   const rule = rules[action]
