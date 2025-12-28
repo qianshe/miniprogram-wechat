@@ -4,7 +4,8 @@
 
   <!-- 空清单显示 -->
   <c-empty
-    show="{{!cartItems.length && !loading && !syncLoading}}"
+    wx:if="{{!cartItems.length && !loading && !syncLoading}}"
+    show="{{true}}"
     title="清单为空"
     description="快去挑选商品吧"
   />

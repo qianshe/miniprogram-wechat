@@ -273,6 +273,17 @@ const api = {
     }
   },
 
+  // 检查用户是否存在（新增：用于自动同步用户数据）
+  checkUser: async () => {
+    try {
+      const result = await callCloudFunction('login', 'checkUserExists', {});
+      return result;
+    } catch (err) {
+      console.error('检查用户云函数调用失败:', err);
+      throw err;
+    }
+  },
+
   // 管理员登录 - 统一云函数调用
   adminLogin: async (account, password) => {
     try {

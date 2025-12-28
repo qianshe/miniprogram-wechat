@@ -21,9 +21,16 @@ const db = cloud.database()
 
 // 用户登录处理
 const userLogin = async (event, wxContext) => {
-  const { userInfo } = event
+  // 兼容多种传参方式
+  const userInfo = event.userInfo ||
+                   event.data?.userInfo ||
+                   event.data?.data?.userInfo ||
+                   {}
 
-  logger.info('userLogin started', { openid: wxContext.OPENID })
+  logger.info('userLogin started', {
+    openid: wxContext.OPENID,
+    hasUserInfo: !!userInfo.nickName
+  })
 
   // 查询用户是否已存在
   const userQuery = await db.collection('users').where({
@@ -34,8 +41,8 @@ const userLogin = async (event, wxContext) => {
     openid: wxContext.OPENID,
     appid: wxContext.APPID,
     unionid: wxContext.UNIONID,
-    nickName: userInfo.nickName,
-    avatarUrl: userInfo.avatarUrl,
+    nickName: userInfo?.nickName || '',
+    avatarUrl: userInfo?.avatarUrl || '',
     role: 0, // 默认普通用户
     isAdmin: false,
     loginTime: new Date(),
@@ -53,22 +60,22 @@ const userLogin = async (event, wxContext) => {
     // 老用户，更新登录时间和用户信息
     logger.info('Updating existing user', { openid: wxContext.OPENID })
     const existingUser = userQuery.data[0]
-    userData = {
-      ...existingUser,
-      nickName: userInfo.nickName,
-      avatarUrl: userInfo.avatarUrl,
+
+    const updateData = {
+      nickName: userInfo?.nickName || existingUser.nickName || '',
+      avatarUrl: userInfo?.avatarUrl || existingUser.avatarUrl || '',
       loginTime: new Date(),
       updateTime: new Date()
     }
 
     await db.collection('users').doc(existingUser._id).update({
-      data: {
-        nickName: userInfo.nickName,
-        avatarUrl: userInfo.avatarUrl,
-        loginTime: new Date(),
-        updateTime: new Date()
-      }
+      data: updateData
     })
+
+    userData = {
+      ...existingUser,
+      ...updateData
+    }
   }
 
   return success({
@@ -163,6 +170,56 @@ const adminLogin = async (event, wxContext) => {
   }
 }
 
+// 检查用户是否存在（新增：用于自动同步用户数据）
+const checkUserExists = async (event, wxContext) => {
+  logger.info('checkUserExists started', { openid: wxContext.OPENID })
+
+  try {
+    // 查询用户是否已存在
+    const userQuery = await db.collection('users').where({
+      openid: wxContext.OPENID
+    }).get()
+
+    if (userQuery.data.length > 0) {
+      const user = userQuery.data[0]
+      // 检查用户是否有完整的资料（头像和昵称）
+      const hasCompleteProfile = user.nickName && user.avatarUrl &&
+                                  user.nickName.trim() !== '' &&
+                                  user.avatarUrl.trim() !== ''
+
+      logger.info('User found', {
+        openid: wxContext.OPENID,
+        hasCompleteProfile,
+        nickName: user.nickName,
+        avatarUrl: user.avatarUrl ? '有' : '无'
+      })
+
+      return success({
+        exists: true,
+        hasCompleteProfile,
+        userInfo: {
+          _id: user._id,
+          openid: user.openid,
+          nickName: user.nickName || '',
+          avatarUrl: user.avatarUrl || '',
+          role: user.role || 0,
+          isAdmin: user.isAdmin || false
+        }
+      }, '用户存在')
+    } else {
+      logger.info('User not found', { openid: wxContext.OPENID })
+      return success({
+        exists: false,
+        hasCompleteProfile: false,
+        userInfo: null
+      }, '用户不存在')
+    }
+  } catch (err) {
+    logger.error('checkUserExists error', err)
+    return error(ErrorCodes.DB_ERROR, '查询用户失败')
+  }
+}
+
 // 主处理逻辑
 const handler = async (event, context) => {
   const wxContext = cloud.getWXContext()
@@ -181,6 +238,8 @@ const handler = async (event, context) => {
       return await userLogin(event, wxContext)
     case 'adminLogin':
       return await adminLogin(event, wxContext)
+    case 'checkUserExists':
+      return await checkUserExists(event, wxContext)
     default:
       return paramError(`不支持的action参数: ${action}`)
   }

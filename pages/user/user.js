@@ -17,7 +17,13 @@ Page({
     systemType: 'white',
     themeColor: '#333333',
     tempAvatarUrl: defaultAvatarUrl,
-    tempNickName: ''
+    tempNickName: '',
+    // 新增：登录流程优化相关状态
+    loginStep: 1,        // 当前步骤：1=选择头像，2=设置昵称
+    avatarSelected: false, // 是否已选择头像
+    nicknameFocus: false,  // 昵称输入框是否聚焦
+    canLogin: false,       // 是否可以登录
+    loading: false         // 登录中状态
   },
   onLoad() {
     this.checkLoginStatus();
@@ -82,20 +88,95 @@ Page({
   onChooseAvatar(e) {
     const { avatarUrl } = e.detail;
     this.setData({
-      tempAvatarUrl: avatarUrl
+      tempAvatarUrl: avatarUrl,
+      avatarSelected: true,
+      loginStep: 2,
+      nicknameFocus: true  // 自动聚焦到昵称输入框
     });
+    // 更新登录按钮状态
+    this.updateCanLogin();
   },
 
   onNicknameInput(e) {
     this.setData({
       tempNickName: e.detail.value
     });
+    // 更新登录按钮状态
+    this.updateCanLogin();
   },
 
   onNicknameBlur(e) {
     this.setData({
+      tempNickName: e.detail.value,
+      nicknameFocus: false
+    });
+    // 更新登录按钮状态
+    this.updateCanLogin();
+  },
+
+  // 昵称输入确认（键盘完成按钮）- 自动触发登录
+  onNicknameConfirm(e) {
+    this.setData({
       tempNickName: e.detail.value
     });
+    this.updateCanLogin();
+    // 如果条件满足，自动登录
+    if (this.data.canLogin) {
+      this.login();
+    }
+  },
+
+  // 更新是否可以登录的状态
+  updateCanLogin() {
+    const { tempAvatarUrl, tempNickName } = this.data;
+    const canLogin = this.data.avatarSelected &&
+                     tempAvatarUrl !== defaultAvatarUrl &&
+                     tempNickName &&
+                     tempNickName.trim().length > 0;
+    this.setData({ canLogin });
+  },
+
+  // 上传头像到云存储，获取永久URL
+  async uploadAvatarToCloud(tempFilePath) {
+    try {
+      // 生成唯一文件名
+      const ext = tempFilePath.split('.').pop() || 'png';
+      const cloudPath = `avatars/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`;
+
+      // 上传到云存储
+      const uploadResult = await wx.cloud.uploadFile({
+        cloudPath,
+        filePath: tempFilePath
+      });
+
+      if (!uploadResult.fileID) {
+        throw new Error('上传失败，未获取到fileID');
+      }
+
+      // 获取永久访问URL
+      const { fileList } = await wx.cloud.getTempFileURL({
+        fileList: [uploadResult.fileID]
+      });
+
+      if (fileList && fileList[0] && fileList[0].tempFileURL) {
+        return fileList[0].tempFileURL;
+      }
+
+      // 如果获取临时URL失败，返回fileID（也可以作为图片src使用）
+      return uploadResult.fileID;
+    } catch (err) {
+      console.error('头像上传失败:', err);
+      throw err;
+    }
+  },
+
+  // 检查是否为临时文件路径
+  isTempFilePath(url) {
+    if (!url) return false;
+    return url.startsWith('wxfile://') ||
+           url.startsWith('http://tmp/') ||
+           url.startsWith('https://tmp/') ||
+           url.includes('tmp_');
   },
 
   async login() {
@@ -121,9 +202,29 @@ Page({
     this.setData({ loading: true });
 
     try {
+      // 处理头像：如果是临时文件，先上传到云存储获取永久URL
+      let finalAvatarUrl = tempAvatarUrl;
+
+      if (this.isTempFilePath(tempAvatarUrl)) {
+        wx.showLoading({ title: '上传头像中...' });
+        try {
+          finalAvatarUrl = await this.uploadAvatarToCloud(tempAvatarUrl);
+        } catch (uploadErr) {
+          console.error('头像上传失败:', uploadErr);
+          wx.hideLoading();
+          wx.showToast({
+            title: '头像上传失败，请重试',
+            icon: 'none'
+          });
+          this.setData({ loading: false });
+          return;
+        }
+        wx.hideLoading();
+      }
+
       const userInfo = {
         nickName: tempNickName.trim(),
-        avatarUrl: tempAvatarUrl
+        avatarUrl: finalAvatarUrl
       };
 
       const loginData = await api.login(userInfo);
@@ -161,12 +262,12 @@ Page({
     }
   },
 
-  // 检查登录状态
-  checkLoginStatus() {
-    // 云开发模式下检查本地存储的用户信息
+  // 检查登录状态（支持从云端自动同步用户数据）
+  async checkLoginStatus() {
     const userInfo = wx.getStorageSync('userInfo');
-    if (userInfo && userInfo.openid) {
-      // 更新页面和全局状态
+
+    // 情况1：本地有完整的用户信息，直接使用
+    if (userInfo && userInfo.openid && userInfo.nickName && userInfo.avatarUrl) {
       this.setData({
         userInfo,
         hasUserInfo: true,
@@ -177,17 +278,53 @@ Page({
       return true;
     }
 
-    // 如果token不存在或用户信息不存在，则清除登录状态
-    this.setData({
-      hasUserInfo: false,
-      isAdmin: false,
-      userInfo: {
-        avatarUrl: defaultAvatarUrl,
-        nickName: '',
+    // 情况2：本地没有用户信息，尝试从云端同步
+    try {
+      const result = await api.checkUser();
+
+      if (result.exists && result.hasCompleteProfile && result.userInfo) {
+        // 用户在云端存在且有完整资料，自动同步到本地
+        const cloudUserInfo = result.userInfo;
+        wx.setStorageSync('userInfo', cloudUserInfo);
+
+        this.setData({
+          userInfo: cloudUserInfo,
+          hasUserInfo: true,
+          isAdmin: cloudUserInfo.isAdmin || false
+        });
+        app.globalData.userInfo = cloudUserInfo;
+        app.globalData.isAdmin = cloudUserInfo.isAdmin || false;
+
+        return true;
+      } else {
+        // 用户不存在或资料不完整，需要用户设置
+        this.setData({
+          hasUserInfo: false,
+          isAdmin: false,
+          userInfo: {
+            avatarUrl: defaultAvatarUrl,
+            nickName: '',
+          },
+          loginStep: 1,
+          avatarSelected: false,
+          canLogin: false
+        });
+        app.globalData.isAdmin = false;
+        return false;
       }
-    });
-    app.globalData.isAdmin = false;
-    return false;
+    } catch (err) {
+      console.error('云端同步失败:', err);
+      this.setData({
+        hasUserInfo: false,
+        isAdmin: false,
+        userInfo: {
+          avatarUrl: defaultAvatarUrl,
+          nickName: '',
+        }
+      });
+      app.globalData.isAdmin = false;
+      return false;
+    }
   },
 
   // 检查用户角色

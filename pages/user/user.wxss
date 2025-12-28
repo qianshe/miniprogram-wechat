@@ -167,6 +167,133 @@ page {
   border: none;
 }
 
+.btn-disabled {
+  opacity: 0.5;
+  background: #ccc !important;
+}
+
+/* 登录步骤引导样式 */
+.login-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32rpx;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  opacity: 0.4;
+  transition: all 0.3s ease;
+}
+
+.step-active {
+  opacity: 1;
+}
+
+.step-done .step-num {
+  background: var(--success-color, #07C160);
+  color: #fff;
+}
+
+.step-num {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: var(--package-border);
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.step-active .step-num {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.step-text {
+  font-size: 22rpx;
+  color: var(--text-sub);
+}
+
+.step-active .step-text {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.step-line {
+  width: 60rpx;
+  height: 4rpx;
+  background: var(--package-border);
+  margin: 0 16rpx;
+  margin-bottom: 30rpx;
+  border-radius: 2rpx;
+  transition: all 0.3s ease;
+}
+
+.line-active {
+  background: var(--success-color, #07C160);
+}
+
+/* 头像选择优化 */
+.avatar-btn {
+  position: relative;
+}
+
+.avatar-selected .userinfo-avatar {
+  border-color: var(--success-color, #07C160);
+}
+
+.avatar-tip {
+  position: absolute;
+  bottom: -8rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 20rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  white-space: nowrap;
+}
+
+.avatar-check {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 40rpx;
+  height: 40rpx;
+  background: var(--success-color, #07C160);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  border: 4rpx solid #fff;
+}
+
+/* 昵称输入优化 */
+.nickname-wrapper {
+  opacity: 0.4;
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.nickname-show {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
 .card-list {
   width: 100%;
   border-radius: var(--package-card-radius);
