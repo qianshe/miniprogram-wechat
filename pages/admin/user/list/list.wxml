@@ -1,67 +1,143 @@
-<view class="user-list-page">
-  <!-- 搜索栏 -->
-  <view class="search-bar">
-    <t-search
-      value="{{keyword}}"
-      placeholder="搜索用户昵称"
-      bind:change="onSearchChange"
-      bind:submit="onSearch"
-      bind:clear="onSearchClear"
-    />
+<view class="admin-users-container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <view class="page-title">用户管理</view>
+    <view class="stats-info" wx:if="{{total > 0}}">
+      <text>共 {{total}} 位用户</text>
+    </view>
+  </view>
+
+  <!-- 搜索框 -->
+  <view class="search-container">
+    <view class="search-wrapper">
+      <t-search
+        placeholder="搜索用户昵称"
+        value="{{keyword}}"
+        bind:change="onSearchChange"
+        bind:submit="onSearch"
+        bind:clear="onSearchClear"
+      ></t-search>
+    </view>
   </view>
 
   <!-- 筛选标签 -->
-  <view class="filter-tabs">
-    <t-tabs value="{{filterType}}" bind:change="onFilterChange">
-      <t-tab-panel label="全部" value="all" />
-      <t-tab-panel label="管理员" value="admin" />
-      <t-tab-panel label="普通用户" value="user" />
-    </t-tabs>
+  <view class="tabs">
+    <view
+      class="tab-item {{filterType === 'all' ? 'active' : ''}}"
+      data-value="all"
+      bindtap="onTabClick">全部</view>
+    <view
+      class="tab-item {{filterType === 'admin' ? 'active' : ''}}"
+      data-value="admin"
+      bindtap="onTabClick">管理员</view>
+    <view
+      class="tab-item {{filterType === 'user' ? 'active' : ''}}"
+      data-value="user"
+      bindtap="onTabClick">普通用户</view>
   </view>
 
   <!-- 用户列表 -->
-  <view class="user-list" wx:if="{{!loading && users.length > 0}}">
-    <view class="user-item" wx:for="{{users}}" wx:key="_id" bindtap="onUserTap" data-user="{{item}}">
-      <view class="user-avatar">
-        <t-avatar image="{{item.avatarUrl || ''}}" icon="user" size="large" />
-      </view>
-      <view class="user-info">
-        <view class="user-name">
-          <text>{{item.nickName || '未设置昵称'}}</text>
-          <t-tag wx:if="{{item.isAdmin}}" theme="primary" size="small" variant="light">管理员</t-tag>
-          <t-tag wx:if="{{item.status === 0}}" theme="danger" size="small" variant="light">已禁用</t-tag>
+  <view class="user-list">
+    <!-- 加载中 -->
+    <view class="loading-wrapper" wx:if="{{loading}}">
+      <view class="loading-text">加载中...</view>
+    </view>
+
+    <!-- 空状态 -->
+    <t-empty wx:elif="{{!users.length}}" icon="user" description="暂无用户"></t-empty>
+
+    <!-- 用户卡片 -->
+    <view class="users" wx:else>
+      <view
+        class="user-item {{item.isAdmin ? 'status-admin' : ''}} {{item.status === 0 ? 'status-disabled' : ''}}"
+        wx:for="{{users}}"
+        wx:key="_id"
+      >
+        <!-- 卡片头部：昵称 + 状态标签 -->
+        <view class="user-header">
+          <view class="user-avatar">
+            <t-avatar image="{{item.avatarUrl || ''}}" icon="user" size="medium" />
+          </view>
+          <text class="user-name">{{item.nickName || '未设置昵称'}}</text>
+          <text class="user-status status-tag-admin" wx:if="{{item.isAdmin}}">管理员</text>
+          <text class="user-status status-tag-normal" wx:elif="{{item.status !== 0}}">普通用户</text>
+          <text class="user-status status-tag-disabled" wx:if="{{item.status === 0}}">已禁用</text>
         </view>
-        <view class="user-meta">
-          <text class="meta-item">ID: {{item.openid}}</text>
+
+        <!-- 卡片信息区 -->
+        <view class="user-info" bindtap="onUserTap" data-user="{{item}}">
+          <view class="info-row">
+            <text class="label">用户ID：</text>
+            <text class="value id-text">{{item.openid}}</text>
+          </view>
+          <view class="info-row">
+            <text class="label">最近登录：</text>
+            <text>{{item.loginTimeStr || '从未登录'}}</text>
+          </view>
+          <view class="info-row" wx:if="{{item.createTime}}">
+            <text class="label">注册时间：</text>
+            <text>{{item.createTimeStr || '-'}}</text>
+          </view>
         </view>
-        <view class="user-time">
-          <text>最近登录: {{item.loginTimeStr || '未知'}}</text>
+
+        <!-- 卡片操作区 -->
+        <view class="user-actions">
+          <!-- 设为管理员：非管理员用户，当前管理员可操作 -->
+          <t-button
+            size="small"
+            theme="primary"
+            wx:if="{{!item.isAdmin && item.openid !== currentOpenid}}"
+            data-user="{{item}}"
+            data-action="setAdmin"
+            catchtap="onQuickAction">设为管理员</t-button>
+
+          <!-- 取消管理员：只有超级管理员才能操作其他管理员，普通管理员不能操作 -->
+          <!-- 目前系统没有超级管理员概念，暂时隐藏此按钮 -->
+          <!-- <t-button
+            size="small"
+            theme="default"
+            wx:if="{{item.isAdmin && item.openid !== currentOpenid && currentIsSuperAdmin}}"
+            data-user="{{item}}"
+            data-action="removeAdmin"
+            catchtap="onQuickAction">取消管理员</t-button> -->
+
+          <!-- 禁用：非管理员用户且未禁用，当前管理员可操作 -->
+          <t-button
+            size="small"
+            theme="danger"
+            variant="outline"
+            wx:if="{{!item.isAdmin && item.status !== 0 && item.openid !== currentOpenid}}"
+            data-user="{{item}}"
+            data-action="disable"
+            catchtap="onQuickAction">禁用</t-button>
+
+          <!-- 启用：已禁用的非管理员用户 -->
+          <t-button
+            size="small"
+            theme="success"
+            wx:if="{{!item.isAdmin && item.status === 0}}"
+            data-user="{{item}}"
+            data-action="enable"
+            catchtap="onQuickAction">启用</t-button>
+
+          <!-- 当前用户标识 -->
+          <t-tag wx:if="{{item.openid === currentOpenid}}" theme="warning" size="small" variant="light">当前账号</t-tag>
+
+          <!-- 管理员用户标识（非自己）：显示无法操作提示 -->
+          <t-tag wx:if="{{item.isAdmin && item.openid !== currentOpenid}}" theme="default" size="small" variant="light">无权限操作</t-tag>
         </view>
-      </view>
-      <view class="user-action" catchtap="onActionTap" data-user="{{item}}">
-        <text class="action-icon">⋮</text>
       </view>
     </view>
   </view>
 
-  <!-- 加载中 -->
-  <view class="loading-container" wx:if="{{loading}}">
-    <t-loading theme="circular" size="40rpx" text="加载中..." />
-  </view>
-
-  <!-- 空状态 -->
-  <view class="empty-container" wx:if="{{!loading && users.length === 0}}">
-    <t-empty icon="user" description="暂无用户数据" />
-  </view>
-
-  <!-- 加载更多 -->
-  <view class="load-more" wx:if="{{!loading && hasMore}}">
-    <text bindtap="loadMore">加载更多</text>
-  </view>
-
-  <!-- 统计信息 -->
-  <view class="stats-bar" wx:if="{{total > 0}}">
-    <text>共 {{total}} 位用户</text>
+  <!-- 底部加载状态 -->
+  <view class="footer-status" wx:if="{{!loading && users.length > 0}}">
+    <view wx:if="{{hasMore}}" class="load-more" bindtap="loadMore">
+      <text>加载更多</text>
+    </view>
+    <view wx:else class="no-more">
+      <text>— 已经到底啦 —</text>
+    </view>
   </view>
 
   <!-- 操作菜单 -->
@@ -82,5 +158,32 @@
     bind:confirm="onDialogConfirm"
     bind:cancel="onDialogCancel"
   />
-</view>
 
+  <!-- 用户详情弹窗 - 自定义实现 -->
+  <view class="detail-popup-mask" wx:if="{{showDetailDialog}}" bindtap="onCloseDetailDialog">
+    <view class="detail-popup-container" catchtap="preventBubble">
+      <view class="detail-popup-title">用户详情</view>
+      <view class="detail-popup-content">
+        <view class="detail-row">
+          <text class="detail-label">昵称：</text>
+          <text class="detail-value">{{detailUser.nickName || '未设置'}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">角色：</text>
+          <text class="detail-value">{{detailUser.isAdmin ? '管理员' : '普通用户'}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">用户ID：</text>
+          <text class="detail-value detail-id">{{detailUser.openid}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">最近登录：</text>
+          <text class="detail-value">{{detailUser.loginTimeStr || '从未登录'}}</text>
+        </view>
+      </view>
+      <view class="detail-popup-footer">
+        <view class="detail-popup-btn" bindtap="onCloseDetailDialog">关闭</view>
+      </view>
+    </view>
+  </view>
+</view>

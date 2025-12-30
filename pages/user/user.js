@@ -87,17 +87,36 @@ Page({
 
   onChooseAvatar(e) {
     const { avatarUrl } = e.detail;
+    
+    // 增加空值判断 - 避免把空字符串当成已选头像
+    if (!avatarUrl) {
+      wx.showToast({
+        title: '未获取到头像，请重试',
+        icon: 'none'
+      });
+      return;
+    }
+    
     this.setData({
       tempAvatarUrl: avatarUrl,
       avatarSelected: true,
-      loginStep: 2,
-      nicknameFocus: true  // 自动聚焦到昵称输入框
+      loginStep: 2
+      // 不自动聚焦昵称输入框，避免授权弹框冲突
     });
     // 更新登录按钮状态
     this.updateCanLogin();
   },
 
   onNicknameInput(e) {
+    this.setData({
+      tempNickName: e.detail.value
+    });
+    // 更新登录按钮状态
+    this.updateCanLogin();
+  },
+
+  // 处理微信授权昵称填充（bindchange事件）
+  onNicknameChange(e) {
     this.setData({
       tempNickName: e.detail.value
     });
@@ -153,16 +172,8 @@ Page({
         throw new Error('上传失败，未获取到fileID');
       }
 
-      // 获取永久访问URL
-      const { fileList } = await wx.cloud.getTempFileURL({
-        fileList: [uploadResult.fileID]
-      });
-
-      if (fileList && fileList[0] && fileList[0].tempFileURL) {
-        return fileList[0].tempFileURL;
-      }
-
-      // 如果获取临时URL失败，返回fileID（也可以作为图片src使用）
+      // 直接返回 fileID，小程序支持直接使用 fileID 作为图片地址
+      // 这样可以避免临时URL过期的问题
       return uploadResult.fileID;
     } catch (err) {
       console.error('头像上传失败:', err);
@@ -191,7 +202,7 @@ Page({
       return;
     }
 
-    if (tempAvatarUrl === defaultAvatar) {
+    if (!tempAvatarUrl || tempAvatarUrl === defaultAvatar) {
       wx.showToast({
         title: '请选择头像',
         icon: 'none'

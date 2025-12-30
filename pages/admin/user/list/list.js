@@ -1,4 +1,5 @@
 const { user: userApi } = require('../../../../api/index')
+const app = getApp()
 
 Page({
   data: {
@@ -10,20 +11,28 @@ Page({
     size: 20,
     keyword: '',
     filterType: 'all', // all, admin, user
-    
+    currentOpenid: '', // 当前登录用户的 openid
+
     // 操作相关
     showActionSheet: false,
     actionItems: [],
     currentUser: null,
-    
+
     // 对话框
     showDialog: false,
     dialogTitle: '',
     dialogContent: '',
-    dialogAction: ''
+    dialogAction: '',
+
+    // 用户详情弹窗
+    showDetailDialog: false,
+    detailUser: {}
   },
 
   onLoad() {
+    // 获取当前登录用户的 openid
+    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+    this.setData({ currentOpenid: userInfo.openid || '' })
     this.loadUsers()
   },
 
@@ -62,25 +71,32 @@ Page({
         params.isAdmin = false
       }
 
+      // call 函数成功时直接返回 data 字段，不需要再判断 code
       const res = await userApi.adminGetUsers(params)
 
-      if (res.code === 200 || res.code === 0) {
-        const newUsers = (res.data.records || []).map(user => ({
-          ...user,
-          loginTimeStr: this.formatTime(user.loginTime)
-        }))
+      // res 就是云函数返回的 data 部分（records, total, hasMore等）
+      const newUsers = (res.records || []).map(user => ({
+        ...user,
+        loginTimeStr: this.formatTime(user.loginTime)
+      }))
 
-        this.setData({
-          users: this.data.page === 1 ? newUsers : [...this.data.users, ...newUsers],
-          total: res.data.total || 0,
-          hasMore: res.data.hasMore || newUsers.length === this.data.size
-        })
-      } else {
-        wx.showToast({ title: res.message || '加载失败', icon: 'none' })
-      }
+      this.setData({
+        users: this.data.page === 1 ? newUsers : [...this.data.users, ...newUsers],
+        total: res.total || 0,
+        hasMore: res.hasMore || newUsers.length === this.data.size
+      })
     } catch (err) {
       console.error('[UserList] loadUsers error:', err)
-      wx.showToast({ title: '加载失败', icon: 'none' })
+      // 显示具体的错误信息
+      const errorMsg = err.message || '加载失败'
+      wx.showToast({ title: errorMsg, icon: 'none' })
+
+      // 如果是权限错误，跳转到首页
+      if (err.code === 403 || errorMsg.includes('permission') || errorMsg.includes('admin')) {
+        setTimeout(() => {
+          wx.switchTab({ url: '/pages/index_home/index_home' })
+        }, 1500)
+      }
     } finally {
       this.setData({ loading: false })
     }
@@ -105,8 +121,9 @@ Page({
     this.loadUsers()
   },
 
+  // t-tabs 组件变更事件（保留兼容）
   onFilterChange(e) {
-    this.setData({ 
+    this.setData({
       filterType: e.detail.value,
       page: 1,
       users: [],
@@ -115,14 +132,116 @@ Page({
     this.loadUsers()
   },
 
-  onUserTap(e) {
-    const { user } = e.currentTarget.dataset
-    // 可以跳转到用户详情页
-    console.log('User tapped:', user)
+  // 自定义标签点击事件
+  onTabClick(e) {
+    const value = e.currentTarget.dataset.value
+    if (value === this.data.filterType) return
+
+    this.setData({
+      filterType: value,
+      page: 1,
+      users: [],
+      hasMore: true
+    })
+    this.loadUsers()
   },
 
+  // 快捷操作按钮
+  onQuickAction(e) {
+    const { user, action } = e.currentTarget.dataset
+
+    // 根据 action 执行对应操作
+    switch (action) {
+      case 'setAdmin':
+        this.setData({
+          currentUser: user,
+          pendingAction: 'setAdmin',
+          dialogTitle: '设置管理员',
+          dialogContent: `确定将 "${user.nickName || '该用户'}" 设为管理员吗？`,
+          showDialog: true
+        })
+        break
+      case 'removeAdmin':
+        this.setData({
+          currentUser: user,
+          pendingAction: 'removeAdmin',
+          dialogTitle: '取消管理员',
+          dialogContent: `确定取消 "${user.nickName || '该用户'}" 的管理员权限吗？`,
+          showDialog: true
+        })
+        break
+      case 'disable':
+        this.setData({
+          currentUser: user,
+          pendingAction: 'disable',
+          dialogTitle: '禁用用户',
+          dialogContent: `确定禁用 "${user.nickName || '该用户'}" 吗？禁用后该用户将无法登录。`,
+          showDialog: true
+        })
+        break
+      case 'enable':
+        this.setData({
+          currentUser: user,
+          pendingAction: 'enable',
+          dialogTitle: '启用用户',
+          dialogContent: `确定启用 "${user.nickName || '该用户'}" 吗？`,
+          showDialog: true
+        })
+        break
+      default:
+        console.warn('Unknown action:', action)
+    }
+  },
+
+  onUserTap(e) {
+    const { user } = e.currentTarget.dataset
+    // 点击卡片显示用户详情
+    this.showUserDetail(user)
+  },
+
+  // 显示用户详情弹窗
+  showUserDetail(user) {
+    this.setData({
+      showDetailDialog: true,
+      detailUser: user
+    })
+  },
+
+  // 关闭详情弹窗
+  onCloseDetailDialog() {
+    this.setData({
+      showDetailDialog: false,
+      detailUser: {}
+    })
+  },
+
+  // 阻止事件冒泡
+  preventBubble() {
+    // 空函数，仅用于阻止事件冒泡
+  },
+
+  // 复制用户ID
+  onCopyUserId() {
+    const { detailUser } = this.data
+    if (detailUser.openid) {
+      wx.setClipboardData({
+        data: detailUser.openid,
+        success: () => {
+          wx.showToast({ title: '已复制', icon: 'success' })
+          this.setData({ showDetailDialog: false })
+        }
+      })
+    }
+  },
+
+  // 按钮点击触发
   onActionTap(e) {
     const { user } = e.currentTarget.dataset
+    this.showActionSheet(user)
+  },
+
+  // 辅助方法：显示操作菜单
+  showActionSheet(user) {
     const items = []
 
     if (user.isAdmin) {

@@ -231,10 +231,8 @@ const call = async (functionName, action, data = {}, options = {}) => {
   const startTime = Date.now()
   const logPrefix = formatLogPrefix(traceId, functionName, action)
 
-  // 记录请求开始日志
-  if (!silent) {
-    console.log(`${logPrefix} Request started`)
-  }
+  // 根据配置决定是否输出日志
+  const enableLog = apiConfig.log?.trace && !silent
 
   // 生成缓存键
   const cacheKey = cache > 0 ? generateCacheKey(functionName, action, data) : null
@@ -243,8 +241,8 @@ const call = async (functionName, action, data = {}, options = {}) => {
   if (cacheKey) {
     const cachedData = getCache(cacheKey)
     if (cachedData !== null) {
-      const duration = Date.now() - startTime
-      if (!silent) {
+      if (enableLog) {
+        const duration = Date.now() - startTime
         console.log(`${logPrefix} Cache hit, duration: ${duration}ms`)
       }
       return cachedData
@@ -287,7 +285,7 @@ const call = async (functionName, action, data = {}, options = {}) => {
         const responseData = result.data
 
         // 记录成功日志
-        if (!silent) {
+        if (enableLog) {
           console.log(`${logPrefix} Request completed, duration: ${duration}ms`)
         }
 

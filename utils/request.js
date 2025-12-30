@@ -8,9 +8,12 @@ const apiConfig = require('../config/api.config.js')
 const { safeLog, safeError } = require('./sensitive.js')
 
 // ============ 调试配置 ============
-// 根据小程序环境自动判断是否启用调试日志
-// envVersion: 'develop' | 'trial' | 'release'
+// 根据配置和小程序环境判断是否启用调试日志
 const getDebugMode = () => {
+  // 优先读取配置中的日志开关
+  if (apiConfig.log?.verbose === false) {
+    return false
+  }
   try {
     const accountInfo = wx.getAccountInfoSync()
     return accountInfo.miniProgram.envVersion !== 'release'

@@ -114,6 +114,16 @@ const config = {
     cloudFunction: 15000
   },
 
+  // ============ 日志配置 ============
+  log: {
+    // 是否启用详细日志（设为 false 关闭所有详细日志）
+    verbose: false,
+    // 是否启用请求追踪日志
+    trace: false,
+    // 是否启用敏感数据脱敏日志
+    sensitive: false
+  },
+
   // HTTP请求头配置（用于可能的HTTP请求）
   header: {
     'content-type': 'application/json'

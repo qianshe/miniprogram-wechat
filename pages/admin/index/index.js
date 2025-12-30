@@ -117,19 +117,20 @@ Page({
     this.setData({ loading: true });
     try {
       // 并行调用统计API和用户统计
-      const [statsResult, usersResult] = await Promise.all([
+      const [statsData, usersResult] = await Promise.all([
         adminApi.getStatistics(),
         this.getUserCount()
       ]);
 
-      if (statsResult.code === 0 && statsResult.data) {
-        const { today, total, orderStatus } = statsResult.data;
+      // callCloudFunction 已解包，statsData 直接是统计数据
+      if (statsData) {
+        const { today, total, orderStatus } = statsData;
         this.setData({
           todayStats: {
-            orders: today.orders || 0,
-            sales: (today.sales || 0).toFixed(2),
+            orders: today?.orders || 0,
+            sales: (today?.sales || 0).toFixed(2),
             users: usersResult || 0,
-            revenue: (total.sales || 0).toFixed(2)
+            revenue: (total?.sales || 0).toFixed(2)
           },
           orderStatus: {
             pending: orderStatus?.pending || 0,
@@ -137,10 +138,10 @@ Page({
             processing: orderStatus?.processing || 0,
             completed: orderStatus?.completed || 0
           },
-          fullStatistics: statsResult.data
+          fullStatistics: statsData
         });
       } else {
-        console.error('获取统计数据失败:', statsResult.message);
+        console.error('获取统计数据失败: 返回数据为空');
       }
     } catch (error) {
       console.error('加载统计数据失败:', error);

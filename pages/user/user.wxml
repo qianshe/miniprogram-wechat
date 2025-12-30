@@ -32,12 +32,12 @@
             <input
               type="nickname"
               class="nickname-input"
-              placeholder="请输入昵称"
+              placeholder="请点击输入昵称"
               value="{{tempNickName}}"
               bindinput="onNicknameInput"
               bindblur="onNicknameBlur"
               bindconfirm="onNicknameConfirm"
-              focus="{{nicknameFocus}}"
+              bindchange="onNicknameChange"
               confirm-type="done"
             />
           </view>

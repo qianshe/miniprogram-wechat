@@ -21,15 +21,49 @@ const db = cloud.database()
 
 // 用户登录处理
 const userLogin = async (event, wxContext) => {
-  // 兼容多种传参方式
-  const userInfo = event.userInfo ||
-                   event.data?.userInfo ||
-                   event.data?.data?.userInfo ||
-                   {}
+  // 统一归一化 userInfo 解析 - 兼容多种传参结构
+  const payload = (event && typeof event === 'object') ? event : {};
+  const data = (payload.data && typeof payload.data === 'object') ? payload.data : {};
+
+  // 辅助函数：检查是否是有效的用户信息对象（必须包含 nickName 或 avatarUrl）
+  const isValidUserInfo = (obj) => obj && typeof obj === 'object' && (obj.nickName || obj.nickname || obj.avatarUrl || obj.avatar);
+
+  const rawUserInfo =
+    // 优先从 data.userInfo 获取（callCloudFunction 包装的结构）
+    (isValidUserInfo(data.userInfo) ? data.userInfo : null) ||
+    // 其次从 data.data.userInfo 获取（双层包装）
+    (data.data && isValidUserInfo(data.data.userInfo) ? data.data.userInfo : null) ||
+    // 再次从 event.userInfo 获取（但要排除微信自动注入的只有 appId/openId 的情况）
+    (isValidUserInfo(payload.userInfo) ? payload.userInfo : null) ||
+    // 兜底：data 本身就是 userInfo（当直接传 nickName/avatarUrl 时）
+    (isValidUserInfo(data) ? data : {});
+
+  const nickName = String(rawUserInfo.nickName ?? rawUserInfo.nickname ?? '').trim();
+  const avatarUrl = String(rawUserInfo.avatarUrl ?? rawUserInfo.avatar ?? '').trim();
+
+  // 调试日志：打印实际接收到的参数结构
+  logger.info('userLogin params debug', {
+    eventKeys: Object.keys(event || {}),
+    dataKeys: Object.keys(data || {}),
+    rawUserInfo,
+    parsedNickName: nickName,
+    parsedAvatarUrl: avatarUrl ? '有' : '无'
+  })
+
+  // 参数校验 - 如果缺少必要字段，返回错误而不是写入空值
+  if (!nickName || !avatarUrl) {
+    return {
+      success: false,
+      error: '缺少用户昵称或头像（nickName/avatarUrl）',
+      debug: { rawUserInfo, eventKeys: Object.keys(event || {}), dataKeys: Object.keys(data || {}) }
+    };
+  }
 
   logger.info('userLogin started', {
     openid: wxContext.OPENID,
-    hasUserInfo: !!userInfo.nickName
+    hasUserInfo: !!(nickName || avatarUrl),
+    nickName: nickName || '(空)',
+    avatarUrl: avatarUrl ? '有' : '无'
   })
 
   // 查询用户是否已存在
@@ -41,8 +75,8 @@ const userLogin = async (event, wxContext) => {
     openid: wxContext.OPENID,
     appid: wxContext.APPID,
     unionid: wxContext.UNIONID,
-    nickName: userInfo?.nickName || '',
-    avatarUrl: userInfo?.avatarUrl || '',
+    nickName: nickName,
+    avatarUrl: avatarUrl,
     role: 0, // 默认普通用户
     isAdmin: false,
     loginTime: new Date(),
@@ -62,8 +96,8 @@ const userLogin = async (event, wxContext) => {
     const existingUser = userQuery.data[0]
 
     const updateData = {
-      nickName: userInfo?.nickName || existingUser.nickName || '',
-      avatarUrl: userInfo?.avatarUrl || existingUser.avatarUrl || '',
+      nickName: nickName || existingUser.nickName || '',
+      avatarUrl: avatarUrl || existingUser.avatarUrl || '',
       loginTime: new Date(),
       updateTime: new Date()
     }

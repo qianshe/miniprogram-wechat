@@ -46,7 +46,8 @@ Page({
     }
 
     const userInfo = wx.getStorageSync('userInfo');
-    if (!userInfo || userInfo.role !== 'admin') {
+    // 修复：role 是数字类型，1表示管理员；或者直接检查 isAdmin 字段
+    if (!userInfo || (userInfo.role !== 1 && !userInfo.isAdmin)) {
       wx.showToast({
         title: '无管理员权限',
         icon: 'none'
