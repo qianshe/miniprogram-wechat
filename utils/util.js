@@ -86,10 +86,42 @@ const formatPrice = (price) => {
   return normalized.toFixed(2);
 }
 
+const debounce = (fn, wait = 800) => {
+  let timer = null
+  let lastArgs = null
+  let lastThis = null
+
+  const debounced = function(...args) {
+    lastArgs = args
+    lastThis = this
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = null
+      fn.apply(lastThis, lastArgs)
+    }, wait)
+  }
+
+  debounced.cancel = () => {
+    clearTimeout(timer)
+    timer = null
+  }
+
+  debounced.flush = () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+      fn.apply(lastThis, lastArgs)
+    }
+  }
+
+  return debounced
+}
+
 module.exports = {
   formatTime,
   formatDate,
   formatDateTime,
   normalizePrice,
-  formatPrice
+  formatPrice,
+  debounce
 }

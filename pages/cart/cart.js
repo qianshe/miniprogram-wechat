@@ -1,6 +1,7 @@
 // pages/cart/cart.js
 const cartApi = require('../../api/cart.js');
 const auth = require('../../utils/auth.js');
+const { debounce } = require('../../utils/util.js');
 
 const LOCAL_STORAGE_KEY = 'cartListLocal';
 
@@ -19,6 +20,12 @@ Page({
     startY: 0,
     resetTimer: null,
     isLoggedIn: false
+  },
+
+  debouncedSyncToCloud: null,
+
+  onLoad() {
+    this.debouncedSyncToCloud = debounce(() => this.syncToCloud(), 800);
   },
 
   onShow() {
@@ -172,7 +179,7 @@ Page({
     this.setData({ cartItems }, () => {
       this.updateTotalAmount();
       this.saveToLocal();
-      this.syncToCloud();
+      this.debouncedSyncToCloud();
     });
   },
 
@@ -191,7 +198,7 @@ Page({
           this.setData({ cartItems }, () => {
             this.updateTotalAmount();
             this.saveToLocal();
-            this.syncToCloud();
+            this.debouncedSyncToCloud();
           });
           wx.showToast({ title: '删除成功', icon: 'success' });
         } else {
@@ -313,6 +320,7 @@ Page({
   },
 
   onUnload() {
+    this.debouncedSyncToCloud?.flush?.();
     if (this.data.resetTimer) {
       clearTimeout(this.data.resetTimer);
       this.setData({ resetTimer: null });

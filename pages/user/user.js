@@ -181,6 +181,24 @@ Page({
     }
   },
 
+  isCloudFileId(url) {
+    if (!url) return false;
+    return url.startsWith('cloud://');
+  },
+
+  async deleteOldAvatarFromCloud(fileId) {
+    if (!fileId || !this.isCloudFileId(fileId)) return;
+    
+    try {
+      await wx.cloud.deleteFile({
+        fileList: [fileId]
+      });
+      console.log('旧头像已删除:', fileId);
+    } catch (err) {
+      console.warn('删除旧头像失败:', err);
+    }
+  },
+
   // 检查是否为临时文件路径
   isTempFilePath(url) {
     if (!url) return false;
@@ -217,9 +235,15 @@ Page({
       let finalAvatarUrl = tempAvatarUrl;
 
       if (this.isTempFilePath(tempAvatarUrl)) {
+        const oldAvatarUrl = this.data.userInfo?.avatarUrl;
+        
         wx.showLoading({ title: '上传头像中...' });
         try {
           finalAvatarUrl = await this.uploadAvatarToCloud(tempAvatarUrl);
+          
+          if (oldAvatarUrl && this.isCloudFileId(oldAvatarUrl)) {
+            this.deleteOldAvatarFromCloud(oldAvatarUrl);
+          }
         } catch (uploadErr) {
           console.error('头像上传失败:', uploadErr);
           wx.hideLoading();
