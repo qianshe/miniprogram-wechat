@@ -140,9 +140,7 @@
           </view>
         </view>
         <view class="order-actions">
-          <!-- 订单动作按钮 - 根据订单状态显示不同的按钮（兼容新旧字段） -->
-          <!-- 待服务且未支付：显示确认支付和开始服务 -->
-          <block wx:if="{{(item.orderStatus === 0 && item.paymentStatus === 0) || (item.orderStatus === undefined && item.status === 0)}}">
+          <block wx:if="{{item.showActionCreatedUnpaid}}">
             <t-button
               size="small"
               theme="success"
@@ -157,8 +155,7 @@
               data-orderid="{{item._id}}"
               bindtap="startService">开始服务</t-button>
           </block>
-          <!-- 待服务且已支付：显示开始服务 -->
-          <block wx:elif="{{(item.orderStatus === 0 && item.paymentStatus === 1) || (item.orderStatus === undefined && item.status === 1)}}">
+          <block wx:elif="{{item.showActionCreatedPaid}}">
             <t-button
               size="small"
               theme="primary"
@@ -167,8 +164,7 @@
               data-status="2"
               bindtap="updateOrderStatus">开始服务</t-button>
           </block>
-          <!-- 服务中：显示标记服务完成 -->
-          <block wx:elif="{{item.orderStatus === 1 || (item.orderStatus === undefined && item.status === 2)}}">
+          <block wx:elif="{{item.showActionProcessing}}">
             <t-button
               size="small"
               theme="primary"
@@ -177,8 +173,7 @@
               data-status="3"
               bindtap="updateOrderStatus">服务完成</t-button>
           </block>
-          <!-- 服务完成且未支付：显示确认收款 -->
-          <block wx:elif="{{(item.orderStatus === 2 && item.paymentStatus === 0) || (item.orderStatus === undefined && item.status === 5)}}">
+          <block wx:elif="{{item.showActionServiceDoneUnpaid}}">
             <t-button
               size="small"
               theme="success"
@@ -186,8 +181,7 @@
               data-orderid="{{item._id}}"
               bindtap="recordOfflinePayment">确认线下收款</t-button>
           </block>
-          <!-- 服务完成且已支付：显示完成订单 -->
-          <block wx:elif="{{item.orderStatus === 2 && item.paymentStatus === 1}}">
+          <block wx:elif="{{item.showActionServiceDonePaid}}">
             <t-button
               size="small"
               theme="primary"
@@ -196,8 +190,7 @@
               data-status="3"
               bindtap="updateOrderStatus">完成订单</t-button>
           </block>
-          <!-- 非已完成、非已取消状态：显示取消订单 -->
-          <block wx:if="{{item.orderStatus !== undefined ? (item.orderStatus !== 3 && item.orderStatus !== 4) : (item.status !== 3 && item.status !== 4)}}">
+          <block wx:if="{{item.showCancelButton}}">
             <t-button
               size="small"
               theme="danger"

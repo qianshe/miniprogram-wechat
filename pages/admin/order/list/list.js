@@ -8,7 +8,8 @@ const {
   getOrderFlowText,
   getPaymentStatusText,
   getTabByStatusParams: getTabByStatusParamsFromConstants,
-  getStatusByTabIndex
+  getStatusByTabIndex,
+  mapLegacyStatusToNew
 } = require('../../../../config/constants.js');
 const { formatDate } = require('../../../../utils/util.js');
 
@@ -262,24 +263,44 @@ Page({
         return;
       }
 
-      // 处理订单数据，添加双状态文本
-      const formattedOrders = records.map(order => ({
-        ...order,
-        // 新双字段状态文本
-        orderStatusText: order.orderStatus !== undefined
-          ? getOrderFlowText(order.orderStatus)
-          : getOrderStatusText(order.status),
-        paymentStatusText: order.paymentStatus !== undefined
-          ? getPaymentStatusText(order.paymentStatus)
-          : (order.status === 1 || order.status === 2 || order.status === 3 ? '已支付' : '待支付'),
-        // 兼容旧数据：同时保留 statusText
-        statusText: order.orderStatus !== undefined
-          ? getOrderFlowText(order.orderStatus)
-          : getOrderStatusText(order.status),
-        createdTime: formatDate(order.createTime),
-        serviceTime: formatDate(order.serviceTime),
-        totalAmount: order.totalAmount.toFixed(2) // 云函数已转换为元
-      }));
+      // 处理订单数据，添加双状态文本和操作标志
+      const formattedOrders = records.map(order => {
+        const hasNewFields = order.orderStatus !== undefined && order.orderStatus !== null;
+        const normalized = hasNewFields
+          ? { orderStatus: order.orderStatus, paymentStatus: order.paymentStatus }
+          : mapLegacyStatusToNew(order.status, order.payTime);
+        const os = normalized.orderStatus;
+        const ps = normalized.paymentStatus;
+
+        const showActionCreatedUnpaid = os === ORDER_FLOW_STATUS.CREATED && ps === PAYMENT_STATUS.UNPAID;
+        const showActionCreatedPaid = os === ORDER_FLOW_STATUS.CREATED && ps === PAYMENT_STATUS.PAID;
+        const showActionProcessing = os === ORDER_FLOW_STATUS.PROCESSING;
+        const showActionServiceDoneUnpaid = os === ORDER_FLOW_STATUS.SERVICE_DONE && ps === PAYMENT_STATUS.UNPAID;
+        const showActionServiceDonePaid = os === ORDER_FLOW_STATUS.SERVICE_DONE && ps === PAYMENT_STATUS.PAID;
+        const showCancelButton = os !== ORDER_FLOW_STATUS.COMPLETED && os !== ORDER_FLOW_STATUS.CANCELLED;
+
+        return {
+          ...order,
+          orderStatusText: hasNewFields
+            ? getOrderFlowText(order.orderStatus)
+            : getOrderStatusText(order.status),
+          paymentStatusText: hasNewFields
+            ? getPaymentStatusText(order.paymentStatus)
+            : (order.status === 1 || order.status === 2 || order.status === 3 ? '已支付' : '待支付'),
+          statusText: hasNewFields
+            ? getOrderFlowText(order.orderStatus)
+            : getOrderStatusText(order.status),
+          createdTime: formatDate(order.createTime),
+          serviceTime: formatDate(order.serviceTime),
+          totalAmount: order.totalAmount.toFixed(2),
+          showActionCreatedUnpaid,
+          showActionCreatedPaid,
+          showActionProcessing,
+          showActionServiceDoneUnpaid,
+          showActionServiceDonePaid,
+          showCancelButton
+        };
+      });
 
       this.setData({
         orders: isLoadMore ? [...this.data.orders, ...formattedOrders] : formattedOrders,
