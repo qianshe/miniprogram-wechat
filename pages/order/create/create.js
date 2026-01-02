@@ -55,11 +55,6 @@ Page({
     this.setData({ showProductSelector: e.detail.visible })
   },
 
-  // 隐藏商品选择器
-  hideProductSelector() {
-    this.setData({ showProductSelector: false })
-  },
-
   onSearchChange(e) {
     const searchValue = e.detail.value.toLowerCase()
     // 重置分页
@@ -369,10 +364,10 @@ Page({
       phone: validation.validatePhone(value)
     };
 
-    const validation = fieldValidations[fieldName];
-    if (validation && !validation.valid) {
+    const fieldValidation = fieldValidations[fieldName];
+    if (fieldValidation && !fieldValidation.valid) {
       this.setData({
-        [`${fieldName}Error`]: validation.message
+        [`${fieldName}Error`]: fieldValidation.message
       });
     } else {
       this.setData({

@@ -1,5 +1,6 @@
 const { api } = require('../../../utils/api.js');
 const auth = require('../../../utils/auth.js');
+const cartApi = require('../../../api/cart.js');
 
 Page({
   data: {
@@ -94,8 +95,10 @@ Page({
   },
 
   addToCart() {
+    const isLoggedIn = auth.checkAuth();
+
     // 登录状态校验
-    if (!auth.checkAuth()) {
+    if (!isLoggedIn) {
       auth.loginWithPrompt();
       return;
     }
@@ -111,7 +114,7 @@ Page({
     }
 
     let cartList = wx.getStorageSync('cartListLocal') || [];
-    const targetId = this.data.goods.id || this.data.goods._id;
+    const targetId = this.data.goods._id || this.data.goods.id;
     const existingIndex = cartList.findIndex(item => item.id === targetId);
 
     if (existingIndex > -1) {
@@ -128,6 +131,35 @@ Page({
     }
 
     wx.setStorageSync('cartListLocal', cartList);
+
+    // 云端同步 (仅登录用户)
+    if (isLoggedIn) {
+      const syncData = {
+        productId: targetId,
+        name: this.data.goods.name,
+        price: this.data.goods.price,
+        image: this.data.goods.image || '',
+        quantity: this.data.quantity,
+        systemType: this.data.systemType
+      };
+
+      // 验证必需字段 - 使用更严格的空字符串检查
+      if (!syncData.productId || syncData.productId === '' ||
+          !syncData.name || syncData.name === '' ||
+          syncData.price === undefined || syncData.price === null) {
+        console.warn('[addToCart] Cloud sync skipped - missing required fields:', {
+          hasProductId: !!syncData.productId,
+          hasName: !!syncData.name,
+          hasPrice: syncData.price !== undefined
+        });
+      } else {
+        cartApi.add(syncData).then(() => {
+          console.log('[addToCart] Cloud sync success');
+        }).catch(err => {
+          console.error('Cart cloud sync failed:', err);
+        });
+      }
+    }
 
     wx.showToast({
       title: '加入成功',

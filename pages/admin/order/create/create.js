@@ -145,8 +145,9 @@ Page({
 
     if (existIndex >= 0) {
       // 已经选择过，增加数量
-      const selectedProducts = this.data.selectedProducts;
-      selectedProducts[existIndex].quantity += 1;
+      const selectedProducts = this.data.selectedProducts.map((item, idx) =>
+        idx === existIndex ? { ...item, quantity: item.quantity + 1 } : item
+      );
 
       this.setData({
         selectedProducts
@@ -172,9 +173,9 @@ Page({
    */
   increaseQuantity(e) {
     const { index } = e.currentTarget.dataset;
-    const selectedProducts = this.data.selectedProducts;
-
-    selectedProducts[index].quantity += 1;
+    const selectedProducts = this.data.selectedProducts.map((item, idx) =>
+      idx === index ? { ...item, quantity: item.quantity + 1 } : item
+    );
 
     this.setData({
       selectedProducts
@@ -188,31 +189,32 @@ Page({
    */
   decreaseQuantity(e) {
     const { index } = e.currentTarget.dataset;
-    const selectedProducts = this.data.selectedProducts;
+    const currentProduct = this.data.selectedProducts[index];
 
-    if (selectedProducts[index].quantity > 1) {
-      selectedProducts[index].quantity -= 1;
+    if (currentProduct.quantity > 1) {
+      const selectedProducts = this.data.selectedProducts.map((item, idx) =>
+        idx === index ? { ...item, quantity: item.quantity - 1 } : item
+      );
 
       this.setData({
         selectedProducts
       });
+      this.calculateTotal();
     } else {
-      // 数量为1时，询问是否移除产品
       wx.showModal({
         title: '提示',
         content: '确定要移除此产品吗？',
         success: (res) => {
           if (res.confirm) {
-            selectedProducts.splice(index, 1);
+            const selectedProducts = this.data.selectedProducts.filter((_, idx) => idx !== index);
             this.setData({
               selectedProducts
             });
+            this.calculateTotal();
           }
         }
       });
     }
-
-    this.calculateTotal();
   },
 
   /**

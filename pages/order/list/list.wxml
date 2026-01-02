@@ -92,20 +92,38 @@
             data-orderid="{{item.orderNo}}">
         <view class="order-header">
           <text class="order-no">订单号：{{item.orderNo}}</text>
-          <text class="order-status status-{{item.status}}">{{item.statusText}}</text>
+          <!-- 双状态标签显示 -->
+          <view class="order-status-tags">
+            <text class="status-tag flow-status-{{item.orderStatus}}">{{item.orderStatusText}}</text>
+            <text class="status-tag payment-status-{{item.paymentStatus}}">{{item.paymentStatusText}}</text>
+          </view>
         </view>
         <view class="order-info">
           <view class="info-row">
             <text class="label">创建时间：</text>
             <text>{{item.createdTime}}</text>
           </view>
-          <view class="info-row" wx:if="{{item.status === 'completed' && item.completedTime}}">
+          <view class="info-row" wx:if="{{item.orderStatus === 3 && item.completedTime}}">
             <text class="label">完成时间：</text>
             <text>{{item.completedTime}}</text>
           </view>
         </view>
         <view class="order-footer">
-          <text class="amount">¥{{item.totalAmount}}</text>
+          <view class="order-amount">
+            <text class="amount-label">合计: </text>
+            <text class="amount">¥{{item.totalAmount}}</text>
+          </view>
+          <!-- 根据状态显示操作按钮 -->
+          <view class="order-actions">
+            <button wx:if="{{item.paymentStatus === 0 && item.orderStatus < 3}}"
+                    class="btn btn-pay"
+                    catchtap="handlePay"
+                    data-id="{{item._id}}">去支付</button>
+            <button wx:if="{{item.orderStatus === 0 && item.paymentStatus === 0}}"
+                    class="btn btn-cancel"
+                    catchtap="handleCancel"
+                    data-id="{{item._id}}">取消订单</button>
+          </view>
         </view>
       </view>
     </view>

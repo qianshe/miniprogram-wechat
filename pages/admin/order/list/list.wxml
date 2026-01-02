@@ -70,30 +70,35 @@
     </view>
   </view>
 
+  <!-- 订单状态标签页（与统计页面保持一致） -->
   <view class="tabs">
-    <view 
-      class="tab-item {{activeTab === '0' ? 'active' : ''}}" 
-      data-value="0" 
+    <view
+      class="tab-item {{activeTab === '0' ? 'active' : ''}}"
+      data-value="0"
       bindtap="onTabClick">全部</view>
-    <view 
-      class="tab-item {{activeTab === '1' ? 'active' : ''}}" 
-      data-value="1" 
+    <view
+      class="tab-item {{activeTab === '1' ? 'active' : ''}}"
+      data-value="1"
       bindtap="onTabClick">待支付</view>
-    <view 
-      class="tab-item {{activeTab === '2' ? 'active' : ''}}" 
-      data-value="2" 
-      bindtap="onTabClick">已支付</view>
-    <view 
-      class="tab-item {{activeTab === '3' ? 'active' : ''}}" 
-      data-value="3" 
-      bindtap="onTabClick">处理中</view>
-    <view 
-      class="tab-item {{activeTab === '4' ? 'active' : ''}}" 
-      data-value="4" 
+    <view
+      class="tab-item {{activeTab === '2' ? 'active' : ''}}"
+      data-value="2"
+      bindtap="onTabClick">待服务</view>
+    <view
+      class="tab-item {{activeTab === '3' ? 'active' : ''}}"
+      data-value="3"
+      bindtap="onTabClick">服务中</view>
+    <view
+      class="tab-item {{activeTab === '4' ? 'active' : ''}}"
+      data-value="4"
+      bindtap="onTabClick">待收款</view>
+    <view
+      class="tab-item {{activeTab === '5' ? 'active' : ''}}"
+      data-value="5"
       bindtap="onTabClick">已完成</view>
-    <view 
-      class="tab-item {{activeTab === '5' ? 'active' : ''}}" 
-      data-value="5" 
+    <view
+      class="tab-item {{activeTab === '6' ? 'active' : ''}}"
+      data-value="6"
       bindtap="onTabClick">已取消</view>
   </view>
 
@@ -106,7 +111,11 @@
       <view class="order-item" wx:for="{{orders}}" wx:key="orderNo">
         <view class="order-header">
           <text class="order-no">订单号：{{item.orderNo}}</text>
-          <text class="order-status status-{{item.status}}">{{item.statusText}}</text>
+          <!-- 双状态标签显示 -->
+          <view class="order-status-tags">
+            <view class="status-tag flow-status-{{item.orderStatus !== undefined ? item.orderStatus : item.status}}">{{item.orderStatusText}}</view>
+            <view class="status-tag payment-status-{{item.paymentStatus !== undefined ? item.paymentStatus : (item.status === 1 || item.status === 2 || item.status === 3 ? 1 : 0)}}">{{item.paymentStatusText}}</view>
+          </view>
         </view>
         <view class="order-info" bindtap="onOrderClick" data-orderid="{{item._id}}">
           <view class="info-row">
@@ -131,44 +140,72 @@
           </view>
         </view>
         <view class="order-actions">
-          <!-- 订单动作按钮 - 根据订单状态显示不同的按钮 -->
-          <block wx:if="{{item.status === 0}}">
+          <!-- 订单动作按钮 - 根据订单状态显示不同的按钮（兼容新旧字段） -->
+          <!-- 待服务且未支付：显示确认支付和开始服务 -->
+          <block wx:if="{{(item.orderStatus === 0 && item.paymentStatus === 0) || (item.orderStatus === undefined && item.status === 0)}}">
             <t-button
               size="small"
-              theme="primary"
+              theme="success"
+              class="btn-success"
               data-orderid="{{item._id}}"
               data-status="1"
               bindtap="updateOrderStatus">确认支付</t-button>
-          </block>
-          <block wx:elif="{{item.status === 1}}">
             <t-button
               size="small"
               theme="primary"
+              class="btn-primary"
+              data-orderid="{{item._id}}"
+              bindtap="startService">开始服务</t-button>
+          </block>
+          <!-- 待服务且已支付：显示开始服务 -->
+          <block wx:elif="{{(item.orderStatus === 0 && item.paymentStatus === 1) || (item.orderStatus === undefined && item.status === 1)}}">
+            <t-button
+              size="small"
+              theme="primary"
+              class="btn-primary"
               data-orderid="{{item._id}}"
               data-status="2"
-              bindtap="updateOrderStatus">进入处理</t-button>
+              bindtap="updateOrderStatus">开始服务</t-button>
           </block>
-          <block wx:elif="{{item.status === 2}}">
+          <!-- 服务中：显示标记服务完成 -->
+          <block wx:elif="{{item.orderStatus === 1 || (item.orderStatus === undefined && item.status === 2)}}">
             <t-button
               size="small"
               theme="primary"
+              class="btn-primary"
               data-orderid="{{item._id}}"
               data-status="3"
-              bindtap="updateOrderStatus">标记完成</t-button>
+              bindtap="updateOrderStatus">服务完成</t-button>
           </block>
-          <block wx:if="{{item.status !== 3 && item.status !== 4}}">
+          <!-- 服务完成且未支付：显示确认收款 -->
+          <block wx:elif="{{(item.orderStatus === 2 && item.paymentStatus === 0) || (item.orderStatus === undefined && item.status === 5)}}">
+            <t-button
+              size="small"
+              theme="success"
+              class="btn-success"
+              data-orderid="{{item._id}}"
+              bindtap="recordOfflinePayment">确认线下收款</t-button>
+          </block>
+          <!-- 服务完成且已支付：显示完成订单 -->
+          <block wx:elif="{{item.orderStatus === 2 && item.paymentStatus === 1}}">
+            <t-button
+              size="small"
+              theme="primary"
+              class="btn-primary"
+              data-orderid="{{item._id}}"
+              data-status="3"
+              bindtap="updateOrderStatus">完成订单</t-button>
+          </block>
+          <!-- 非已完成、非已取消状态：显示取消订单 -->
+          <block wx:if="{{item.orderStatus !== undefined ? (item.orderStatus !== 3 && item.orderStatus !== 4) : (item.status !== 3 && item.status !== 4)}}">
             <t-button
               size="small"
               theme="danger"
+              class="btn-danger"
               data-orderid="{{item._id}}"
               data-status="4"
               bindtap="updateOrderStatus">取消订单</t-button>
           </block>
-          <t-button 
-            size="small"
-            theme="default"
-            data-orderid="{{item._id}}"
-            bindtap="onOrderClick">查看详情</t-button>
         </view>
       </view>
     </view>

@@ -1,5 +1,14 @@
 const { api, adminApi } = require('../../../utils/api.js');
-const { getOrderStatusInfo } = require('../../../config/constants.js');
+const cartApi = require('../../../api/cart.js');
+const auth = require('../../../utils/auth.js');
+const {
+  getOrderStatusInfo,
+  ORDER_FLOW_STATUS,
+  PAYMENT_STATUS,
+  getOrderFlowText,
+  getPaymentStatusText,
+  mapLegacyStatusToNew
+} = require('../../../config/constants.js');
 const { formatDate } = require('../../../utils/util.js');
 
 Page({
@@ -9,7 +18,17 @@ Page({
     loading: true,
     systemType: 'white', // 默认为白事系统
     themeColor: '#333333', // 默认主题色
-    isAdmin: false // 是否为管理员
+    isAdmin: false, // 是否为管理员
+    // 管理员按钮显示控制（双字段系统）
+    showStartProcessingBtn: false,
+    showMarkServiceDoneBtn: false,
+    showConfirmPaymentBtn: false,
+    showCancelBtn: false,
+    showNoActionTip: false,
+    // 用户端按钮显示控制（双字段系统）
+    showPayBtn: false,
+    showUserCancelBtn: false,
+    showUserNoActionTip: false
   },
 
   onLoad(options) {
@@ -28,6 +47,12 @@ Page({
     
     if (options.orderNo) {
       this.setData({ orderNo: options.orderNo });
+      this.loadOrderDetail();
+    }
+  },
+
+  onShow() {
+    if (this.data.orderNo) {
       this.loadOrderDetail();
     }
   },
@@ -73,14 +98,63 @@ Page({
         addressStr = addressObj;
       }
       
+      // 判断是否已付款（兼容旧字段）
+      const isPaid = !!orderData.payTime || (orderData.paymentMethod && orderData.paymentMethod !== 'not_paid');
+      
+      // === 双字段状态系统处理 ===
+      let orderStatus = orderData.orderStatus;
+      let paymentStatus = orderData.paymentStatus;
+      
+      // 兼容旧数据：如果没有新字段，从旧 status 映射
+      if (orderStatus === undefined || orderStatus === null) {
+        const mapped = mapLegacyStatusToNew(orderData.status, orderData.payTime);
+        orderStatus = mapped.orderStatus;
+        paymentStatus = mapped.paymentStatus;
+      }
+      
+      // 获取双字段状态文本
+      const orderStatusText = getOrderFlowText(orderStatus);
+      const paymentStatusText = getPaymentStatusText(paymentStatus);
+      
+      // 处理status=5的状态描述（兼容旧系统）
+      let customStatusDesc = statusInfo.desc;
+      if (orderData.status === 5 && orderData.payDeadlineAt) {
+        const deadline = new Date(orderData.payDeadlineAt);
+        customStatusDesc = `服务已完成，请于 ${deadline.getMonth()+1}月${deadline.getDate()}日 前完成付款`;
+      } else if (orderData.status === 2 && !isPaid) {
+        customStatusDesc = '服务进行中，可随时付款';
+      }
+      
+      // 根据双字段系统生成状态描述
+      let flowStatusDesc = '';
+      if (orderStatus === ORDER_FLOW_STATUS.CREATED) {
+        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '已付款，等待服务' : '等待服务开始';
+      } else if (orderStatus === ORDER_FLOW_STATUS.PROCESSING) {
+        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '服务进行中' : '服务进行中，可随时付款';
+      } else if (orderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
+        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '服务已完成，订单即将结束' : '服务已完成，请尽快完成付款';
+      } else if (orderStatus === ORDER_FLOW_STATUS.COMPLETED) {
+        flowStatusDesc = '订单已完成';
+      } else if (orderStatus === ORDER_FLOW_STATUS.CANCELLED) {
+        flowStatusDesc = '订单已取消';
+      }
+      
       const orderInfo = {
         ...orderData,
         contactName: contactName,
         contactPhone: contactPhone,
         address: addressStr,
+        isPaid: isPaid,
+        // 旧状态系统（兼容）
         statusText: statusInfo.text,
-        statusDesc: statusInfo.desc,
+        statusDesc: customStatusDesc,
         statusClass: statusInfo.class,
+        // 新双字段状态系统
+        orderStatus: orderStatus,
+        paymentStatus: paymentStatus,
+        orderStatusText: orderStatusText,
+        paymentStatusText: paymentStatusText,
+        flowStatusDesc: flowStatusDesc,
         createdTime: formatDate(orderData.createTime),
         serviceTime: formatDate(orderData.serviceTime),
         payTime: orderData.payTime ? formatDate(orderData.payTime) : '',
@@ -101,9 +175,20 @@ Page({
         })
       };
 
+      // 计算按钮显示状态（基于双字段系统）
+      let btnStates = {};
+      if (this.data.isAdmin) {
+        // 管理员按钮状态
+        btnStates = this.calculateAdminButtonStates(orderStatus, paymentStatus);
+      } else {
+        // 用户端按钮状态
+        btnStates = this.calculateUserButtonStates({ orderStatus, paymentStatus });
+      }
+
       this.setData({
         orderInfo,
-        loading: false
+        loading: false,
+        ...btnStates
       });
     } catch (err) {
       console.error('[订单详情页] 获取订单详情失败:', {
@@ -132,6 +217,63 @@ Page({
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  },
+
+  /**
+   * 计算用户端按钮显示状态（基于新双字段状态系统）
+   * 按钮规则：
+   * | orderStatus | paymentStatus | 用户端显示的按钮 |
+   * |-------------|---------------|-----------------|
+   * | CREATED(0) | UNPAID(0) | 去支付、取消订单 |
+   * | CREATED(0) | PAID(1) | (等待服务，无操作按钮) |
+   * | PROCESSING(1) | UNPAID(0) | 去支付 |
+   * | PROCESSING(1) | PAID(1) | (服务中，无操作按钮) |
+   * | SERVICE_DONE(2) | UNPAID(0) | 去支付（支付后自动转为 COMPLETED）|
+   * | SERVICE_DONE(2) | PAID(1) | (通常已自动完成，无按钮) |
+   * | COMPLETED(3) | - | 无操作按钮 |
+   * | CANCELLED(4) | - | 无操作按钮 |
+   */
+  calculateUserButtonStates(order) {
+    const orderStatus = order.orderStatus !== undefined ? order.orderStatus : 0;
+    const paymentStatus = order.paymentStatus !== undefined ? order.paymentStatus : 0;
+    
+    return {
+      // 显示"去支付"按钮: 未支付 且 订单未完成/未取消
+      showPayBtn: paymentStatus === PAYMENT_STATUS.UNPAID && orderStatus < ORDER_FLOW_STATUS.COMPLETED,
+      // 显示"取消订单"按钮: 仅在 CREATED 状态且未支付时
+      showUserCancelBtn: orderStatus === ORDER_FLOW_STATUS.CREATED && paymentStatus === PAYMENT_STATUS.UNPAID,
+      // 显示"无操作"提示: 已完成/已取消 或 已支付但订单未完成
+      showUserNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED || (paymentStatus === PAYMENT_STATUS.PAID && orderStatus < ORDER_FLOW_STATUS.COMPLETED)
+    };
+  },
+
+  /**
+   * 计算管理员按钮显示状态（基于双字段系统）
+   * 按钮规则：
+   * | orderStatus | paymentStatus | 显示的按钮 |
+   * |-------------|---------------|-----------|
+   * | CREATED(0) | UNPAID(0) | 开始处理、确认收款、取消订单 |
+   * | CREATED(0) | PAID(1) | 开始处理、取消订单 |
+   * | PROCESSING(1) | UNPAID(0) | 标记服务完成、确认收款 |
+   * | PROCESSING(1) | PAID(1) | 标记服务完成 |
+   * | SERVICE_DONE(2) | UNPAID(0) | 确认收款 |
+   * | SERVICE_DONE(2) | PAID(1) | (自动转为 COMPLETED，通常不显示) |
+   * | COMPLETED(3) | - | 无操作按钮 |
+   * | CANCELLED(4) | - | 无操作按钮 |
+   */
+  calculateAdminButtonStates(orderStatus, paymentStatus) {
+    return {
+      // 开始处理：仅 CREATED 状态可用
+      showStartProcessingBtn: orderStatus === ORDER_FLOW_STATUS.CREATED,
+      // 标记服务完成：仅 PROCESSING 状态可用
+      showMarkServiceDoneBtn: orderStatus === ORDER_FLOW_STATUS.PROCESSING,
+      // 确认收款：未支付且订单未完成/未取消时可用
+      showConfirmPaymentBtn: paymentStatus === PAYMENT_STATUS.UNPAID && orderStatus < ORDER_FLOW_STATUS.COMPLETED,
+      // 取消订单：仅 CREATED 或 PROCESSING 状态可用
+      showCancelBtn: orderStatus <= ORDER_FLOW_STATUS.PROCESSING,
+      // 无操作提示：已完成或已取消
+      showNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED
+    };
   },
 
   // 复制订单号
@@ -241,19 +383,44 @@ Page({
   },
 
   // 再次购买
-  rebuyOrder() {
+  async rebuyOrder() {
     // 获取订单中的商品信息
     const items = this.data.orderInfo.items;
-    if (items && items.length > 0) {
-      // 将商品添加到购物车（使用正确的缓存key: cartListLocal）
+    if (!items || items.length === 0) {
+      wx.showToast({
+        title: '订单商品为空',
+        icon: 'none'
+      });
+      return;
+    }
+
+    wx.showLoading({ title: '添加中...' });
+
+    try {
+      const isLoggedIn = auth.checkAuth();
+      
+      // 同时更新本地缓存
       const cart = wx.getStorageSync('cartListLocal') || [];
-      items.forEach(item => {
-        // 使用正确的字段名 id 来查找已存在的商品
+      
+      for (const item of items) {
+        const productData = {
+          productId: item.productId,
+          name: item.productName,
+          price: Number(item.productPrice) || item.price || 0,
+          image: item.productImage,
+          quantity: item.quantity
+        };
+
+        // 如果已登录，调用云端API添加商品
+        if (isLoggedIn) {
+          await cartApi.add(productData);
+        }
+
+        // 更新本地缓存
         const existingItem = cart.find(i => i.id === item.productId);
         if (existingItem) {
           existingItem.quantity += item.quantity;
         } else {
-          // 使用购物车期望的数据格式：id, name, price(数字), image, quantity
           cart.push({
             id: item.productId,
             name: item.productName,
@@ -262,20 +429,30 @@ Page({
             quantity: item.quantity
           });
         }
-      });
+      }
+
+      // 保存本地缓存
       wx.setStorageSync('cartListLocal', cart);
-      
+
+      wx.hideLoading();
       wx.showToast({
         title: '已添加到购物车',
         icon: 'success'
       });
       
-      // 跳转到购物车页面（修正路径）
+      // 跳转到购物车页面
       setTimeout(() => {
         wx.switchTab({
           url: '/pages/cart/cart'
         });
       }, 1500);
+    } catch (err) {
+      wx.hideLoading();
+      console.error('再次购买失败:', err);
+      wx.showToast({
+        title: err.message || '添加失败',
+        icon: 'none'
+      });
     }
   },
 
@@ -320,6 +497,52 @@ Page({
         icon: 'none'
       });
     }
+  },
+
+  /**
+   * 用户端操作：去支付（双字段系统）
+   * 复用现有的 handlePay 方法
+   */
+  handlePayOrder() {
+    this.handlePay();
+  },
+
+  /**
+   * 用户端操作：取消订单（双字段系统）
+   */
+  handleUserCancelOrder() {
+    wx.showModal({
+      title: '取消订单',
+      content: '确定要取消此订单吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '处理中...' });
+            const result = await wx.cloud.callFunction({
+              name: 'orderManagement',
+              data: {
+                action: 'updateOrderFlowStatus',
+                data: {
+                  orderId: this.data.orderInfo._id,
+                  orderStatus: ORDER_FLOW_STATUS.CANCELLED
+                }
+              }
+            });
+            wx.hideLoading();
+            if (result.result && result.result.code === 0) {
+              wx.showToast({ title: '订单已取消', icon: 'success' });
+              this.loadOrderDetail();
+            } else {
+              wx.showToast({ title: (result.result && result.result.message) || '取消失败', icon: 'none' });
+            }
+          } catch (err) {
+            wx.hideLoading();
+            console.error('取消订单失败:', err);
+            wx.showToast({ title: '取消失败', icon: 'none' });
+          }
+        }
+      }
+    });
   },
 
   getFormattedDiscountAmount() {
@@ -448,6 +671,173 @@ Page({
             console.error('取消订单失败:', err);
             wx.showToast({
               title: err.message || '取消失败',
+              icon: 'none'
+            });
+          }
+        }
+      }
+    });
+  },
+
+  // 管理员操作：待收款状态回退到处理中（旧系统兼容）
+  async handleRevertToProcessing() {
+    wx.showModal({
+      title: '确认操作',
+      content: '确定要将订单状态回退到"处理中"吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '处理中...' });
+          try {
+            await adminApi.updateOrderStatus(this.data.orderNo, 2); // 2:处理中
+            wx.hideLoading();
+            wx.showToast({
+              title: '状态已回退',
+              icon: 'success'
+            });
+            // 刷新订单详情
+            this.loadOrderDetail();
+          } catch (err) {
+            wx.hideLoading();
+            console.error('回退订单状态失败:', err);
+            wx.showToast({
+              title: err.message || '操作失败',
+              icon: 'none'
+            });
+          }
+        }
+      }
+    });
+  },
+
+  // ===== 双字段状态系统 - 新操作方法 =====
+
+  /**
+   * 管理员操作：开始处理（updateOrderFlowStatus -> PROCESSING）
+   */
+  handleStartProcessing() {
+    this.updateOrderFlowStatus(ORDER_FLOW_STATUS.PROCESSING, '确认开始处理此订单？');
+  },
+
+  /**
+   * 管理员操作：标记服务完成（updateOrderFlowStatus -> SERVICE_DONE）
+   */
+  handleMarkServiceDone() {
+    this.updateOrderFlowStatus(ORDER_FLOW_STATUS.SERVICE_DONE, '确认服务已完成？');
+  },
+
+  /**
+   * 管理员操作：确认收款（双字段系统 - updatePaymentStatus -> PAID）
+   */
+  handleConfirmPaymentNew() {
+    wx.showModal({
+      title: '确认收款',
+      content: '确认已收到客户付款？',
+      success: (res) => {
+        if (res.confirm) {
+          this.updatePaymentStatus(PAYMENT_STATUS.PAID);
+        }
+      }
+    });
+  },
+
+  /**
+   * 管理员操作：取消订单（双字段系统 - updateOrderFlowStatus -> CANCELLED）
+   */
+  handleCancelOrderNew() {
+    this.updateOrderFlowStatus(ORDER_FLOW_STATUS.CANCELLED, '确认取消此订单？');
+  },
+
+  /**
+   * 通用订单流程状态更新方法（双字段系统）
+   */
+  async updateOrderFlowStatus(newStatus, confirmMsg) {
+    wx.showModal({
+      title: '确认操作',
+      content: confirmMsg,
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '处理中...' });
+            const result = await wx.cloud.callFunction({
+              name: 'orderManagement',
+              data: {
+                action: 'updateOrderFlowStatus',
+                data: {
+                  orderId: this.data.orderInfo._id,
+                  orderStatus: newStatus
+                }
+              }
+            });
+            wx.hideLoading();
+            if (result.result && result.result.code === 0) {
+              wx.showToast({ title: '操作成功', icon: 'success' });
+              this.loadOrderDetail(); // 刷新详情
+            } else {
+              wx.showToast({ title: (result.result && result.result.message) || '操作失败', icon: 'none' });
+            }
+          } catch (err) {
+            wx.hideLoading();
+            console.error('更新订单流程状态失败:', err);
+            wx.showToast({ title: '操作失败', icon: 'none' });
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * 通用支付状态更新方法（双字段系统）
+   */
+  async updatePaymentStatus(newStatus) {
+    try {
+      wx.showLoading({ title: '处理中...' });
+      const result = await wx.cloud.callFunction({
+        name: 'orderManagement',
+        data: {
+          action: 'updatePaymentStatus',
+          data: {
+            orderId: this.data.orderInfo._id,
+            paymentStatus: newStatus,
+            paymentMethod: 'offline' // 线下收款
+          }
+        }
+      });
+      wx.hideLoading();
+      if (result.result && result.result.code === 0) {
+        wx.showToast({ title: '收款确认成功', icon: 'success' });
+        this.loadOrderDetail(); // 刷新详情
+      } else {
+        wx.showToast({ title: (result.result && result.result.message) || '操作失败', icon: 'none' });
+      }
+    } catch (err) {
+      wx.hideLoading();
+      console.error('更新支付状态失败:', err);
+      wx.showToast({ title: '操作失败', icon: 'none' });
+    }
+  },
+
+  // 旧系统兼容：确认收款（待收款状态变为已完成）
+  async handleConfirmPayment() {
+    wx.showModal({
+      title: '确认收款',
+      content: '确定已收到客户付款吗？确认后订单将变为"已完成"状态。',
+      success: async (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '处理中...' });
+          try {
+            await adminApi.updateOrderStatus(this.data.orderNo, 3); // 3:已完成
+            wx.hideLoading();
+            wx.showToast({
+              title: '收款确认成功',
+              icon: 'success'
+            });
+            // 刷新订单详情
+            this.loadOrderDetail();
+          } catch (err) {
+            wx.hideLoading();
+            console.error('确认收款失败:', err);
+            wx.showToast({
+              title: err.message || '操作失败',
               icon: 'none'
             });
           }

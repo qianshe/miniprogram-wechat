@@ -213,7 +213,7 @@
   font-weight: 600;
 }
 
-/* 状态样式 */
+/* 旧状态样式（兼容） */
 .status-0 { /* 待支付 */
   color: #ff9800;
   background: rgba(255, 152, 0, 0.1);
@@ -239,9 +239,129 @@
   background: #f5f5f5;
 }
 
+.status-5 { /* 已服务待付款 */
+  color: #e91e63;
+  background: rgba(233, 30, 99, 0.12);
+}
+
 .red-theme .status-1 {
   color: var(--danger-color);
   background: rgba(244, 67, 54, 0.1);
+}
+
+/* ========== 双状态标签系统（新） ========== */
+
+/* 状态标签容器 */
+.order-status-tags {
+  display: flex;
+  gap: 8rpx;
+  flex-wrap: wrap;
+}
+
+/* 通用状态标签样式 */
+.status-tag {
+  padding: 4rpx 12rpx;
+  border-radius: 4rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 订单流程状态颜色 */
+.flow-status-0 { /* 待服务 */
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.flow-status-1 { /* 服务中 */
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.flow-status-2 { /* 服务完成 */
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.flow-status-3 { /* 已完成 */
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.flow-status-4 { /* 已取消 */
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+/* 支付状态颜色 */
+.payment-status-0 { /* 待支付 */
+  background: #fff8e1;
+  color: #ffa000;
+}
+
+.payment-status-1 { /* 已支付 */
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+/* 红色主题流程状态 */
+.red-theme .flow-status-0 {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.red-theme .flow-status-1 {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.red-theme .flow-status-2 {
+  background: #fce4ec;
+  color: #c2185b;
+}
+
+/* 订单操作按钮区域 */
+.order-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.order-amount {
+  display: flex;
+  align-items: center;
+}
+
+.amount-label {
+  font-size: 26rpx;
+  color: var(--text-sub);
+}
+
+/* 操作按钮样式 */
+.btn {
+  padding: 12rpx 24rpx;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  border: none;
+  line-height: 1.2;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn-pay {
+  background: #07c160;
+  color: #fff;
+}
+
+.btn-cancel {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.red-theme .btn-pay {
+  background: var(--danger-color);
 }
 
 /* 订单信息区域 */

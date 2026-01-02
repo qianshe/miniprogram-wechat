@@ -135,7 +135,7 @@
 /* 订单状态分布 */
 .order-status-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16rpx;
   background: #fff;
   border-radius: 16rpx;
@@ -160,6 +160,8 @@
 }
 
 .status-pending { color: #faad14; }
-.status-paid { color: #1890ff; }
-.status-processing { color: #722ed1; }
-.status-completed { color: #52c41a; }
+.status-wait-service { color: #52c41a; }
+.status-processing { color: #1890ff; }
+.status-served-unpaid { color: #722ed1; }
+.status-completed { color: #8c8c8c; }
+.status-cancelled { color: #ff4d4f; }

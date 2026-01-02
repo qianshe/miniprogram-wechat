@@ -1,6 +1,15 @@
 const { adminApi } = require('../../../../utils/api.js');
 const auth = require('../../../../utils/auth.js');
-const { getOrderStatusText } = require('../../../../config/constants.js');
+const {
+  getOrderStatusText,
+  ORDER_STATUS,
+  ORDER_FLOW_STATUS,
+  PAYMENT_STATUS,
+  getOrderFlowText,
+  getPaymentStatusText,
+  getTabByStatusParams: getTabByStatusParamsFromConstants,
+  getStatusByTabIndex
+} = require('../../../../config/constants.js');
 const { formatDate } = require('../../../../utils/util.js');
 
 Page({
@@ -13,7 +22,7 @@ Page({
       total: 0
     },
     hasMore: true,
-    activeTab: '0', // 当前激活的标签页
+    activeTab: '0', // 当前激活的标签页（与统计页状态对应）
     // 搜索和筛选相关数据
     searchKeyword: '',
     showFilterPanel: false,
@@ -25,10 +34,22 @@ Page({
     isAdmin: true
   },
 
-  onLoad() {
+  onLoad(options) {
     // 检查管理员权限
     this.checkAdminPermission();
+    
+    // 处理从统计页面跳转过来的筛选参数
+    if (options.orderStatus !== undefined || options.paymentStatus !== undefined) {
+      const activeTab = this.getTabByStatusParams(options.orderStatus, options.paymentStatus);
+      this.setData({ activeTab });
+    }
+    
     this.loadOrders();
+  },
+  
+  // 根据 orderStatus 和 paymentStatus 参数获取对应的 tab
+  getTabByStatusParams(orderStatus, paymentStatus) {
+    return getTabByStatusParamsFromConstants(orderStatus, paymentStatus);
   },
 
   checkAdminPermission() {
@@ -184,14 +205,23 @@ Page({
 
     try {
       const { page, size } = this.data.pagination;
-      // 根据标签页状态过滤订单
-      const orderStatus = this.getStatusByTab(this.data.activeTab);
+      // 根据标签页状态过滤订单（使用 orderStatus + paymentStatus 组合）
+      const statusFilter = this.getStatusByTab(this.data.activeTab);
       
       const params = {
         page,
-        size,
-        ...(orderStatus !== undefined ? { orderStatus } : {})
+        size
       };
+
+      // 添加 orderStatus 筛选
+      if (statusFilter.orderStatus !== null && statusFilter.orderStatus !== undefined) {
+        params.orderStatus = statusFilter.orderStatus;
+      }
+
+      // 添加 paymentStatus 筛选
+      if (statusFilter.paymentStatus !== null && statusFilter.paymentStatus !== undefined) {
+        params.paymentStatus = statusFilter.paymentStatus;
+      }
 
       // 添加搜索关键词
       if (this.data.searchKeyword) {
@@ -218,8 +248,7 @@ Page({
       const data = await adminApi.getOrders({
         ...params,
         page,
-        size,
-        status: params.orderStatus // 使用orderStatus作为状态筛选
+        size
       });
 
       const { records, total } = data;
@@ -233,9 +262,20 @@ Page({
         return;
       }
 
+      // 处理订单数据，添加双状态文本
       const formattedOrders = records.map(order => ({
         ...order,
-        statusText: getOrderStatusText(order.status),
+        // 新双字段状态文本
+        orderStatusText: order.orderStatus !== undefined
+          ? getOrderFlowText(order.orderStatus)
+          : getOrderStatusText(order.status),
+        paymentStatusText: order.paymentStatus !== undefined
+          ? getPaymentStatusText(order.paymentStatus)
+          : (order.status === 1 || order.status === 2 || order.status === 3 ? '已支付' : '待支付'),
+        // 兼容旧数据：同时保留 statusText
+        statusText: order.orderStatus !== undefined
+          ? getOrderFlowText(order.orderStatus)
+          : getOrderStatusText(order.status),
         createdTime: formatDate(order.createTime),
         serviceTime: formatDate(order.serviceTime),
         totalAmount: order.totalAmount.toFixed(2) // 云函数已转换为元
@@ -261,22 +301,35 @@ Page({
     }
   },
 
+  // 根据标签页获取 orderStatus 和 paymentStatus 组合（与统计页面保持一致）
   getStatusByTab(tab) {
-    const statusMap = {
-      '0': undefined, // 全部
-      '1': 0,        // 待支付
-      '2': 1,        // 已支付
-      '3': 2,        // 处理中
-      '4': 3,        // 已完成
-      '5': 4         // 已取消
-    };
-    return statusMap[tab];
+    return getStatusByTabIndex(tab);
   },
 
   onReachBottom() {
     if (this.data.hasMore) {
       this.loadMore();
     }
+  },
+
+  /**
+   * 页面下拉刷新处理
+   */
+  onPullDownRefresh() {
+    // 重置分页参数，在回调中加载数据以确保状态已更新
+    this.setData({
+      'pagination.page': 1,
+      orders: [],
+      hasMore: true
+    }, async () => {
+      try {
+        // 重新加载订单数据
+        await this.loadOrders();
+      } finally {
+        // 无论成功与否，都要停止下拉刷新动画
+        wx.stopPullDownRefresh();
+      }
+    });
   },
 
   onOrderClick(e) {
@@ -297,6 +350,7 @@ Page({
       // 调用统一API更新订单状态
       await adminApi.updateOrderStatus(orderid, parseInt(status));
 
+      wx.hideLoading();
       wx.showToast({ title: '更新成功' });
       // 刷新当前订单列表
       this.setData({
@@ -307,13 +361,77 @@ Page({
       });
     } catch (error) {
       console.error('更新订单状态失败:', error);
+      wx.hideLoading();
       wx.showToast({
         title: error.message || error.result?.message || '更新失败',
         icon: 'none'
       });
-    } finally {
-      wx.hideLoading();
     }
+  },
+
+  /**
+   * 开始服务（未支付状态下开始服务）
+   * 将订单状态从待服务改为服务中
+   */
+  async startService(e) {
+    const { orderid } = e.currentTarget.dataset;
+    wx.showModal({
+      title: '确认操作',
+      content: '确认开始为客户提供服务？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '处理中...' });
+            // 调用统一API更新订单状态为服务中
+            await adminApi.updateOrderStatus(orderid, ORDER_STATUS.PROCESSING);
+            wx.hideLoading();
+            wx.showToast({ title: '已开始服务' });
+            this.setData({ 'pagination.page': 1, orders: [] }, () => this.loadOrders());
+          } catch (error) {
+            wx.hideLoading();
+            wx.showToast({ title: error.message || '操作失败', icon: 'none' });
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * 确认线下收款
+   */
+  async recordOfflinePayment(e) {
+    const { orderid } = e.currentTarget.dataset;
+    wx.showModal({
+      title: '确认收款',
+      content: '确认已收到客户的线下付款？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '处理中...' });
+            const result = await wx.cloud.callFunction({
+              name: 'orderManagement',
+              data: {
+                action: 'recordOfflinePayment',
+                data: { orderNo: orderid }
+              }
+            });
+            wx.hideLoading();
+            // 检查云函数返回结果
+            if (result.result && result.result.success === false) {
+              wx.showToast({ title: result.result.message || '操作失败', icon: 'none' });
+              return;
+            }
+            wx.showToast({ title: '收款已确认' });
+            setTimeout(() => {
+              this.setData({ 'pagination.page': 1, orders: [] }, () => this.loadOrders());
+            }, 300);
+          } catch (error) {
+            wx.hideLoading();
+            wx.showToast({ title: error.message || '操作失败', icon: 'none' });
+          }
+        }
+      }
+    });
   },
 
   /**

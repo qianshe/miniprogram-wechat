@@ -1,6 +1,7 @@
 const app = getApp()
 const { adminApi } = require('../../../utils/api')
 const { user: userApi } = require('../../../api/index')
+const { ORDER_FLOW_STATUS, PAYMENT_STATUS } = require('../../../config/constants')
 
 Page({
   /**
@@ -70,12 +71,35 @@ Page({
       users: 0,
       revenue: '0.00'
     },
-    // 订单状态分布
+    // 展示用主状态分布（单一主状态）
+    mainStatus: {
+      pendingPayment: 0, // 待支付
+      waitService: 0,    // 待服务
+      processing: 0,     // 服务中
+      serviceDone: 0,    // 待收款
+      completed: 0,      // 已完成
+      cancelled: 0       // 已取消
+    },
+    // 订单状态分布（旧字段，保持兼容）
     orderStatus: {
       pending: 0,
       paid: 0,
       processing: 0,
-      completed: 0
+      completed: 0,
+      servedUnpaid: 0
+    },
+    // 新订单流程状态分布
+    orderFlowStatus: {
+      created: 0,      // 待服务
+      processing: 0,   // 服务中
+      serviceDone: 0,  // 服务完成
+      completed: 0,    // 已完成
+      cancelled: 0     // 已取消
+    },
+    // 支付状态分布
+    paymentStatusDist: {
+      unpaid: 0,  // 待支付
+      paid: 0     // 已支付
     },
     loading: false
   },
@@ -124,24 +148,59 @@ Page({
 
       // callCloudFunction 已解包，statsData 直接是统计数据
       if (statsData) {
-        const { today, total, orderStatus } = statsData;
+        // 尝试从 statsData 获取 mainStatus
+        // 兼容两种可能的数据结构：
+        // 1. 标准结构: statsData.mainStatus 存在
+        // 2. 扁平结构: statsData 直接就是 mainStatus 对象
+        let mainStatus = statsData.mainStatus;
+        
+        // 如果 mainStatus 不存在，检查 statsData 是否直接就是 mainStatus 对象
+        if (!mainStatus && statsData.pendingPayment !== undefined) {
+          mainStatus = statsData;
+        }
+        
+        const { today, total, legacyStatus, orderFlowStatus, paymentStatusDist } = statsData;
+        
         this.setData({
           todayStats: {
             orders: today?.orders || 0,
             sales: (today?.sales || 0).toFixed(2),
             users: usersResult || 0,
+            // 总收入只计算已支付订单金额（云函数已处理）
             revenue: (total?.sales || 0).toFixed(2)
           },
+          // 展示用主状态分布（单一主状态）
+          mainStatus: {
+            pendingPayment: mainStatus?.pendingPayment || 0,
+            waitService: mainStatus?.waitService || 0,
+            processing: mainStatus?.processing || 0,
+            serviceDone: mainStatus?.serviceDone || 0,
+            completed: mainStatus?.completed || 0,
+            cancelled: mainStatus?.cancelled || 0
+          },
+          // 旧订单状态分布（兼容）
           orderStatus: {
-            pending: orderStatus?.pending || 0,
-            paid: orderStatus?.paid || 0,
-            processing: orderStatus?.processing || 0,
-            completed: orderStatus?.completed || 0
+            pending: legacyStatus?.pending || 0,
+            paid: legacyStatus?.paid || 0,
+            processing: legacyStatus?.processing || 0,
+            completed: legacyStatus?.completed || 0,
+            servedUnpaid: legacyStatus?.servedUnpaid || 0
+          },
+          // 新订单流程状态分布
+          orderFlowStatus: {
+            created: orderFlowStatus?.created || 0,
+            processing: orderFlowStatus?.processing || 0,
+            serviceDone: orderFlowStatus?.serviceDone || 0,
+            completed: orderFlowStatus?.completed || 0,
+            cancelled: orderFlowStatus?.cancelled || 0
+          },
+          // 支付状态分布
+          paymentStatusDist: {
+            unpaid: paymentStatusDist?.unpaid || 0,
+            paid: paymentStatusDist?.paid || 0
           },
           fullStatistics: statsData
         });
-      } else {
-        console.error('获取统计数据失败: 返回数据为空');
       }
     } catch (error) {
       console.error('加载统计数据失败:', error);
@@ -194,9 +253,32 @@ Page({
   },
 
   onStatusTap(e) {
-    const { status } = e.currentTarget.dataset;
-    wx.navigateTo({
-      url: `/pages/admin/order/list/list?status=${status}`
-    });
+    const { status, filterType, filterValue, orderStatus, paymentStatus } = e.currentTarget.dataset;
+    let url = '/pages/admin/order/list/list';
+
+    const params = [];
+    if (orderStatus !== undefined) {
+      params.push(`orderStatus=${orderStatus}`);
+    }
+    if (paymentStatus !== undefined) {
+      params.push(`paymentStatus=${paymentStatus}`);
+    }
+    if (params.length) {
+      url += `?${params.join('&')}`;
+      wx.navigateTo({ url });
+      return;
+    }
+    
+    // 支持新的双字段筛选参数
+    if (filterType === 'paymentStatus') {
+      url += `?paymentStatus=${filterValue}`;
+    } else if (filterType === 'orderStatus') {
+      url += `?orderStatus=${filterValue}`;
+    } else if (status !== undefined) {
+      // 兼容旧的 status 参数
+      url += `?status=${status}`;
+    }
+    
+    wx.navigateTo({ url });
   }
 })

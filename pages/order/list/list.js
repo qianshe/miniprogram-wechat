@@ -1,5 +1,11 @@
 const { api } = require('../../../utils/api.js');
-const { getOrderStatusText } = require('../../../config/constants.js');
+const {
+  ORDER_FLOW_STATUS,
+  PAYMENT_STATUS,
+  getOrderFlowText,
+  getPaymentStatusText,
+  mapLegacyStatusToNew
+} = require('../../../config/constants.js');
 const { formatDate } = require('../../../utils/util.js');
 
 Page({
@@ -13,13 +19,13 @@ Page({
     },
     hasMore: true,
     activeTab: '0',
+    // 用户端标签页：更简洁的设计
     statusTabs: [
-      { value: '0', label: '全部' },
-      { value: '1', label: '待支付' },
-      { value: '2', label: '已支付' },
-      { value: '3', label: '处理中' },
-      { value: '4', label: '已完成' },
-      { value: '5', label: '已取消' }
+      { value: '0', label: '全部', filter: 'all' },
+      { value: '1', label: '待付款', filter: 'unpaid' },       // paymentStatus=0 且 orderStatus<3
+      { value: '2', label: '进行中', filter: 'processing' },   // orderStatus in [1, 2]
+      { value: '3', label: '已完成', filter: 'completed' },    // orderStatus=3
+      { value: '4', label: '已取消', filter: 'cancelled' }     // orderStatus=4
     ],
     searchKeyword: '',
     showFilterPanel: false,
@@ -157,12 +163,13 @@ Page({
 
     try {
       const { page, size } = this.data.pagination;
-      const status = this.getStatusByTab(this.data.activeTab);
+      const tab = this.data.statusTabs.find(t => t.value === this.data.activeTab);
+      const filterParams = this.buildFilterParams(tab ? tab.filter : 'all');
 
       const params = {
         page,
         size,
-        ...(status !== undefined ? { status } : {})
+        ...filterParams
       };
 
       if (this.data.searchKeyword) {
@@ -203,13 +210,25 @@ Page({
         return;
       }
 
-      const formattedOrders = records.map(order => ({
-        ...order,
-        statusText: getOrderStatusText(order.status),
-        createdTime: formatDate(order.createTime),
-        serviceTime: formatDate(order.serviceTime),
-        totalAmount: Number(order.totalAmount).toFixed(2)
-      }));
+      // 处理订单数据，兼容旧数据
+      const formattedOrders = records.map(order => {
+        // 兼容旧数据：如果没有 orderStatus 字段，使用映射函数转换
+        if (order.orderStatus === undefined) {
+          const mapped = mapLegacyStatusToNew(order.status, order.payTime);
+          order.orderStatus = mapped.orderStatus;
+          order.paymentStatus = mapped.paymentStatus;
+        }
+        
+        return {
+          ...order,
+          // 新系统的状态文本
+          orderStatusText: getOrderFlowText(order.orderStatus),
+          paymentStatusText: getPaymentStatusText(order.paymentStatus),
+          createdTime: formatDate(order.createTime),
+          serviceTime: formatDate(order.serviceTime),
+          totalAmount: Number(order.totalAmount).toFixed(2)
+        };
+      });
 
       this.setData({
         orders: isLoadMore ? [...this.data.orders, ...formattedOrders] : formattedOrders,
@@ -230,16 +249,46 @@ Page({
     }
   },
 
-  getStatusByTab(tab) {
-    const statusMap = {
-      '0': undefined,
-      '1': 0,
-      '2': 1,
-      '3': 2,
-      '4': 3,
-      '5': 4
-    };
-    return statusMap[tab];
+  /**
+   * 根据标签页 filter 构建查询参数
+   * @param {string} filter - 筛选类型
+   * @returns {Object} 查询参数
+   */
+  buildFilterParams(filter) {
+    switch (filter) {
+      case 'unpaid':
+        // 待付款：未支付 + 未完成/取消的订单
+        return {
+          paymentStatus: PAYMENT_STATUS.UNPAID,
+          orderStatusList: [
+            ORDER_FLOW_STATUS.CREATED,
+            ORDER_FLOW_STATUS.PROCESSING,
+            ORDER_FLOW_STATUS.SERVICE_DONE
+          ]
+        };
+      case 'processing':
+        // 进行中：服务中或服务完成（不论支付状态）
+        return {
+          orderStatusList: [
+            ORDER_FLOW_STATUS.PROCESSING,
+            ORDER_FLOW_STATUS.SERVICE_DONE
+          ]
+        };
+      case 'completed':
+        // 已完成
+        return {
+          orderStatusList: [ORDER_FLOW_STATUS.COMPLETED]
+        };
+      case 'cancelled':
+        // 已取消
+        return {
+          orderStatusList: [ORDER_FLOW_STATUS.CANCELLED]
+        };
+      case 'all':
+      default:
+        // 全部订单，不传状态筛选
+        return {};
+    }
   },
 
   onReachBottom() {

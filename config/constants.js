@@ -12,8 +12,9 @@ const ORDER_STATUS = {
   PENDING_PAYMENT: 0,  // 待支付
   PAID: 1,             // 已支付
   PROCESSING: 2,       // 处理中
-  COMPLETED: 3,        // 已完成
-  CANCELLED: 4         // 已取消
+  COMPLETED: 3,        // 已完成（已结清闭环）
+  CANCELLED: 4,        // 已取消
+  SERVED_UNPAID: 5     // 已服务待付款（先服务后付款场景）
 };
 
 /**
@@ -24,7 +25,8 @@ const ORDER_STATUS_TEXT = {
   [ORDER_STATUS.PAID]: '已支付',
   [ORDER_STATUS.PROCESSING]: '处理中',
   [ORDER_STATUS.COMPLETED]: '已完成',
-  [ORDER_STATUS.CANCELLED]: '已取消'
+  [ORDER_STATUS.CANCELLED]: '已取消',
+  [ORDER_STATUS.SERVED_UNPAID]: '待收款'
 };
 
 /**
@@ -35,7 +37,8 @@ const ORDER_STATUS_COLOR = {
   [ORDER_STATUS.PAID]: '#4caf50',
   [ORDER_STATUS.PROCESSING]: '#2196f3',
   [ORDER_STATUS.COMPLETED]: '#9e9e9e',
-  [ORDER_STATUS.CANCELLED]: '#f44336'
+  [ORDER_STATUS.CANCELLED]: '#f44336',
+  [ORDER_STATUS.SERVED_UNPAID]: '#e91e63'  // 粉红色，表示待收款状态
 };
 
 /**
@@ -66,6 +69,11 @@ const ORDER_STATUS_INFO = {
     text: '已取消',
     desc: '订单已取消',
     class: 'cancelled'
+  },
+  [ORDER_STATUS.SERVED_UNPAID]: {
+    text: '待收款',
+    desc: '服务已完成，请尽快完成付款',
+    class: 'served-unpaid'
   }
 };
 
@@ -149,10 +157,129 @@ const RESPONSE_CODE = {
   SERVER_ERROR: 500
 };
 
+// ============ 订单流程状态（新双字段系统） ============
+
+/**
+ * 订单流程状态枚举（新系统）
+ * 用于 orderStatus 字段，表示订单在业务流程中的状态
+ */
+const ORDER_FLOW_STATUS = {
+  CREATED: 0,      // 已创建/待服务
+  PROCESSING: 1,   // 处理中/服务中
+  SERVICE_DONE: 2, // 服务完成
+  COMPLETED: 3,    // 订单完成
+  CANCELLED: 4     // 已取消
+};
+
+/**
+ * 支付状态枚举（新系统）
+ * 用于 paymentStatus 字段，表示订单的支付状态
+ */
+const PAYMENT_STATUS = {
+  UNPAID: 0,  // 未支付
+  PAID: 1     // 已支付
+};
+
+/**
+ * 管理端订单Tab配置
+ * 定义各Tab对应的 orderStatus 和 paymentStatus 组合
+ */
+const ADMIN_ORDER_TABS = [
+  { index: '0', name: '全部', orderStatus: null, paymentStatus: null },
+  { index: '1', name: '待支付', orderStatus: 0, paymentStatus: 0 },   // CREATED + UNPAID
+  { index: '2', name: '待服务', orderStatus: 0, paymentStatus: 1 },   // CREATED + PAID
+  { index: '3', name: '服务中', orderStatus: 1, paymentStatus: null }, // PROCESSING
+  { index: '4', name: '待收款', orderStatus: 2, paymentStatus: 0 },   // SERVICE_DONE + UNPAID
+  { index: '5', name: '已完成', orderStatus: 3, paymentStatus: null }, // COMPLETED
+  { index: '6', name: '已取消', orderStatus: 4, paymentStatus: null }  // CANCELLED
+];
+
+/**
+ * 根据 orderStatus 和 paymentStatus 获取对应的Tab索引
+ * @param {number|string|null} orderStatus - 订单流程状态码
+ * @param {number|string|null} paymentStatus - 支付状态码
+ * @returns {string} Tab索引
+ */
+const getTabByStatusParams = (orderStatus, paymentStatus) => {
+  const os = orderStatus !== undefined && orderStatus !== null ? parseInt(orderStatus) : null;
+  const ps = paymentStatus !== undefined && paymentStatus !== null ? parseInt(paymentStatus) : null;
+  
+  const tab = ADMIN_ORDER_TABS.find(t => t.orderStatus === os && t.paymentStatus === ps);
+  return tab ? tab.index : '0';
+};
+
+/**
+ * 根据Tab索引获取对应的 orderStatus 和 paymentStatus
+ * @param {string} tabIndex - Tab索引
+ * @returns {Object} { orderStatus, paymentStatus }
+ */
+const getStatusByTabIndex = (tabIndex) => {
+  const tab = ADMIN_ORDER_TABS.find(t => t.index === tabIndex);
+  return tab ? { orderStatus: tab.orderStatus, paymentStatus: tab.paymentStatus } : { orderStatus: null, paymentStatus: null };
+};
+
+/**
+ * 获取订单流程状态文本
+ * @param {number} orderStatus - 订单流程状态码
+ * @returns {string} 状态文本
+ */
+const getOrderFlowText = (orderStatus) => {
+  const textMap = {
+    [ORDER_FLOW_STATUS.CREATED]: '待服务',
+    [ORDER_FLOW_STATUS.PROCESSING]: '服务中',
+    [ORDER_FLOW_STATUS.SERVICE_DONE]: '服务完成',
+    [ORDER_FLOW_STATUS.COMPLETED]: '已完成',
+    [ORDER_FLOW_STATUS.CANCELLED]: '已取消'
+  };
+  return textMap[orderStatus] || '未知状态';
+};
+
+/**
+ * 获取支付状态文本
+ * @param {number} paymentStatus - 支付状态码
+ * @returns {string} 状态文本
+ */
+const getPaymentStatusText = (paymentStatus) => {
+  return paymentStatus === PAYMENT_STATUS.PAID ? '已支付' : '待支付';
+};
+
+/**
+ * 旧 status 到新字段的映射（用于数据迁移和兼容）
+ * @param {number} status - 旧的订单状态码
+ * @param {Date|null} payTime - 支付时间，用于判断是否已支付
+ * @returns {Object} { orderStatus, paymentStatus }
+ */
+const mapLegacyStatusToNew = (status, payTime) => {
+  const mapping = {
+    0: { orderStatus: ORDER_FLOW_STATUS.CREATED, paymentStatus: PAYMENT_STATUS.UNPAID },
+    1: { orderStatus: ORDER_FLOW_STATUS.CREATED, paymentStatus: PAYMENT_STATUS.PAID },
+    2: { orderStatus: ORDER_FLOW_STATUS.PROCESSING, paymentStatus: payTime ? PAYMENT_STATUS.PAID : PAYMENT_STATUS.UNPAID },
+    3: { orderStatus: ORDER_FLOW_STATUS.COMPLETED, paymentStatus: PAYMENT_STATUS.PAID },
+    4: { orderStatus: ORDER_FLOW_STATUS.CANCELLED, paymentStatus: payTime ? PAYMENT_STATUS.PAID : PAYMENT_STATUS.UNPAID },
+    5: { orderStatus: ORDER_FLOW_STATUS.SERVICE_DONE, paymentStatus: PAYMENT_STATUS.UNPAID }
+  };
+  return mapping[status] || { orderStatus: ORDER_FLOW_STATUS.CREATED, paymentStatus: PAYMENT_STATUS.UNPAID };
+};
+
+/**
+ * 新字段到旧 status 的映射（用于兼容期双写）
+ * @param {number} orderStatus - 订单流程状态码
+ * @param {number} paymentStatus - 支付状态码
+ * @returns {number} 旧的订单状态码
+ */
+const mapNewStatusToLegacy = (orderStatus, paymentStatus) => {
+  if (orderStatus === ORDER_FLOW_STATUS.CANCELLED) return 4;
+  if (orderStatus === ORDER_FLOW_STATUS.COMPLETED) return 3;
+  if (orderStatus === ORDER_FLOW_STATUS.SERVICE_DONE && paymentStatus === PAYMENT_STATUS.UNPAID) return 5;
+  if (orderStatus === ORDER_FLOW_STATUS.PROCESSING) return 2;
+  if (orderStatus === ORDER_FLOW_STATUS.CREATED && paymentStatus === PAYMENT_STATUS.PAID) return 1;
+  return 0; // CREATED + UNPAID
+};
+
 // ============ 导出 ============
 
 module.exports = {
-  // 订单
+  // 订单（旧系统，兼容期保留）
   ORDER_STATUS,
   ORDER_STATUS_TEXT,
   ORDER_STATUS_COLOR,
@@ -160,6 +287,17 @@ module.exports = {
   getOrderStatusText,
   getOrderStatusColor,
   getOrderStatusInfo,
+  // 订单流程状态（新系统）
+  ORDER_FLOW_STATUS,
+  PAYMENT_STATUS,
+  getOrderFlowText,
+  getPaymentStatusText,
+  mapLegacyStatusToNew,
+  mapNewStatusToLegacy,
+  // 管理端订单Tab配置
+  ADMIN_ORDER_TABS,
+  getTabByStatusParams,
+  getStatusByTabIndex,
   // 用户
   USER_ROLE,
   USER_ROLE_TEXT,

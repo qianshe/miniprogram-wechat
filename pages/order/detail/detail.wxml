@@ -2,35 +2,44 @@
   <view class="loading" wx:if="{{loading}}">加载中...</view>
   <block wx:elif="{{orderInfo}}">
     <!-- 状态栏 -->
-    <view class="status-bar {{systemType}}-status-{{orderInfo.status}}">
+    <view class="status-bar {{systemType}}-status-{{orderInfo.orderStatus}}">
       <text class="status">{{orderInfo.statusText}}</text>
-      <view class="status-desc">{{orderInfo.statusDesc}}</view>
+      <view class="status-desc">{{orderInfo.flowStatusDesc || orderInfo.statusDesc}}</view>
     </view>
 
-    <!-- 状态时间线 -->
+    <!-- 双状态标签（管理端显示） -->
+    <view class="order-status-section" wx:if="{{isAdmin}}">
+      <view class="status-label">订单状态</view>
+      <view class="status-tags">
+        <view class="status-tag flow-status-{{orderInfo.orderStatus}}">{{orderInfo.orderStatusText}}</view>
+        <view class="status-tag payment-status-{{orderInfo.paymentStatus}}">{{orderInfo.paymentStatusText}}</view>
+      </view>
+    </view>
+
+    <!-- 状态时间线（基于双字段状态系统：orderStatus + paymentStatus） -->
     <view class="timeline">
-      <view class="timeline-item {{orderInfo.status >= 0 ? (orderInfo.status === 0 ? 'current' : 'active') : ''}}">
+      <view class="timeline-item {{orderInfo.orderStatus === 0 && orderInfo.paymentStatus === 0 ? 'current' : 'active'}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">下单</text>
         <text class="timeline-time">{{orderInfo.timelineCreatedTime || ''}}</text>
       </view>
-      <view class="timeline-line {{orderInfo.status >= 1 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.status >= 1 ? (orderInfo.status === 1 ? 'current' : 'active') : ''}}">
+      <view class="timeline-line {{orderInfo.paymentStatus === 1 || orderInfo.orderStatus >= 1 ? 'active' : ''}}"></view>
+      <view class="timeline-item {{orderInfo.paymentStatus === 1 ? (orderInfo.orderStatus === 0 ? 'current' : 'active') : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">支付</text>
-        <text class="timeline-time">{{orderInfo.status >= 1 ? (orderInfo.timelinePayTime || '-') : ''}}</text>
+        <text class="timeline-time">{{orderInfo.paymentStatus === 1 ? (orderInfo.timelinePayTime || '-') : ''}}</text>
       </view>
-      <view class="timeline-line {{orderInfo.status >= 2 && orderInfo.status !== 4 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.status >= 2 && orderInfo.status !== 4 ? (orderInfo.status === 2 ? 'current' : 'active') : ''}}">
+      <view class="timeline-line {{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? 'active' : ''}}"></view>
+      <view class="timeline-item {{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? (orderInfo.orderStatus === 1 ? 'current' : 'active') : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">服务中</text>
-        <text class="timeline-time">{{orderInfo.status >= 2 && orderInfo.status !== 4 ? (orderInfo.timelineProcessTime || '-') : ''}}</text>
+        <text class="timeline-time">{{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? (orderInfo.timelineProcessTime || '-') : ''}}</text>
       </view>
-      <view class="timeline-line {{orderInfo.status >= 3 && orderInfo.status !== 4 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.status >= 3 && orderInfo.status !== 4 ? 'active' : ''}}">
+      <view class="timeline-line {{orderInfo.orderStatus >= 3 && orderInfo.orderStatus !== 4 ? 'active' : ''}}"></view>
+      <view class="timeline-item {{orderInfo.orderStatus === 3 ? 'active' : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">完成</text>
-        <text class="timeline-time">{{orderInfo.status >= 3 && orderInfo.status !== 4 ? (orderInfo.timelineCompleteTime || '-') : ''}}</text>
+        <text class="timeline-time">{{orderInfo.orderStatus === 3 ? (orderInfo.timelineCompleteTime || '-') : ''}}</text>
       </view>
     </view>
 
@@ -112,45 +121,54 @@
     </view>
 
     <view class="actions">
-      <!-- 管理员按钮 -->
+      <!-- 管理员按钮（双字段状态系统） -->
       <block wx:if="{{isAdmin}}">
-        <!-- 待支付(0): 下一步, 取消订单 -->
-        <block wx:if="{{orderInfo.status === 0}}">
-          <t-button theme="default" class="btn-secondary" bindtap="handleAdminCancel">取消订单</t-button>
-          <t-button theme="primary" class="btn-primary" bindtap="handleNextStep">下一步</t-button>
-        </block>
-        <!-- 已支付(1): 上一步, 下一步, 取消订单 -->
-        <block wx:elif="{{orderInfo.status === 1}}">
-          <t-button theme="default" class="btn-secondary" bindtap="handlePrevStep">上一步</t-button>
-          <t-button theme="default" class="btn-secondary" bindtap="handleAdminCancel">取消订单</t-button>
-          <t-button theme="primary" class="btn-primary" bindtap="handleNextStep">下一步</t-button>
-        </block>
-        <!-- 处理中(2): 上一步, 下一步, 取消订单 -->
-        <block wx:elif="{{orderInfo.status === 2}}">
-          <t-button theme="default" class="btn-secondary" bindtap="handlePrevStep">上一步</t-button>
-          <t-button theme="default" class="btn-secondary" bindtap="handleAdminCancel">取消订单</t-button>
-          <t-button theme="primary" class="btn-primary" bindtap="handleNextStep">下一步</t-button>
-        </block>
-        <!-- 已完成(3): 上一步 -->
-        <block wx:elif="{{orderInfo.status === 3}}">
-          <t-button theme="default" class="btn-secondary" bindtap="handlePrevStep">上一步</t-button>
-        </block>
-        <!-- 已取消(4): 无按钮 -->
+        <!-- 开始处理：仅 CREATED 状态可用 -->
+        <t-button wx:if="{{showStartProcessingBtn}}" theme="primary" class="btn-primary" bindtap="handleStartProcessing">开始处理</t-button>
+        <!-- 标记服务完成：仅 PROCESSING 状态可用 -->
+        <t-button wx:if="{{showMarkServiceDoneBtn}}" theme="primary" class="btn-primary" bindtap="handleMarkServiceDone">标记服务完成</t-button>
+        <!-- 确认收款：未支付且订单未完成/未取消时可用 -->
+        <t-button wx:if="{{showConfirmPaymentBtn}}" theme="success" class="btn-success" bindtap="handleConfirmPaymentNew">确认收款</t-button>
+        <!-- 取消订单：仅 CREATED 或 PROCESSING 状态可用 -->
+        <t-button wx:if="{{showCancelBtn}}" theme="danger" class="btn-danger" bindtap="handleCancelOrderNew">取消订单</t-button>
+        <!-- 无操作提示：已完成或已取消 -->
+        <view wx:if="{{showNoActionTip}}" class="no-action-tip">订单已结束，无可用操作</view>
       </block>
-      <!-- 普通用户按钮 -->
-      <block wx:else>
-        <block wx:if="{{orderInfo.status === 0}}">
-          <t-button theme="default" bindtap="handleCancel">取消订单</t-button>
-          <t-button theme="primary" bindtap="handlePay">立即支付</t-button>
-        </block>
-        <block wx:elif="{{orderInfo.status === 1 || orderInfo.status === 2}}">
-          <t-button theme="danger" bindtap="applyRefund">申请退款</t-button>
-        </block>
-        <block wx:elif="{{orderInfo.status === 3 || orderInfo.status === 4}}">
-          <t-button theme="default" bindtap="deleteOrder">删除订单</t-button>
-          <t-button theme="primary" bindtap="rebuyOrder">再次购买</t-button>
-        </block>
-      </block>
+      <!-- 用户端操作按钮（双字段状态系统） -->
+      <view class="user-action-buttons" wx:if="{{!isAdmin}}">
+        <!-- 去支付按钮 -->
+        <t-button wx:if="{{showPayBtn}}"
+                  theme="primary"
+                  class="btn-pay"
+                  bindtap="handlePayOrder">
+          去支付
+        </t-button>
+        
+        <!-- 取消订单按钮 -->
+        <t-button wx:if="{{showUserCancelBtn}}"
+                  theme="default"
+                  class="btn-cancel-light"
+                  bindtap="handleUserCancelOrder">
+          取消订单
+        </t-button>
+        
+        <!-- 等待状态提示 -->
+        <view wx:if="{{showUserNoActionTip && orderInfo.orderStatus < 3}}" class="user-status-tip">
+          <text wx:if="{{orderInfo.orderStatus === 0}}">订单已提交，等待服务...</text>
+          <text wx:if="{{orderInfo.orderStatus === 1}}">服务进行中，请耐心等待...</text>
+          <text wx:if="{{orderInfo.orderStatus === 2}}">服务已完成，请确认...</text>
+        </view>
+        
+        <!-- 订单结束状态 -->
+        <view wx:if="{{orderInfo.orderStatus >= 3}}" class="user-status-tip ended">
+          <text wx:if="{{orderInfo.orderStatus === 3}}">订单已完成</text>
+          <text wx:if="{{orderInfo.orderStatus === 4}}">订单已取消</text>
+          <view class="ended-actions">
+            <t-button theme="default" size="small" bindtap="deleteOrder">删除订单</t-button>
+            <t-button theme="primary" size="small" bindtap="rebuyOrder" wx:if="{{orderInfo.orderStatus === 3}}">再次购买</t-button>
+          </view>
+        </view>
+      </view>
     </view>
   </block>
   <t-empty wx:else description="订单不存在">

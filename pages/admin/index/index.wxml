@@ -22,26 +22,34 @@
     </view>
   </view>
 
-  <!-- 订单状态分布 -->
+  <!-- 订单状态分布（单一主状态） -->
   <view class="section-header">
     <view class="section-title">订单状态</view>
   </view>
   <view class="order-status-grid">
-    <view class="status-item" bindtap="onStatusTap" data-status="0">
-      <view class="status-count status-pending">{{orderStatus.pending}}</view>
+    <view class="status-item" bindtap="onStatusTap" data-order-status="0" data-payment-status="0">
+      <view class="status-count status-pending">{{mainStatus.pendingPayment}}</view>
       <view class="status-label">待支付</view>
     </view>
-    <view class="status-item" bindtap="onStatusTap" data-status="1">
-      <view class="status-count status-paid">{{orderStatus.paid}}</view>
-      <view class="status-label">已支付</view>
+    <view class="status-item" bindtap="onStatusTap" data-order-status="0" data-payment-status="1">
+      <view class="status-count status-wait-service">{{mainStatus.waitService}}</view>
+      <view class="status-label">待服务</view>
     </view>
-    <view class="status-item" bindtap="onStatusTap" data-status="2">
-      <view class="status-count status-processing">{{orderStatus.processing}}</view>
-      <view class="status-label">处理中</view>
+    <view class="status-item" bindtap="onStatusTap" data-order-status="1">
+      <view class="status-count status-processing">{{mainStatus.processing}}</view>
+      <view class="status-label">服务中</view>
     </view>
-    <view class="status-item" bindtap="onStatusTap" data-status="3">
-      <view class="status-count status-completed">{{orderStatus.completed}}</view>
+    <view class="status-item" bindtap="onStatusTap" data-order-status="2" data-payment-status="0">
+      <view class="status-count status-served-unpaid">{{mainStatus.serviceDone}}</view>
+      <view class="status-label">待收款</view>
+    </view>
+    <view class="status-item" bindtap="onStatusTap" data-order-status="3">
+      <view class="status-count status-completed">{{mainStatus.completed}}</view>
       <view class="status-label">已完成</view>
+    </view>
+    <view class="status-item" bindtap="onStatusTap" data-order-status="4">
+      <view class="status-count status-cancelled">{{mainStatus.cancelled}}</view>
+      <view class="status-label">已取消</view>
     </view>
   </view>
   

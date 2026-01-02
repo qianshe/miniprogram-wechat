@@ -82,7 +82,7 @@ Page({
     }
     
     const localList = wx.getStorageSync(LOCAL_STORAGE_KEY) || [];
-    const validList = localList.filter(item => 
+    const validList = localList.filter(item =>
       item && item.id && item.name && item.price != null && 
       typeof item.quantity === 'number' && item.quantity > 0
     );
