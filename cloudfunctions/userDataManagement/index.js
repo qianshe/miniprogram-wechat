@@ -377,7 +377,7 @@ async function clearCart(data, context, logger) {
 
 // 主处理逻辑
 const handler = async (event, context, logger) => {
-  const { action, ...data } = event;
+  const { action, data } = event;
 
   logger.info('Action received', { action });
 
