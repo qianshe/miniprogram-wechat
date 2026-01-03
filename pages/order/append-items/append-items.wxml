@@ -2,46 +2,43 @@
 <view class="append-items-container">
   <view class="loading" wx:if="{{loading}}">加载中...</view>
   <block wx:else>
-    <!-- 当前订单信息 -->
     <t-cell-group title="当前订单">
       <t-cell title="订单编号" note="{{orderNo}}" />
       <t-cell title="原订单金额" note="¥{{originalAmount}}" />
     </t-cell-group>
 
-    <!-- 已选商品列表 -->
     <view class="section">
       <view class="section-header">
         <text class="section-title">追加商品</text>
         <t-button size="small" theme="primary" bindtap="showProductSelector">+ 选择商品</t-button>
       </view>
       <view class="product-list" wx:if="{{selectedProducts.length}}">
-        <view class="product-item" wx:for="{{selectedProducts}}" wx:key="id">
-          <text class="product-name">{{item.name}}</text>
-          <view class="quantity-control">
-            <button class="quantity-btn" bindtap="decreaseQuantity" data-index="{{index}}">-</button>
-            <text class="quantity-text">{{item.quantity}}</text>
-            <button class="quantity-btn" bindtap="increaseQuantity" data-index="{{index}}">+</button>
+        <t-swipe-cell wx:for="{{selectedProducts}}" wx:key="id" right="{{[{text: '删除', className: 'swipe-delete-btn'}]}}" bind:click="onSwipeClick" data-index="{{index}}">
+          <view class="swipe-cell-content">
+            <view class="product-info">
+              <text class="product-name">{{item.name}}</text>
+              <text class="product-unit-price">¥{{item.price}}/件</text>
+            </view>
+            <t-stepper value="{{item.quantity}}" min="1" max="99" theme="filled" bind:change="onStepperChange" data-index="{{index}}" />
+            <text class="product-price">¥{{tools.formatPrice(item.price * item.quantity)}}</text>
           </view>
-          <text class="product-price">¥{{tools.formatPrice(item.price * item.quantity)}}</text>
-          <button class="remove-btn" bindtap="removeProduct" data-index="{{index}}">×</button>
-        </view>
+        </t-swipe-cell>
       </view>
       <t-empty wx:else description="请选择要追加的商品" />
     </view>
 
-    <!-- 底部固定栏 -->
     <view class="bottom-bar">
       <view class="amount-info">
         <view class="amount-row">
-          <text class="label">原金额：</text>
+          <text class="label">原金额</text>
           <text class="value">¥{{originalAmount}}</text>
         </view>
         <view class="amount-row">
-          <text class="label">追加金额：</text>
+          <text class="label">追加金额</text>
           <text class="value append">+¥{{appendAmount}}</text>
         </view>
         <view class="amount-row total">
-          <text class="label">追加后总计：</text>
+          <text class="label">追加后总计</text>
           <text class="value total-value">¥{{newTotalAmount}}</text>
         </view>
       </view>
@@ -50,21 +47,21 @@
   </block>
 </view>
 
-<!-- 商品选择弹出层 -->
 <t-popup visible="{{showProductSelector}}" placement="bottom" bind:visible-change="onPopupChange">
   <view class="popup-content">
     <view class="popup-header">
       <text class="popup-title">选择商品</text>
-      <t-button variant="text" bindtap="hideProductSelector">×</t-button>
+      <t-button variant="text" bindtap="hideProductSelector">关闭</t-button>
     </view>
     <view class="search-container">
       <t-search placeholder="搜索商品" bind:change="onSearchChange" value="{{searchValue}}" />
     </view>
     <scroll-view scroll-y class="product-scroll" bindscrolltolower="onLoadMoreProducts">
       <block wx:if="{{filteredProducts.length > 0}}">
-        <view class="product-option" wx:for="{{filteredProducts}}" wx:key="id" bindtap="selectProduct" data-product="{{item}}">
+        <view class="product-option {{tools.isProductSelected(selectedProducts, item.id) ? 'selected' : ''}}" wx:for="{{filteredProducts}}" wx:key="id" bindtap="selectProduct" data-product="{{item}}">
           <text class="product-name">{{item.name}}</text>
           <text class="product-price">¥{{item.price}}</text>
+          <text class="selected-tag" wx:if="{{tools.isProductSelected(selectedProducts, item.id)}}">已选</text>
         </view>
       </block>
       <view class="loading-tips" wx:if="{{productsLoading}}">加载中...</view>

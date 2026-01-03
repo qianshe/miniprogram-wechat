@@ -170,24 +170,45 @@
   flex: 1;
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
+  min-width: 0;
 }
 
 .value-with-action .value {
   flex: 1;
   margin-right: 16rpx;
+  min-width: 0;
 }
 
 .value-with-action t-button {
   flex-shrink: 0;
-  min-width: 120rpx;
+  width: 120rpx;
+  margin-left: auto;
+}
+
+.info-item--center {
+  align-items: center;
+}
+
+.info-item--center .label {
+  display: block;
+  height: auto;
+  line-height: 64rpx;
 }
 
 .value-with-action--center-btn {
   align-items: center;
+  min-height: 64rpx;
+}
+
+.value-with-action--center-btn t-button {
+  --td-button-height: 64rpx;
 }
 .value-with-action--center-btn .value {
   line-height: 64rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .value.address {

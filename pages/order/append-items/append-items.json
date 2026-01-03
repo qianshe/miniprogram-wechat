@@ -6,6 +6,8 @@
     "t-button": "tdesign-miniprogram/button/button",
     "t-popup": "tdesign-miniprogram/popup/popup",
     "t-search": "tdesign-miniprogram/search/search",
-    "t-empty": "tdesign-miniprogram/empty/empty"
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "t-stepper": "tdesign-miniprogram/stepper/stepper",
+    "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell"
   }
 }

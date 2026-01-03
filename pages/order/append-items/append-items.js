@@ -110,28 +110,24 @@ Page({
     }
     this.setData({ selectedProducts });
     this.calculateTotal();
+    wx.showToast({ title: '已添加', icon: 'success', duration: 1000 });
   },
 
-  increaseQuantity(e) {
+  onStepperChange(e) {
     const { index } = e.currentTarget.dataset;
+    const value = e.detail.value;
     const selectedProducts = [...this.data.selectedProducts];
-    selectedProducts[index].quantity += 1;
+    selectedProducts[index].quantity = value;
     this.setData({ selectedProducts });
     this.calculateTotal();
   },
 
-  decreaseQuantity(e) {
+  onSwipeClick(e) {
     const { index } = e.currentTarget.dataset;
-    const selectedProducts = [...this.data.selectedProducts];
-    if (selectedProducts[index].quantity > 1) {
-      selectedProducts[index].quantity -= 1;
-      this.setData({ selectedProducts });
-      this.calculateTotal();
-    }
+    this.removeProduct(index);
   },
 
-  removeProduct(e) {
-    const { index } = e.currentTarget.dataset;
+  removeProduct(index) {
     const selectedProducts = [...this.data.selectedProducts];
     selectedProducts.splice(index, 1);
     this.setData({ selectedProducts });
@@ -140,9 +136,9 @@ Page({
 
   calculateTotal() {
     const appendAmount = this.data.selectedProducts.reduce(
-      (sum, item) => sum + item.price * item.quantity,
+      (sum, item) => sum + Math.round(item.price * 100) * item.quantity,
       0
-    );
+    ) / 100;
     const originalAmount = parseFloat(this.data.originalAmount) || 0;
     const newTotalAmount = originalAmount + appendAmount;
     this.setData({

@@ -45,7 +45,7 @@
 
     <view class="section">
       <view class="section-title">基本信息</view>
-      <view class="info-item">
+      <view class="info-item info-item--center">
         <text class="label">订单编号</text>
         <view class="value-with-action value-with-action--center-btn">
           <text class="value">{{orderInfo.orderNo}}</text>
@@ -68,7 +68,7 @@
         <text class="label">联系人</text>
         <text class="value">{{orderInfo.contactName}}</text>
       </view>
-      <view class="info-item">
+      <view class="info-item info-item--center">
         <text class="label">联系电话</text>
         <view class="value-with-action value-with-action--center-btn">
           <text class="value">{{orderInfo.contactPhone}}</text>

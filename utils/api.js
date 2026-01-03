@@ -440,8 +440,8 @@ const adminApi = {
     return await callCloudFunction('orderManagement', 'getOrders', { ...params });
   },
 
-  getOrderDetail: async (orderNo) => {
-    return await callCloudFunction('orderManagement', 'getOrderDetail', { orderNo });
+  getOrderDetail: async (orderNo, isAdmin = false) => {
+    return await callCloudFunction('orderManagement', 'getOrderDetail', { orderNo, isAdmin });
   },
 
   updateOrderStatus: async (orderNo, status) => {
