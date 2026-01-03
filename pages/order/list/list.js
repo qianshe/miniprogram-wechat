@@ -333,4 +333,42 @@ Page({
     });
   },
 
+  // 去支付
+  handlePay(e) {
+    const { id } = e.currentTarget.dataset;
+    // 找到对应订单
+    const order = this.data.orders.find(o => o._id === id);
+    if (order) {
+      wx.navigateTo({
+        url: `/pages/order/detail/detail?orderNo=${order.orderNo}`
+      });
+    }
+  },
+
+  // 取消订单
+  handleCancel(e) {
+    const { id } = e.currentTarget.dataset;
+    const order = this.data.orders.find(o => o._id === id);
+    if (!order) return;
+
+    wx.showModal({
+      title: '确认取消',
+      content: '确定要取消该订单吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '取消中...' });
+            await api.updateOrderFlowStatus(order.orderNo, 4); // 4 = CANCELLED
+            wx.hideLoading();
+            wx.showToast({ title: '订单已取消', icon: 'success' });
+            this.loadOrders(false);
+          } catch (err) {
+            wx.hideLoading();
+            wx.showToast({ title: err.message || '取消失败', icon: 'none' });
+          }
+        }
+      }
+    });
+  },
+
 });

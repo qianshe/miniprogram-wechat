@@ -1668,7 +1668,34 @@ async function appendOrderItems(data, context, logger) {
       appendedAt: new Date()
     }));
 
-    const mergedItems = [...existingItems, ...newItems];
+    // 合并追加商品：相同productId且都是追加商品的进行数量合并
+    const mergeAppendedItems = (existingList, newList) => {
+      const result = [...existingList];
+
+      newList.forEach(newItem => {
+        // 查找已存在的追加商品（有appendedAt标记）
+        const existingIndex = result.findIndex(
+          item => item.productId === newItem.productId && item.appendedAt
+        );
+
+        if (existingIndex > -1) {
+          // 合并数量和小计
+          result[existingIndex].quantity += newItem.quantity;
+          result[existingIndex].subtotal += newItem.subtotal;
+          // 保留最早的追加时间
+          if (new Date(newItem.appendedAt) < new Date(result[existingIndex].appendedAt)) {
+            result[existingIndex].appendedAt = newItem.appendedAt;
+          }
+        } else {
+          // 新增追加商品
+          result.push(newItem);
+        }
+      });
+
+      return result;
+    };
+
+    const mergedItems = mergeAppendedItems(existingItems, newItems);
 
     // 4. 重算总金额
     const newTotalAmount = mergedItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);

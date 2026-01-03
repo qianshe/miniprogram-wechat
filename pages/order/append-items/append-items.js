@@ -251,7 +251,7 @@ Page({
         productName: p.name,
         price: p.price,
         quantity: p.quantity,
-        productImage: p.image || p.productImage || ''
+        productImage: p.imageUrl || p.image || p.productImage || ''
       }));
       await api.appendOrderItems(this.data.orderNo, items, this.data.isAdmin);
       wx.hideLoading();

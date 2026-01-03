@@ -272,6 +272,72 @@
   font-size: 26rpx;
 }
 
+/* 商品分组小计 */
+.goods-section-subtotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-top: 1rpx dashed #eee;
+  margin-top: 8rpx;
+}
+
+.goods-section-subtotal .subtotal-label {
+  font-size: 26rpx;
+  color: var(--text-sub);
+}
+
+.goods-section-subtotal .subtotal-value {
+  font-size: 28rpx;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+/* 追加商品区域 */
+.appended-section {
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid #f0f0f0;
+}
+
+.appended-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.appended-title {
+  font-size: 28rpx;
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.appended-badge {
+  margin-left: 12rpx;
+  padding: 4rpx 12rpx;
+  background: linear-gradient(135deg, #ff9800, #ffc107);
+  color: #fff;
+  font-size: 22rpx;
+  border-radius: 16rpx;
+}
+
+.appended-goods-list {
+  background: #fffbf5;
+  border-radius: 12rpx;
+  padding: 0 16rpx;
+  border: 1rpx solid #fff3e0;
+}
+
+.appended-item {
+  position: relative;
+}
+
+.appended-time {
+  font-size: 22rpx;
+  color: #ff9800;
+  margin-top: 4rpx;
+}
+
 /* 价格汇总 */
 .price-summary {
   padding-top: 24rpx;

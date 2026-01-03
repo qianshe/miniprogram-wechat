@@ -185,7 +185,45 @@ Page({
             productPrice: item.price.toFixed(2),
             subtotal: item.subtotal.toFixed(2)
           };
-        })
+        }),
+        // 分离原始商品和追加商品
+        originalItems: items.filter(item => !item.appendedAt).map((item) => ({
+          ...item,
+          productPrice: item.price.toFixed(2),
+          subtotal: item.subtotal.toFixed(2)
+        })),
+        // 追加商品需要按productId合并（在对象外部先计算好）
+        appendedItems: (() => {
+          const appendedList = items.filter(item => !!item.appendedAt);
+          if (!appendedList.length) return [];
+          const mergedMap = new Map();
+          appendedList.forEach(item => {
+            const key = item.productId;
+            if (mergedMap.has(key)) {
+              const existing = mergedMap.get(key);
+              existing.quantity += item.quantity;
+              existing.subtotal += item.subtotal;
+              if (new Date(item.appendedAt) < new Date(existing.appendedAt)) {
+                existing.appendedAt = item.appendedAt;
+              }
+            } else {
+              mergedMap.set(key, { ...item });
+            }
+          });
+          return Array.from(mergedMap.values()).map(item => ({
+            ...item,
+            productPrice: item.price.toFixed(2),
+            subtotal: item.subtotal.toFixed(2),
+            appendedTime: (() => {
+              if (!item.appendedAt) return '';
+              const date = new Date(item.appendedAt);
+              return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            })()
+          }));
+        })(),
+        // 计算原始商品和追加商品的小计
+        originalSubtotal: items.filter(item => !item.appendedAt).reduce((sum, item) => sum + (item.subtotal || 0), 0).toFixed(2),
+        appendedSubtotal: items.filter(item => !!item.appendedAt).reduce((sum, item) => sum + (item.subtotal || 0), 0).toFixed(2)
       };
 
       // 计算按钮显示状态（基于双字段系统）
@@ -230,6 +268,35 @@ Page({
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  },
+
+  // 合并追加商品（相同productId的商品合并数量）
+  mergeAppendedItems(appendedItems) {
+    if (!appendedItems || appendedItems.length === 0) return [];
+
+    const mergedMap = new Map();
+
+    appendedItems.forEach(item => {
+      const key = item.productId;
+      if (mergedMap.has(key)) {
+        const existing = mergedMap.get(key);
+        existing.quantity += item.quantity;
+        existing.subtotal += item.subtotal;
+        // 保留最早的追加时间
+        if (new Date(item.appendedAt) < new Date(existing.appendedAt)) {
+          existing.appendedAt = item.appendedAt;
+        }
+      } else {
+        mergedMap.set(key, { ...item });
+      }
+    });
+
+    return Array.from(mergedMap.values()).map(item => ({
+      ...item,
+      productPrice: item.price.toFixed(2),
+      subtotal: item.subtotal.toFixed(2),
+      appendedTime: this.formatShortDate(item.appendedAt)
+    }));
   },
 
   /**

@@ -86,8 +86,9 @@
 
     <view class="section">
       <view class="section-title">商品信息</view>
-      <view class="goods-list">
-        <view class="goods-item" wx:for="{{orderInfo.items}}" wx:key="productId">
+      <!-- 原始商品 -->
+      <view class="goods-list" wx:if="{{orderInfo.originalItems.length > 0}}">
+        <view class="goods-item" wx:for="{{orderInfo.originalItems}}" wx:key="productId">
           <image class="goods-image" src="{{item.productImage || '/assets/images/default-product.png'}}" mode="aspectFill"></image>
           <view class="goods-info">
             <text class="goods-name">{{item.productName}}</text>
@@ -99,6 +100,41 @@
           <text class="subtotal">¥{{item.subtotal}}</text>
         </view>
       </view>
+      <!-- 原始商品小计 -->
+      <view class="goods-section-subtotal" wx:if="{{orderInfo.appendedItems.length > 0 && orderInfo.originalItems.length > 0}}">
+        <text class="subtotal-label">原始商品小计</text>
+        <text class="subtotal-value">¥{{orderInfo.originalSubtotal}}</text>
+      </view>
+
+      <!-- 追加商品 -->
+      <view class="appended-section" wx:if="{{orderInfo.appendedItems.length > 0}}">
+        <view class="appended-header">
+          <text class="appended-title">追加商品</text>
+          <text class="appended-badge">+{{orderInfo.appendedItems.length}}项</text>
+        </view>
+        <view class="goods-list appended-goods-list">
+          <view class="goods-item appended-item" wx:for="{{orderInfo.appendedItems}}" wx:key="productId">
+            <image class="goods-image" src="{{item.productImage || '/assets/images/default-product.png'}}" mode="aspectFill"></image>
+            <view class="goods-info">
+              <view class="goods-name-row">
+                <text class="goods-name">{{item.productName}}</text>
+              </view>
+              <view class="goods-price-row">
+                <text class="goods-price">¥{{item.productPrice}}</text>
+                <text class="goods-quantity">×{{item.quantity}}</text>
+              </view>
+              <text class="appended-time">追加于 {{item.appendedTime}}</text>
+            </view>
+            <text class="subtotal">¥{{item.subtotal}}</text>
+          </view>
+        </view>
+        <!-- 追加商品小计 -->
+        <view class="goods-section-subtotal">
+          <text class="subtotal-label">追加商品小计</text>
+          <text class="subtotal-value">¥{{orderInfo.appendedSubtotal}}</text>
+        </view>
+      </view>
+
       <view class="price-summary">
         <view class="price-item">
           <text>商品金额</text>
