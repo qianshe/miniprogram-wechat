@@ -8,6 +8,7 @@
     "t-search": "tdesign-miniprogram/search/search",
     "t-empty": "tdesign-miniprogram/empty/empty",
     "t-stepper": "tdesign-miniprogram/stepper/stepper",
+    "t-icon": "tdesign-miniprogram/icon/icon",
     "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell"
   }
 }

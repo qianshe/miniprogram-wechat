@@ -18,15 +18,33 @@ Page({
       page: 1,
       size: 20,
       hasMore: true
-    }
+    },
+    categories: [],
+    currentCategoryIndex: 0,
+    currentCategoryId: '',
+    isPageContainerSupported: true
   },
 
   onLoad(options) {
+    const { SDKVersion } = wx.getSystemInfoSync();
+    const compareVersion = (v1, v2) => {
+      const s1 = v1.split('.').map(Number);
+      const s2 = v2.split('.').map(Number);
+      const len = Math.max(s1.length, s2.length);
+      for (let i = 0; i < len; i++) {
+        const n1 = s1[i] || 0;
+        const n2 = s2[i] || 0;
+        if (n1 > n2) return 1;
+        if (n1 < n2) return -1;
+      }
+      return 0;
+    };
+    this.setData({ isPageContainerSupported: compareVersion(SDKVersion, '2.16.0') >= 0 });
     const orderNo = options.orderNo || '';
     const isAdmin = options.isAdmin === 'true';
     this.setData({ orderNo, isAdmin });
     this.loadOrderInfo();
-    this.loadProducts();
+    this.loadCategories();
   },
 
   async loadOrderInfo() {
@@ -45,29 +63,82 @@ Page({
     }
   },
 
-  async loadProducts() {
-    if (this.data.productsLoading || !this.data.productsPagination.hasMore) return;
-    this.setData({ productsLoading: true });
+  async loadCategories() {
     try {
-      const result = await api.getProducts({
-        page: this.data.productsPagination.page,
-        size: this.data.productsPagination.size,
-        keyword: this.data.searchValue,
-        status: 1
+      const app = getApp();
+      const type = app.globalData.systemType || 'white';
+      const categories = await api.getCategories({ type });
+      const sortedCategories = categories
+        .sort((a, b) => a.sort - b.sort)
+        .map(category => ({
+          name: category.name,
+          id: category._id
+        }));
+      const allCategory = { id: '', name: '全部' };
+      const categoriesWithAll = [allCategory, ...sortedCategories];
+      this.setData({
+        categories: categoriesWithAll,
+        currentCategoryIndex: 0,
+        currentCategoryId: ''
+      }, () => {
+        this.loadProducts(true);
       });
-      const newProducts = result.records || result.list || [];
-      const allProducts = [...this.data.products, ...newProducts];
+    } catch (err) {
+      console.error('加载分类失败:', err);
+      this.loadProducts(true);
+    }
+  },
+
+  async loadProducts(isRefresh = false) {
+    if (this.data.productsLoading) return;
+    if (!isRefresh && !this.data.productsPagination.hasMore) return;
+    
+    this.setData({ productsLoading: true });
+    const page = isRefresh ? 1 : this.data.productsPagination.page;
+    
+    try {
+      const params = {
+        page,
+        size: this.data.productsPagination.size,
+        status: 1
+      };
+      if (this.data.currentCategoryId) {
+        params.category = this.data.currentCategoryId;
+      }
+      const result = await api.getProducts(params);
+      const rawProducts = result.records || result.list || [];
+      const newProducts = rawProducts.map(p => ({
+        ...p,
+        id: p._id || p.id
+      }));
+      const allProducts = isRefresh ? newProducts : [...this.data.products, ...newProducts];
       this.setData({
         products: allProducts,
         filteredProducts: allProducts,
         productsLoading: false,
-        'productsPagination.page': this.data.productsPagination.page + 1,
+        'productsPagination.page': page + 1,
         'productsPagination.hasMore': newProducts.length >= this.data.productsPagination.size
       });
     } catch (err) {
       console.error('加载商品失败:', err);
       this.setData({ productsLoading: false });
     }
+  },
+
+  onCategoryChange(e) {
+    const index = e.currentTarget.dataset.index;
+    if (index === this.data.currentCategoryIndex) return;
+    const category = this.data.categories[index];
+    this.setData({
+      currentCategoryIndex: index,
+      currentCategoryId: category.id,
+      products: [],
+      filteredProducts: [],
+      'productsPagination.page': 1,
+      'productsPagination.hasMore': true
+    }, () => {
+      this.loadProducts(true);
+    });
   },
 
   onLoadMoreProducts() {
@@ -82,27 +153,29 @@ Page({
     this.setData({ showProductSelector: false });
   },
 
-  onPopupChange(e) {
-    this.setData({ showProductSelector: e.detail.visible });
+  preventTouchMove() {
+    return false;
   },
 
-  onSearchChange(e) {
-    const searchValue = e.detail.value.toLowerCase();
-    this.setData({
-      searchValue,
-      'productsPagination.page': 1,
-      'productsPagination.hasMore': true,
-      products: [],
-      filteredProducts: []
-    }, () => {
-      this.loadProducts();
-    });
+  stopPropagation() {
+    // 阻止事件冒泡
   },
+
+
 
   selectProduct(e) {
-    const product = e.currentTarget.dataset.product;
+    const index = parseInt(e.currentTarget.dataset.index, 10);
+    if (isNaN(index) || index < 0 || index >= this.data.filteredProducts.length) {
+      return;
+    }
+    const product = this.data.filteredProducts[index];
+    const productId = product.id;
+    if (!productId) {
+      wx.showToast({ title: '商品数据异常', icon: 'none' });
+      return;
+    }
     const selectedProducts = [...this.data.selectedProducts];
-    const existingIndex = selectedProducts.findIndex(p => p.id === product.id);
+    const existingIndex = selectedProducts.findIndex(p => p.id === productId);
     if (existingIndex > -1) {
       selectedProducts[existingIndex].quantity += 1;
     } else {
@@ -113,18 +186,37 @@ Page({
     wx.showToast({ title: '已添加', icon: 'success', duration: 1000 });
   },
 
-  onStepperChange(e) {
+  onQuantityMinus(e) {
     const { index } = e.currentTarget.dataset;
-    const value = e.detail.value;
     const selectedProducts = [...this.data.selectedProducts];
-    selectedProducts[index].quantity = value;
-    this.setData({ selectedProducts });
-    this.calculateTotal();
+    if (selectedProducts[index].quantity > 1) {
+      selectedProducts[index].quantity -= 1;
+      this.setData({ selectedProducts });
+      this.calculateTotal();
+    }
   },
 
-  onSwipeClick(e) {
+  onQuantityPlus(e) {
     const { index } = e.currentTarget.dataset;
-    this.removeProduct(index);
+    const selectedProducts = [...this.data.selectedProducts];
+    if (selectedProducts[index].quantity < 99) {
+      selectedProducts[index].quantity += 1;
+      this.setData({ selectedProducts });
+      this.calculateTotal();
+    }
+  },
+
+  onDeleteProduct(e) {
+    const { index } = e.currentTarget.dataset;
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要移除这个商品吗？',
+      success: (res) => {
+        if (res.confirm) {
+          this.removeProduct(index);
+        }
+      }
+    });
   },
 
   removeProduct(index) {

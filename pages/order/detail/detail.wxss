@@ -257,7 +257,8 @@
 .goods-price-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 8rpx;
 }
 
 .goods-price {
@@ -266,7 +267,7 @@
   font-weight: 500;
 }
 
-.quantity {
+.goods-quantity {
   color: var(--text-sub);
   font-size: 26rpx;
 }

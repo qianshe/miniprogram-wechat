@@ -2,9 +2,16 @@ var formatPrice = function(price) {
   return price.toFixed(2);
 };
 
+var getProductId = function(product) {
+  return product.id || product._id || '';
+};
+
 var isProductSelected = function(selectedProducts, productId) {
+  if (!productId) return false;
+  var pid = '' + productId;
   for (var i = 0; i < selectedProducts.length; i++) {
-    if (selectedProducts[i].id === productId) {
+    var sid = '' + (selectedProducts[i].id || '');
+    if (sid === pid) {
       return true;
     }
   }
@@ -13,5 +20,6 @@ var isProductSelected = function(selectedProducts, productId) {
 
 module.exports = {
   formatPrice: formatPrice,
+  getProductId: getProductId,
   isProductSelected: isProductSelected
 };

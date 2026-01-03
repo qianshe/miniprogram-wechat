@@ -93,7 +93,7 @@
             <text class="goods-name">{{item.productName}}</text>
             <view class="goods-price-row">
               <text class="goods-price">¥{{item.productPrice}}</text>
-              <text class="quantity">x{{item.quantity}}</text>
+              <text class="goods-quantity">×{{item.quantity}}</text>
             </view>
           </view>
           <text class="subtotal">¥{{item.subtotal}}</text>
