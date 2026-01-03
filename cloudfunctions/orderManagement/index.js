@@ -1601,6 +1601,108 @@ async function getStatistics(data, context, logger) {
 }
 
 /**
+ * 追加商品到订单（服务完成前 + 未付款）
+ * 支持用户追加自己订单 / 管理员追加任意订单
+ * @param {object} data - { orderNo, items: [{ productId, productName, price, quantity, productImage }], isAdmin? }
+ */
+async function appendOrderItems(data, context, logger) {
+  const { OPENID } = cloud.getWXContext();
+  const { orderNo, items, isAdmin } = data;
+
+  logger.info('appendOrderItems called', { orderNo, itemCount: items?.length, isAdmin });
+
+  if (!orderNo) return paramError('缺少订单号');
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return paramError('追加商品列表不能为空');
+  }
+
+  // 权限校验：管理员需要验证身份
+  let hasAdminPrivilege = false;
+  if (isAdmin) {
+    hasAdminPrivilege = await verifyAdminByOpenid(OPENID);
+    if (!hasAdminPrivilege) {
+      return permissionError('无管理员权限');
+    }
+  }
+
+  try {
+    // 使用事务保证并发安全
+    const transaction = await db.startTransaction();
+    const ordersCollection = transaction.collection('orders');
+
+    // 1. 查询订单
+    const orderQuery = hasAdminPrivilege
+      ? ordersCollection.where({ orderNo })
+      : ordersCollection.where({ orderNo, userOpenid: OPENID });
+
+    const orderResult = await orderQuery.get();
+    if (!orderResult.data || orderResult.data.length === 0) {
+      await transaction.rollback();
+      return notFoundError('订单不存在或无权操作');
+    }
+
+    const order = orderResult.data[0];
+
+    // 2. 状态校验：未付款 + 服务未完成
+    const orderStatus = order.orderStatus !== undefined ? order.orderStatus : mapLegacyStatusToNew(order.status, order.payTime).orderStatus;
+    const paymentStatus = order.paymentStatus !== undefined ? order.paymentStatus : mapLegacyStatusToNew(order.status, order.payTime).paymentStatus;
+
+    if (paymentStatus !== PAYMENT_STATUS.UNPAID) {
+      await transaction.rollback();
+      return error(ErrorCodes.BUSINESS_ERROR, '订单已付款，无法追加商品');
+    }
+    if (orderStatus >= ORDER_FLOW_STATUS.SERVICE_DONE) {
+      await transaction.rollback();
+      return error(ErrorCodes.BUSINESS_ERROR, '服务已完成，无法追加商品');
+    }
+
+    // 3. 构建新商品列表（合并到现有items）
+    const existingItems = Array.isArray(order.items) ? order.items : [];
+    const newItems = items.map(item => ({
+      productId: item.productId,
+      productName: item.productName || item.name,
+      price: Math.round((item.price || 0) * 100),
+      quantity: item.quantity,
+      subtotal: Math.round((item.price || 0) * item.quantity * 100),
+      productImage: item.productImage || '',
+      appendedAt: new Date()
+    }));
+
+    const mergedItems = [...existingItems, ...newItems];
+
+    // 4. 重算总金额
+    const newTotalAmount = mergedItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+
+    // 5. 更新订单
+    await ordersCollection.doc(order._id).update({
+      data: {
+        items: mergedItems,
+        totalAmount: newTotalAmount,
+        updateTime: new Date()
+      }
+    });
+
+    await transaction.commit();
+
+    logger.info('appendOrderItems success', {
+      orderNo,
+      addedCount: newItems.length,
+      newTotalAmount: newTotalAmount / 100
+    });
+
+    return success({
+      orderNo,
+      items: mergedItems.map(i => ({ ...i, price: i.price / 100, subtotal: i.subtotal / 100 })),
+      totalAmount: newTotalAmount / 100
+    }, '商品追加成功');
+
+  } catch (err) {
+    logger.error('appendOrderItems failed', { error: err.message });
+    return error(ErrorCodes.DB_UPDATE_ERROR, '追加商品失败', { originalError: err.message });
+  }
+}
+
+/**
  * 生成订单号
  */
 function generateOrderNo() {
@@ -1695,6 +1797,8 @@ const handler = async (event, context, logger) => {
       return await updatePaymentStatus(data, context, logger);
     case 'migrateOrderStatus':
       return await migrateOrderStatus(data, context, logger);
+    case 'appendOrderItems':
+      return await appendOrderItems(data, context, logger);
     default:
       logger.warn('Unknown action', { action });
       return paramError(`不支持的操作类型: ${action}`);

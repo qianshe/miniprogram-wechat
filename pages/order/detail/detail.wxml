@@ -3,7 +3,7 @@
   <block wx:elif="{{orderInfo}}">
     <!-- 状态栏 -->
     <view class="status-bar {{systemType}}-status-{{orderInfo.orderStatus}}">
-      <text class="status">{{orderInfo.statusText}}</text>
+      <text class="status">{{orderInfo.displayStatusText}}</text>
       <view class="status-desc">{{orderInfo.flowStatusDesc || orderInfo.statusDesc}}</view>
     </view>
 
@@ -32,7 +32,7 @@
       <view class="timeline-line {{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? 'active' : ''}}"></view>
       <view class="timeline-item {{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? (orderInfo.orderStatus === 1 ? 'current' : 'active') : ''}}">
         <view class="timeline-dot"></view>
-        <text class="timeline-text">服务中</text>
+        <text class="timeline-text">{{orderInfo.orderStatus === 2 ? '服务完成' : '服务中'}}</text>
         <text class="timeline-time">{{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? (orderInfo.timelineProcessTime || '-') : ''}}</text>
       </view>
       <view class="timeline-line {{orderInfo.orderStatus >= 3 && orderInfo.orderStatus !== 4 ? 'active' : ''}}"></view>
@@ -47,7 +47,7 @@
       <view class="section-title">基本信息</view>
       <view class="info-item">
         <text class="label">订单编号</text>
-        <view class="value-with-action">
+        <view class="value-with-action value-with-action--center-btn">
           <text class="value">{{orderInfo.orderNo}}</text>
           <t-button size="small" theme="default" bindtap="copyOrderNo">复制</t-button>
         </view>
@@ -70,7 +70,7 @@
       </view>
       <view class="info-item">
         <text class="label">联系电话</text>
-        <view class="value-with-action">
+        <view class="value-with-action value-with-action--center-btn">
           <text class="value">{{orderInfo.contactPhone}}</text>
           <t-button size="small" theme="primary" bindtap="callPhone">拨打</t-button>
         </view>
@@ -129,6 +129,8 @@
         <t-button wx:if="{{showMarkServiceDoneBtn}}" theme="primary" class="btn-primary" bindtap="handleMarkServiceDone">标记服务完成</t-button>
         <!-- 确认收款：未支付且订单未完成/未取消时可用 -->
         <t-button wx:if="{{showConfirmPaymentBtn}}" theme="success" class="btn-success" bindtap="handleConfirmPaymentNew">确认收款</t-button>
+        <!-- 追加商品：未支付 且 服务未完成 -->
+        <t-button wx:if="{{showAppendItemsBtn}}" theme="default" class="btn-append" bindtap="handleAppendItems">追加商品</t-button>
         <!-- 取消订单：仅 CREATED 或 PROCESSING 状态可用 -->
         <t-button wx:if="{{showCancelBtn}}" theme="danger" class="btn-danger" bindtap="handleCancelOrderNew">取消订单</t-button>
         <!-- 无操作提示：已完成或已取消 -->
@@ -142,6 +144,14 @@
                   class="btn-pay"
                   bindtap="handlePayOrder">
           去支付
+        </t-button>
+        
+        <!-- 追加商品按钮 -->
+        <t-button wx:if="{{showAppendItemsBtn}}"
+                  theme="default"
+                  class="btn-append"
+                  bindtap="handleAppendItems">
+          追加商品
         </t-button>
         
         <!-- 取消订单按钮 -->
@@ -160,13 +170,9 @@
         </view>
         
         <!-- 订单结束状态 -->
-        <view wx:if="{{orderInfo.orderStatus >= 3}}" class="user-status-tip ended">
-          <text wx:if="{{orderInfo.orderStatus === 3}}">订单已完成</text>
-          <text wx:if="{{orderInfo.orderStatus === 4}}">订单已取消</text>
-          <view class="ended-actions">
-            <t-button theme="default" size="small" bindtap="deleteOrder">删除订单</t-button>
-            <t-button theme="primary" size="small" bindtap="rebuyOrder" wx:if="{{orderInfo.orderStatus === 3}}">再次购买</t-button>
-          </view>
+        <view wx:if="{{orderInfo.orderStatus >= 3}}" class="ended-actions">
+          <t-button theme="default" class="btn-delete" bindtap="deleteOrder">删除订单</t-button>
+          <t-button theme="primary" class="btn-rebuy" bindtap="rebuyOrder" wx:if="{{orderInfo.orderStatus === 3}}">再次购买</t-button>
         </view>
       </view>
     </view>

@@ -15,6 +15,7 @@
     "pages/order/detail/detail",
     "pages/order/confirm/confirm",
     "pages/order/create/create",
+    "pages/order/append-items/append-items",
     "pages/scan-result/scan-result",
     "pages/package/list/list",
     "pages/package/detail/detail",

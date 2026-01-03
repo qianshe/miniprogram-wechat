@@ -262,6 +262,11 @@ const api = {
     return await callCloudFunction('orderManagement', 'bindOrder', { orderNo, userId });
   },
 
+  // 追加商品到订单（服务完成前 + 未付款）
+  appendOrderItems: async (orderNo, items, isAdmin = false) => {
+    return await callCloudFunction('orderManagement', 'appendOrderItems', { orderNo, items, isAdmin });
+  },
+
   // 用户登录 - 统一云函数调用
   login: async (userInfo) => {
     try {

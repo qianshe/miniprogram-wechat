@@ -94,6 +94,7 @@
 .timeline-text {
   font-size: 24rpx;
   margin-bottom: 8rpx;
+  white-space: nowrap;
 }
 
 .timeline-time {
@@ -105,7 +106,7 @@
 }
 
 .timeline-line {
-  flex: 1;
+  flex: 0 0 56rpx;
   height: 4rpx;
   background: #e0e0e0;
   margin: 0 4rpx;
@@ -142,6 +143,7 @@
 
 .info-item {
   display: flex;
+  align-items: flex-start;
   margin-bottom: 20rpx;
   font-size: 28rpx;
   line-height: 1.5;
@@ -155,17 +157,19 @@
   color: var(--text-sub);
   width: 160rpx;
   flex-shrink: 0;
+  display: block;
 }
 
 .value {
   color: var(--text-main);
   flex: 1;
+  display: block;
 }
 
 .value-with-action {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
 }
 
@@ -177,6 +181,13 @@
 .value-with-action t-button {
   flex-shrink: 0;
   min-width: 120rpx;
+}
+
+.value-with-action--center-btn {
+  align-items: center;
+}
+.value-with-action--center-btn .value {
+  line-height: 64rpx;
 }
 
 .value.address {
@@ -311,11 +322,11 @@
   z-index: 100;
 }
 
-.actions t-button {
+.actions > t-button {
   margin-left: 16rpx;
 }
 
-.actions t-button:first-child {
+.actions > t-button:first-child {
   margin-left: 0;
 }
 
@@ -442,9 +453,20 @@
   color: #666;
 }
 
-.user-status-tip .ended-actions {
+.ended-actions {
   display: flex;
-  justify-content: center;
-  gap: 20rpx;
-  margin-top: 20rpx;
+  gap: 16rpx;
+  width: 100%;
+}
+
+.ended-actions .btn-delete {
+  flex: 1;
+  min-width: 140rpx;
+  background: #f5f5f5 !important;
+  color: #666 !important;
+}
+
+.ended-actions .btn-rebuy {
+  flex: 2;
+  min-width: 200rpx;
 }

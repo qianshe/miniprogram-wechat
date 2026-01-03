@@ -291,6 +291,17 @@ Page({
     }
   },
 
+  onPullDownRefresh() {
+    this.setData({
+      'pagination.page': 1,
+      orders: [],
+      hasMore: true
+    }, async () => {
+      await this.loadOrders();
+      wx.stopPullDownRefresh();
+    });
+  },
+
   onReachBottom() {
     if (this.data.hasMore) {
       this.loadMore();

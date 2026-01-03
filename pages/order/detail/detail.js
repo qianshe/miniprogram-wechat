@@ -116,6 +116,18 @@ Page({
       const orderStatusText = getOrderFlowText(orderStatus);
       const paymentStatusText = getPaymentStatusText(paymentStatus);
       
+      // 根据角色生成状态栏主标题
+      const getDisplayStatusText = (os, ps, admin) => {
+        if (os === ORDER_FLOW_STATUS.CANCELLED) return '已取消';
+        if (os === ORDER_FLOW_STATUS.COMPLETED) return '已完成';
+        if (os === ORDER_FLOW_STATUS.SERVICE_DONE && ps === PAYMENT_STATUS.UNPAID) {
+          return admin ? '待收款' : '待付款';
+        }
+        if (ps === PAYMENT_STATUS.UNPAID) return '待付款';
+        return getOrderFlowText(os);
+      };
+      const displayStatusText = getDisplayStatusText(orderStatus, paymentStatus, this.data.isAdmin);
+      
       // 处理status=5的状态描述（兼容旧系统）
       let customStatusDesc = statusInfo.desc;
       if (orderData.status === 5 && orderData.payDeadlineAt) {
@@ -147,6 +159,7 @@ Page({
         isPaid: isPaid,
         // 旧状态系统（兼容）
         statusText: statusInfo.text,
+        displayStatusText: displayStatusText,
         statusDesc: customStatusDesc,
         statusClass: statusInfo.class,
         // 新双字段状态系统
@@ -243,7 +256,9 @@ Page({
       // 显示"取消订单"按钮: 仅在 CREATED 状态且未支付时
       showUserCancelBtn: orderStatus === ORDER_FLOW_STATUS.CREATED && paymentStatus === PAYMENT_STATUS.UNPAID,
       // 显示"无操作"提示: 已完成/已取消 或 已支付但订单未完成
-      showUserNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED || (paymentStatus === PAYMENT_STATUS.PAID && orderStatus < ORDER_FLOW_STATUS.COMPLETED)
+      showUserNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED || (paymentStatus === PAYMENT_STATUS.PAID && orderStatus < ORDER_FLOW_STATUS.COMPLETED),
+      // 显示"追加商品"按钮: 未支付 且 服务未完成（CREATED 或 PROCESSING）
+      showAppendItemsBtn: paymentStatus === PAYMENT_STATUS.UNPAID && orderStatus < ORDER_FLOW_STATUS.SERVICE_DONE
     };
   },
 
@@ -272,7 +287,9 @@ Page({
       // 取消订单：仅 CREATED 或 PROCESSING 状态可用
       showCancelBtn: orderStatus <= ORDER_FLOW_STATUS.PROCESSING,
       // 无操作提示：已完成或已取消
-      showNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED
+      showNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED,
+      // 追加商品：未支付 且 服务未完成
+      showAppendItemsBtn: paymentStatus === PAYMENT_STATUS.UNPAID && orderStatus < ORDER_FLOW_STATUS.SERVICE_DONE
     };
   },
 
@@ -843,6 +860,13 @@ Page({
           }
         }
       }
+    });
+  },
+
+  // 追加商品到订单
+  handleAppendItems() {
+    wx.navigateTo({
+      url: `/pages/order/append-items/append-items?orderNo=${this.data.orderInfo.orderNo}&isAdmin=${this.data.isAdmin}`
     });
   },
 
