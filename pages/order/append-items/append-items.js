@@ -27,18 +27,7 @@ Page({
 
   onLoad(options) {
     const { SDKVersion } = wx.getSystemInfoSync();
-    const compareVersion = (v1, v2) => {
-      const s1 = v1.split('.').map(Number);
-      const s2 = v2.split('.').map(Number);
-      const len = Math.max(s1.length, s2.length);
-      for (let i = 0; i < len; i++) {
-        const n1 = s1[i] || 0;
-        const n2 = s2[i] || 0;
-        if (n1 > n2) return 1;
-        if (n1 < n2) return -1;
-      }
-      return 0;
-    };
+    const { compareVersion } = require('../../../utils/util');
     this.setData({ isPageContainerSupported: compareVersion(SDKVersion, '2.16.0') >= 0 });
     const orderNo = options.orderNo || '';
     const isAdmin = options.isAdmin === 'true';
@@ -112,9 +101,11 @@ Page({
         id: p._id || p.id
       }));
       const allProducts = isRefresh ? newProducts : [...this.data.products, ...newProducts];
+      // 初始化选中状态
+      const filteredProducts = this.updateFilteredProductsSelection(allProducts, this.data.selectedProducts);
       this.setData({
         products: allProducts,
-        filteredProducts: allProducts,
+        filteredProducts: filteredProducts,
         productsLoading: false,
         'productsPagination.page': page + 1,
         'productsPagination.hasMore': newProducts.length >= this.data.productsPagination.size
@@ -126,7 +117,7 @@ Page({
   },
 
   onCategoryChange(e) {
-    const index = e.currentTarget.dataset.index;
+    const index = e.detail ? e.detail.index : e.currentTarget.dataset.index;
     if (index === this.data.currentCategoryIndex) return;
     const category = this.data.categories[index];
     this.setData({
@@ -146,7 +137,9 @@ Page({
   },
 
   showProductSelector() {
-    this.setData({ showProductSelector: true });
+    // 打开弹窗时同步选中状态
+    const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, this.data.selectedProducts);
+    this.setData({ showProductSelector: true, filteredProducts });
   },
 
   hideProductSelector() {
@@ -164,7 +157,7 @@ Page({
 
 
   selectProduct(e) {
-    const index = parseInt(e.currentTarget.dataset.index, 10);
+    const index = parseInt(e.detail ? e.detail.index : e.currentTarget.dataset.index, 10);
     if (isNaN(index) || index < 0 || index >= this.data.filteredProducts.length) {
       return;
     }
@@ -181,9 +174,23 @@ Page({
     } else {
       selectedProducts.push({ ...product, quantity: 1 });
     }
-    this.setData({ selectedProducts });
+    // 更新 filteredProducts 以触发 WXS 重新计算
+    const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+    this.setData({ selectedProducts, filteredProducts });
     this.calculateTotal();
     wx.showToast({ title: '已添加', icon: 'success', duration: 1000 });
+  },
+
+  // 辅助方法：更新 filteredProducts 中的选中状态
+  updateFilteredProductsSelection(products, selectedProducts) {
+    return products.map(p => {
+      const selected = selectedProducts.find(sp => String(sp.id) === String(p.id));
+      return {
+        ...p,
+        _isSelected: !!selected,
+        _selectedQuantity: selected ? selected.quantity : 0
+      };
+    });
   },
 
   onQuantityMinus(e) {
@@ -191,7 +198,8 @@ Page({
     const selectedProducts = [...this.data.selectedProducts];
     if (selectedProducts[index].quantity > 1) {
       selectedProducts[index].quantity -= 1;
-      this.setData({ selectedProducts });
+      const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+      this.setData({ selectedProducts, filteredProducts });
       this.calculateTotal();
     }
   },
@@ -201,7 +209,8 @@ Page({
     const selectedProducts = [...this.data.selectedProducts];
     if (selectedProducts[index].quantity < 99) {
       selectedProducts[index].quantity += 1;
-      this.setData({ selectedProducts });
+      const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+      this.setData({ selectedProducts, filteredProducts });
       this.calculateTotal();
     }
   },
@@ -222,7 +231,8 @@ Page({
   removeProduct(index) {
     const selectedProducts = [...this.data.selectedProducts];
     selectedProducts.splice(index, 1);
-    this.setData({ selectedProducts });
+    const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+    this.setData({ selectedProducts, filteredProducts });
     this.calculateTotal();
   },
 

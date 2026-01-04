@@ -1,4 +1,4 @@
-const { adminApi } = require('../../../../utils/api.js');
+const { adminApi, api } = require('../../../../utils/api.js');
 const validation = require('../../../../utils/validation.js');
 
 Page({
@@ -9,8 +9,19 @@ Page({
     // 产品数据
     productList: [],
     selectedProducts: [],
-    searchKeyword: '',
     showProductSelector: false,
+    
+    // 分类和分页数据
+    categories: [],
+    currentCategoryIndex: 0,
+    currentCategoryId: '',
+    filteredProducts: [],
+    productsLoading: false,
+    productsPagination: {
+      page: 1,
+      size: 20,
+      hasMore: true
+    },
 
     // 订单数据
     formData: {
@@ -36,8 +47,8 @@ Page({
   onLoad(options) {
     // 设置默认服务时间（明天）
     this.setDefaultServiceTime();
-    // 加载产品列表
-    this.loadProducts();
+    // 加载分类列表
+    this.loadCategories();
   },
 
   /**
@@ -57,59 +68,83 @@ Page({
   },
 
   /**
-   * 加载产品列表
+   * 加载分类列表
    */
-  loadProducts() {
-    adminApi.getProducts({ page: 1, size: 100 })
-      .then(data => {
-        const products = (data.records || []).map(item => ({
-          ...item,
-          thumb: item.thumb || item.imageUrl || ''
+  async loadCategories() {
+    try {
+      const app = getApp();
+      const type = app.globalData.systemType || 'white';
+      const categories = await api.getCategories({ type });
+      const sortedCategories = categories
+        .sort((a, b) => a.sort - b.sort)
+        .map(category => ({
+          name: category.name,
+          id: category._id
         }));
-        this.setData({ productList: products });
-      })
-      .catch(err => {
-        console.error('加载产品失败', err);
-        // Fallback to mock
-        this.setData({ productList: this.getMockProducts() });
+      const allCategory = { id: '', name: '全部' };
+      const categoriesWithAll = [allCategory, ...sortedCategories];
+      this.setData({
+        categories: categoriesWithAll,
+        currentCategoryIndex: 0,
+        currentCategoryId: ''
+      }, () => {
+        this.loadProducts(true);
       });
+    } catch (err) {
+      console.error('加载分类失败:', err);
+      this.loadProducts(true);
+    }
   },
 
   /**
-   * 生成模拟产品数据
+   * 加载产品列表
    */
-  getMockProducts() {
-    const products = [];
-    for (let i = 1; i <= 20; i++) {
-      products.push({
-        id: i,
-        name: `产品 ${i}`,
-        price: Math.floor(Math.random() * 1000) + 100, // 100-1099元
-        thumb: 'https://img.yzcdn.cn/vant/cat.jpeg',
-        stock: Math.floor(Math.random() * 100) + 10,
-        description: `这是产品 ${i} 的详细描述`,
-        status: 1 // 1表示上架
+  async loadProducts(isRefresh = false) {
+    if (this.data.productsLoading) return;
+    if (!isRefresh && !this.data.productsPagination.hasMore) return;
+    
+    this.setData({ productsLoading: true });
+    const page = isRefresh ? 1 : this.data.productsPagination.page;
+    
+    try {
+      const params = {
+        page,
+        size: this.data.productsPagination.size,
+        status: 1
+      };
+      if (this.data.currentCategoryId) {
+        params.category = this.data.currentCategoryId;
+      }
+      const result = await api.getProducts(params);
+      const rawProducts = result.records || result.list || [];
+      const newProducts = rawProducts.map(p => ({
+        ...p,
+        id: p._id || p.id,
+        thumb: p.thumb || p.imageUrl || ''
+      }));
+      const allProducts = isRefresh ? newProducts : [...this.data.productList, ...newProducts];
+      const filteredProducts = this.updateFilteredProductsSelection(allProducts, this.data.selectedProducts);
+      this.setData({
+        productList: allProducts,
+        filteredProducts: filteredProducts,
+        productsLoading: false,
+        'productsPagination.page': page + 1,
+        'productsPagination.hasMore': newProducts.length >= this.data.productsPagination.size
       });
+    } catch (err) {
+      console.error('加载产品失败:', err);
+      this.setData({ productsLoading: false });
     }
-    return products;
   },
 
   /**
    * 打开产品选择器
    */
   openProductSelector() {
+    const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, this.data.selectedProducts);
     this.setData({
       showProductSelector: true,
-      searchKeyword: ''
-    });
-  },
-
-  /**
-   * TDesign弹窗状态变化
-   */
-  onProductSelectorChange(e) {
-    this.setData({
-      showProductSelector: e.detail.visible
+      filteredProducts
     });
   },
 
@@ -123,49 +158,70 @@ Page({
   },
 
   /**
-   * 搜索产品
+   * 分类切换
    */
-  onSearchInput(e) {
+  onCategoryChange(e) {
+    const index = e.detail.index;
+    if (index === this.data.currentCategoryIndex) return;
+    const category = this.data.categories[index];
     this.setData({
-      searchKeyword: e.detail.value
+      currentCategoryIndex: index,
+      currentCategoryId: category.id,
+      productList: [],
+      filteredProducts: [],
+      'productsPagination.page': 1,
+      'productsPagination.hasMore': true
+    }, () => {
+      this.loadProducts(true);
     });
   },
 
   /**
-   * 选择产品
+   * 加载更多产品
    */
-  selectProduct(e) {
-    const { id } = e.currentTarget.dataset;
-    const product = this.data.productList.find(item => item.id === id);
+  onLoadMoreProducts() {
+    this.loadProducts();
+  },
 
-    if (!product) return;
+  /**
+   * 选择产品（来自组件事件）
+   */
+  onProductSelect(e) {
+    const product = e.detail.product;
+    const productId = product.id;
 
-    // 检查产品是否已经选择
-    const existIndex = this.data.selectedProducts.findIndex(item => item.id === id);
-
-    if (existIndex >= 0) {
-      // 已经选择过，增加数量
-      const selectedProducts = this.data.selectedProducts.map((item, idx) =>
-        idx === existIndex ? { ...item, quantity: item.quantity + 1 } : item
-      );
-
-      this.setData({
-        selectedProducts
-      });
-    } else {
-      // 新增选择
-      const newProduct = {
-        ...product,
-        quantity: 1
-      };
-
-      this.setData({
-        selectedProducts: [...this.data.selectedProducts, newProduct]
-      });
+    if (!productId) {
+      wx.showToast({ title: '商品数据异常', icon: 'none' });
+      return;
     }
 
+    const selectedProducts = [...this.data.selectedProducts];
+    const existingIndex = selectedProducts.findIndex(p => String(p.id) === String(productId));
+
+    if (existingIndex > -1) {
+      selectedProducts[existingIndex].quantity += 1;
+    } else {
+      selectedProducts.push({ ...product, quantity: 1 });
+    }
+
+    const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+    this.setData({ selectedProducts, filteredProducts });
     this.calculateTotal();
-    this.closeProductSelector();
+    wx.showToast({ title: '已添加', icon: 'success', duration: 1000 });
+  },
+
+  /**
+   * 更新 filteredProducts 中的选中状态
+   */
+  updateFilteredProductsSelection(products, selectedProducts) {
+    return products.map(p => {
+      const selected = selectedProducts.find(sp => String(sp.id) === String(p.id));
+      return {
+        ...p,
+        _isSelected: !!selected,
+        _selectedQuantity: selected ? selected.quantity : 0
+      };
+    });
   },
 
   /**
@@ -177,10 +233,8 @@ Page({
       idx === index ? { ...item, quantity: item.quantity + 1 } : item
     );
 
-    this.setData({
-      selectedProducts
-    });
-
+    const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+    this.setData({ selectedProducts, filteredProducts });
     this.calculateTotal();
   },
 
@@ -196,9 +250,8 @@ Page({
         idx === index ? { ...item, quantity: item.quantity - 1 } : item
       );
 
-      this.setData({
-        selectedProducts
-      });
+      const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+      this.setData({ selectedProducts, filteredProducts });
       this.calculateTotal();
     } else {
       wx.showModal({
@@ -207,9 +260,8 @@ Page({
         success: (res) => {
           if (res.confirm) {
             const selectedProducts = this.data.selectedProducts.filter((_, idx) => idx !== index);
-            this.setData({
-              selectedProducts
-            });
+            const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+            this.setData({ selectedProducts, filteredProducts });
             this.calculateTotal();
           }
         }
@@ -222,14 +274,11 @@ Page({
    */
   removeProduct(e) {
     const { index } = e.currentTarget.dataset;
-    const selectedProducts = this.data.selectedProducts;
-
+    const selectedProducts = [...this.data.selectedProducts];
     selectedProducts.splice(index, 1);
 
-    this.setData({
-      selectedProducts
-    });
-
+    const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+    this.setData({ selectedProducts, filteredProducts });
     this.calculateTotal();
   },
 
@@ -429,15 +478,5 @@ Page({
    */
   goBack() {
     wx.navigateBack();
-  },
-
-  // 过滤产品列表 - 根据搜索关键词
-  getFilteredProducts() {
-    const { productList, searchKeyword } = this.data;
-    if (!searchKeyword) return productList;
-
-    return productList.filter(product =>
-      product.name.toLowerCase().includes(searchKeyword.toLowerCase())
-    );
   }
 });

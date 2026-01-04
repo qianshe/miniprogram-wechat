@@ -11,8 +11,6 @@
     "t-dialog": "tdesign-miniprogram/dialog/dialog",
     "t-popup": "tdesign-miniprogram/popup/popup",
     "t-action-sheet": "tdesign-miniprogram/action-sheet/action-sheet",
-    "t-tabs": "tdesign-miniprogram/tabs/tabs",
-    "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
     "t-button": "tdesign-miniprogram/button/button"
   },
   "enablePullDownRefresh": true

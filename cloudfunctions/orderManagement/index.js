@@ -1656,17 +1656,43 @@ async function appendOrderItems(data, context, logger) {
       return error(ErrorCodes.BUSINESS_ERROR, '服务已完成，无法追加商品');
     }
 
-    // 3. 构建新商品列表（合并到现有items）
+    // 3. 从数据库查询商品权威价格（安全：不信任客户端传来的价格）
+    const productIds = items.map(item => item.productId);
+    const productsResult = await db.collection('products')
+      .where({ _id: db.command.in(productIds) })
+      .get();
+
+    const productMap = new Map();
+    productsResult.data.forEach(p => {
+      productMap.set(p._id, {
+        price: p.price, // 数据库中已是分为单位
+        name: p.name,
+        imageUrl: p.imageUrl || p.image || ''
+      });
+    });
+
+    // 验证所有商品都存在
+    const missingProducts = productIds.filter(id => !productMap.has(id));
+    if (missingProducts.length > 0) {
+      await transaction.rollback();
+      return error(ErrorCodes.BUSINESS_ERROR, `商品不存在: ${missingProducts.join(', ')}`);
+    }
+
+    // 4. 构建新商品列表（使用数据库权威价格）
     const existingItems = Array.isArray(order.items) ? order.items : [];
-    const newItems = items.map(item => ({
-      productId: item.productId,
-      productName: item.productName || item.name,
-      price: Math.round((item.price || 0) * 100),
-      quantity: item.quantity,
-      subtotal: Math.round((item.price || 0) * item.quantity * 100),
-      productImage: item.productImage || '',
-      appendedAt: new Date()
-    }));
+    const newItems = items.map(item => {
+      const dbProduct = productMap.get(item.productId);
+      const price = dbProduct.price; // 使用数据库价格（分）
+      return {
+        productId: item.productId,
+        productName: dbProduct.name || item.productName || item.name,
+        price: price,
+        quantity: item.quantity,
+        subtotal: price * item.quantity,
+        productImage: dbProduct.imageUrl || item.productImage || '',
+        appendedAt: new Date()
+      };
+    });
 
     // 合并追加商品：相同productId且都是追加商品的进行数量合并
     const mergeAppendedItems = (existingList, newList) => {

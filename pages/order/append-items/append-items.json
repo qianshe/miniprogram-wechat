@@ -9,6 +9,7 @@
     "t-empty": "tdesign-miniprogram/empty/empty",
     "t-stepper": "tdesign-miniprogram/stepper/stepper",
     "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell"
+    "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell",
+    "product-selector": "/components/product-selector/product-selector"
   }
 }

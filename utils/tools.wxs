@@ -18,8 +18,21 @@ var isProductSelected = function(selectedProducts, productId) {
   return false;
 };
 
+var getSelectedQuantity = function(selectedProducts, productId) {
+  if (!productId) return 0;
+  var pid = '' + productId;
+  for (var i = 0; i < selectedProducts.length; i++) {
+    var sid = '' + (selectedProducts[i].id || '');
+    if (sid === pid) {
+      return selectedProducts[i].quantity || 1;
+    }
+  }
+  return 0;
+};
+
 module.exports = {
   formatPrice: formatPrice,
   getProductId: getProductId,
-  isProductSelected: isProductSelected
+  isProductSelected: isProductSelected,
+  getSelectedQuantity: getSelectedQuantity
 };

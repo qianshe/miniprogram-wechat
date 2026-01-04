@@ -1,0 +1,51 @@
+<view wx:if="{{visible}}" class="product-selector-modal" catchtouchmove="preventTouchMove">
+  <view class="product-selector-mask" bindtap="onClose"></view>
+  <view class="product-selector-panel" catchtap="stopPropagation">
+    <view class="popup-content">
+      <view class="popup-header">
+        <text class="popup-title">{{title}}</text>
+        <t-button variant="text" bindtap="onClose">关闭</t-button>
+      </view>
+      <view class="category-product-wrapper">
+        <scroll-view wx:if="{{categories.length > 0}}" scroll-y class="category-sidebar">
+          <view
+            class="category-item {{currentCategoryIndex === index ? 'active' : ''}}"
+            wx:for="{{categories}}"
+            wx:key="id"
+            bindtap="onCategoryChange"
+            data-index="{{index}}"
+          >
+            {{item.name}}
+          </view>
+        </scroll-view>
+        <scroll-view scroll-y class="product-scroll {{categories.length === 0 ? 'no-sidebar' : ''}}" bindscrolltolower="onLoadMore">
+          <block wx:if="{{products.length > 0}}">
+            <view
+              class="product-option {{item._isSelected ? 'selected' : ''}}"
+              wx:for="{{products}}"
+              wx:key="id"
+              bindtap="onProductSelect"
+              data-index="{{index}}"
+            >
+              <view class="product-option-left">
+                <view class="check-icon {{item._isSelected ? 'checked' : ''}}">
+                  <text wx:if="{{item._isSelected}}">✓</text>
+                </view>
+                <text class="product-name">{{item.name}}</text>
+              </view>
+              <view class="product-option-right">
+                <text class="product-price">¥{{item.price}}</text>
+                <view class="selected-badge" wx:if="{{item._selectedQuantity > 0}}">
+                  <text class="selected-quantity">×{{item._selectedQuantity}}</text>
+                </view>
+              </view>
+            </view>
+          </block>
+          <view class="loading-tips" wx:if="{{productsLoading}}">加载中...</view>
+          <view class="no-more-tips" wx:elif="{{!hasMore && products.length > 0}}">没有更多了</view>
+          <view class="empty-tips" wx:elif="{{!productsLoading && products.length === 0}}">暂无商品</view>
+        </scroll-view>
+      </view>
+    </view>
+  </view>
+</view>

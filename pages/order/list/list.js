@@ -358,7 +358,7 @@ Page({
         if (res.confirm) {
           try {
             wx.showLoading({ title: '取消中...' });
-            await api.updateOrderFlowStatus(order.orderNo, 4); // 4 = CANCELLED
+            await api.updateOrderFlowStatus(order.orderNo, ORDER_FLOW_STATUS.CANCELLED);
             wx.hideLoading();
             wx.showToast({ title: '订单已取消', icon: 'success' });
             this.loadOrders(false);

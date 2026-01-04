@@ -63,43 +63,16 @@
   </block>
 </view>
 
-<template name="productSelectorContent">
-  <view class="popup-content">
-    <view class="popup-header">
-      <text class="popup-title">选择商品</text>
-      <t-button variant="text" bindtap="hideProductSelector">关闭</t-button>
-    </view>
-    <view class="category-product-wrapper">
-      <scroll-view scroll-y class="category-sidebar">
-        <view 
-          class="category-item {{currentCategoryIndex === index ? 'active' : ''}}"
-          wx:for="{{categories}}"
-          wx:key="id"
-          bindtap="onCategoryChange"
-          data-index="{{index}}"
-        >
-          {{item.name}}
-        </view>
-      </scroll-view>
-      <scroll-view scroll-y class="product-scroll" bindscrolltolower="onLoadMoreProducts">
-        <block wx:if="{{filteredProducts.length > 0}}">
-          <view class="product-option {{tools.isProductSelected(selectedProducts, item.id) ? 'selected' : ''}}" wx:for="{{filteredProducts}}" wx:key="id" bindtap="selectProduct" data-index="{{index}}">
-            <text class="product-name">{{item.name}}</text>
-            <text class="product-price">¥{{item.price}}</text>
-            <text class="selected-tag" wx:if="{{tools.isProductSelected(selectedProducts, item.id)}}">已选</text>
-          </view>
-        </block>
-        <view class="loading-tips" wx:if="{{productsLoading}}">加载中...</view>
-        <view class="no-more-tips" wx:elif="{{!productsPagination.hasMore && filteredProducts.length > 0}}">没有更多了</view>
-        <view class="empty-tips" wx:elif="{{!productsLoading && filteredProducts.length === 0}}">暂无商品</view>
-      </scroll-view>
-    </view>
-  </view>
-</template>
-
-<view wx:if="{{showProductSelector}}" class="product-selector-modal" catchtouchmove="preventTouchMove">
-  <view class="product-selector-mask" bindtap="hideProductSelector"></view>
-  <view class="product-selector-panel" catchtap="stopPropagation">
-    <template is="productSelectorContent" data="{{categories, currentCategoryIndex, filteredProducts, selectedProducts, productsLoading, productsPagination}}"/>
-  </view>
-</view>
+<product-selector
+  visible="{{showProductSelector}}"
+  title="选择商品"
+  categories="{{categories}}"
+  currentCategoryIndex="{{currentCategoryIndex}}"
+  products="{{filteredProducts}}"
+  productsLoading="{{productsLoading}}"
+  hasMore="{{productsPagination.hasMore}}"
+  bind:close="hideProductSelector"
+  bind:categorychange="onCategoryChange"
+  bind:productselect="selectProduct"
+  bind:loadmore="onLoadMoreProducts"
+/>

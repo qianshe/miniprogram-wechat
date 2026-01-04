@@ -46,9 +46,7 @@
           start="{{formData.serviceTime}}"
         >
           <view class="filled-input picker-trigger">
-            <text class="{{formData.serviceTime ? 'text-value' : 'text-placeholder'}}">
-              {{formData.serviceTime || '请选择服务日期'}}
-            </text>
+            <text class="{{formData.serviceTime ? 'text-value' : 'text-placeholder'}}">{{formData.serviceTime || '请选择服务日期'}}</text>
             <t-icon name="calendar" size="40rpx" color="#ccc" />
           </view>
         </picker>
@@ -109,7 +107,7 @@
                   <view class="qty-btn plus" bindtap="increaseQuantity" data-index="{{index}}">+</view>
                 </view>
                 <view class="delete-btn" bindtap="removeProduct" data-index="{{index}}">
-                  <t-icon name="delete" size="36rpx" color="#999" />
+                  <text class="delete-text">删除</text>
                 </view>
               </view>
             </view>
@@ -154,51 +152,17 @@
   </view>
   
   <!-- 产品选择弹窗 -->
-  <t-popup
+  <product-selector
     visible="{{showProductSelector}}"
-    placement="bottom"
-    bind:visible-change="onProductSelectorChange"
-  >
-    <view class="selector-content">
-      <view class="selector-header">
-        <view class="selector-title">选择产品</view>
-        <t-icon name="close" size="40rpx" bindtap="closeProductSelector" />
-      </view>
-
-      <view class="selector-search">
-        <t-search
-          placeholder="搜索产品名称"
-          bind:change="onSearchInput"
-          value="{{searchKeyword}}"
-          shape="round"
-        />
-      </view>
-      
-      <scroll-view scroll-y class="selector-list">
-        <block wx:if="{{getFilteredProducts().length > 0}}">
-          <view 
-            class="selector-item" 
-            wx:for="{{getFilteredProducts()}}" 
-            wx:key="id" 
-            bindtap="selectProduct" 
-            data-id="{{item.id}}"
-          >
-            <image class="selector-thumb" src="{{item.thumb}}" mode="aspectFill"></image>
-            <view class="selector-info">
-              <view class="selector-name">{{item.name}}</view>
-              <view class="selector-bottom">
-                <view class="selector-price">¥{{item.price}}</view>
-                <view class="add-icon">
-                  <t-icon name="add" size="32rpx" color="#fff" />
-                </view>
-              </view>
-            </view>
-          </view>
-        </block>
-        <view class="empty-results" wx:else>
-          <t-empty description="未找到相关产品" />
-        </view>
-      </scroll-view>
-    </view>
-  </t-popup>
+    title="选择产品"
+    categories="{{categories}}"
+    currentCategoryIndex="{{currentCategoryIndex}}"
+    products="{{filteredProducts}}"
+    productsLoading="{{productsLoading}}"
+    hasMore="{{productsPagination.hasMore}}"
+    bind:close="closeProductSelector"
+    bind:categorychange="onCategoryChange"
+    bind:productselect="onProductSelect"
+    bind:loadmore="onLoadMoreProducts"
+  />
 </view>

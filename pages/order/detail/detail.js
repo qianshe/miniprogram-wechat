@@ -192,35 +192,7 @@ Page({
           productPrice: item.price.toFixed(2),
           subtotal: item.subtotal.toFixed(2)
         })),
-        // 追加商品需要按productId合并（在对象外部先计算好）
-        appendedItems: (() => {
-          const appendedList = items.filter(item => !!item.appendedAt);
-          if (!appendedList.length) return [];
-          const mergedMap = new Map();
-          appendedList.forEach(item => {
-            const key = item.productId;
-            if (mergedMap.has(key)) {
-              const existing = mergedMap.get(key);
-              existing.quantity += item.quantity;
-              existing.subtotal += item.subtotal;
-              if (new Date(item.appendedAt) < new Date(existing.appendedAt)) {
-                existing.appendedAt = item.appendedAt;
-              }
-            } else {
-              mergedMap.set(key, { ...item });
-            }
-          });
-          return Array.from(mergedMap.values()).map(item => ({
-            ...item,
-            productPrice: item.price.toFixed(2),
-            subtotal: item.subtotal.toFixed(2),
-            appendedTime: (() => {
-              if (!item.appendedAt) return '';
-              const date = new Date(item.appendedAt);
-              return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            })()
-          }));
-        })(),
+        appendedItems: this._processAppendedItems(items),
         // 计算原始商品和追加商品的小计
         originalSubtotal: items.filter(item => !item.appendedAt).reduce((sum, item) => sum + (item.subtotal || 0), 0).toFixed(2),
         appendedSubtotal: items.filter(item => !!item.appendedAt).reduce((sum, item) => sum + (item.subtotal || 0), 0).toFixed(2)
@@ -935,6 +907,33 @@ Page({
     wx.navigateTo({
       url: `/pages/order/append-items/append-items?orderNo=${this.data.orderInfo.orderNo}&isAdmin=${this.data.isAdmin}`
     });
+  },
+
+  _processAppendedItems(items) {
+    const appendedList = items.filter(item => !!item.appendedAt);
+    if (!appendedList.length) return [];
+    const mergedMap = new Map();
+    appendedList.forEach(item => {
+      const key = item.productId;
+      if (mergedMap.has(key)) {
+        const existing = mergedMap.get(key);
+        existing.quantity += item.quantity;
+        existing.subtotal += item.subtotal;
+        if (new Date(item.appendedAt) < new Date(existing.appendedAt)) {
+          existing.appendedAt = item.appendedAt;
+        }
+      } else {
+        mergedMap.set(key, { ...item });
+      }
+    });
+    return Array.from(mergedMap.values()).map(item => ({
+      ...item,
+      productPrice: item.price.toFixed(2),
+      subtotal: item.subtotal.toFixed(2),
+      appendedTime: item.appendedAt
+        ? `${String(new Date(item.appendedAt).getMonth() + 1).padStart(2, '0')}-${String(new Date(item.appendedAt).getDate()).padStart(2, '0')}`
+        : ''
+    }));
   },
 
 });

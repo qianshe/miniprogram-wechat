@@ -86,6 +86,25 @@ const formatPrice = (price) => {
   return normalized.toFixed(2);
 }
 
+/**
+ * 比较两个版本号
+ * @param {string} v1 - 版本号1 (如 '2.16.0')
+ * @param {string} v2 - 版本号2 (如 '2.15.0')
+ * @returns {number} 1 表示 v1 > v2, -1 表示 v1 < v2, 0 表示相等
+ */
+const compareVersion = (v1, v2) => {
+  const s1 = v1.split('.').map(Number);
+  const s2 = v2.split('.').map(Number);
+  const len = Math.max(s1.length, s2.length);
+  for (let i = 0; i < len; i++) {
+    const n1 = s1[i] || 0;
+    const n2 = s2[i] || 0;
+    if (n1 > n2) return 1;
+    if (n1 < n2) return -1;
+  }
+  return 0;
+};
+
 const debounce = (fn, wait = 800) => {
   let timer = null
   let lastArgs = null
@@ -123,5 +142,6 @@ module.exports = {
   formatDateTime,
   normalizePrice,
   formatPrice,
+  compareVersion,
   debounce
 }
