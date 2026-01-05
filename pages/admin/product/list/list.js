@@ -358,7 +358,7 @@ Page({
   /**
    * 上架/下架商品
    */
-  toggleProductStatus(e) {
+  async toggleProductStatus(e) {
     const id = e.currentTarget.dataset.id
     const status = e.currentTarget.dataset.status
     const newStatus = status === 1 ? 0 : 1
@@ -366,28 +366,33 @@ Page({
     wx.showModal({
       title: '确认操作',
       content: newStatus === 1 ? '确定要上架该商品吗？' : '确定要下架该商品吗？',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
-          // 这里应该调用API更新商品状态
-          // 模拟API请求
-          setTimeout(() => {
-            // 更新本地数据
+          try {
+            wx.showLoading({ title: '处理中...' })
+            
+            await adminApi.updateProduct(id, { status: newStatus })
+            
+            wx.hideLoading()
+            
             const products = this.data.products.map(item => {
-              if (item.id === id) {
+              if (item.id === id || item._id === id) {
                 return { ...item, status: newStatus }
               }
               return item
             })
 
-            this.setData({
-              products
-            })
+            this.setData({ products })
 
             wx.showToast({
               title: newStatus === 1 ? '上架成功' : '下架成功',
               icon: 'success'
             })
-          }, 500)
+          } catch (error) {
+            wx.hideLoading()
+            console.error('更新商品状态失败:', error)
+            wx.showToast({ title: '操作失败', icon: 'none' })
+          }
         }
       }
     })

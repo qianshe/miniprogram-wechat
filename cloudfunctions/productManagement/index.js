@@ -89,13 +89,17 @@ const handler = async (event, context) => {
  */
 async function getProducts(data, context) {
   const startTime = Date.now();
+  const { OPENID } = cloud.getWXContext();
   const safeData = data || {};
   const { page = 1, size = 10, keyword, status, orderBy = 'createTime', orderDirection = 'desc' } = safeData;
   // 兼容 category 和 categoryId 两种参数名
   const category = safeData.category ?? safeData.categoryId;
   
+  // 验证是否为管理员
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+  
   console.log('[PRODUCT_MANAGEMENT] getProducts:', {
-    page, size, category, keyword, status, orderBy, orderDirection
+    page, size, category, keyword, status, orderBy, orderDirection, isAdmin
   });
   
   try {
@@ -118,9 +122,15 @@ async function getProducts(data, context) {
       });
     }
     
-    // 状态筛选
-    if (status !== undefined && status !== '') {
-      conditions.push({ status: parseInt(status) });
+    // 状态筛选 - 非管理员强制只能查看上架商品
+    if (isAdmin) {
+      // 管理员：可按status筛选，不传则查全部
+      if (status !== undefined && status !== '') {
+        conditions.push({ status: parseInt(status) });
+      }
+    } else {
+      // 非管理员：强制只查上架商品(status=1)
+      conditions.push({ status: 1 });
     }
     
     // 应用查询条件
@@ -187,6 +197,7 @@ async function getProducts(data, context) {
  */
 async function getProductDetail(data, context) {
   const startTime = Date.now();
+  const { OPENID } = cloud.getWXContext();
   const { id } = data || {};
   
   console.log('[PRODUCT_MANAGEMENT] getProductDetail:', { productId: id });
@@ -202,6 +213,13 @@ async function getProductDetail(data, context) {
     
     if (!result.data) {
       console.warn('[PRODUCT_MANAGEMENT] Product not found:', { productId: id });
+      return notFoundError('Product');
+    }
+    
+    // 非管理员不能访问下架商品
+    const isAdmin = await verifyAdminByOpenid(OPENID);
+    if (!isAdmin && result.data.status !== 1) {
+      console.warn('[PRODUCT_MANAGEMENT] Non-admin access to unpublished product:', { productId: id });
       return notFoundError('Product');
     }
     

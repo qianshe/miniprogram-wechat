@@ -67,9 +67,12 @@ const getUserOpenId = async () => {
 
 // 普通用户API封装
 const api = {
-  // 商品相关 - 统一云函数调用
+  // 商品相关 - 统一云函数调用（用户端默认只查上架商品）
   getProducts: async (params) => {
-    return await callCloudFunction('productManagement', 'getProducts', params);
+    return await callCloudFunction('productManagement', 'getProducts', {
+      status: 1,  // 默认只查上架商品
+      ...params
+    });
   },
 
   getProductDetail: async (id) => {

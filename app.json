@@ -39,7 +39,8 @@
         "order/qr-code/qr-code",
         "package/list/list",
         "package/edit/edit",
-        "user/list/list"
+        "user/list/list",
+        "assets/images/images"
       ]
     }
   ],

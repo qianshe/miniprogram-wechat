@@ -2,7 +2,23 @@
   <view class="qrcode-section">
     <view class="qrcode-title">加入用户交流群</view>
     <view class="qrcode-desc">扫描下方二维码，加入微信群与我们直接沟通</view>
-    <image class="qrcode-image" src="/assets/images/wechat-group-qrcode.png" mode="aspectFit" show-menu-by-longpress="{{true}}"></image>
-    <view class="qrcode-tip">长按图片可保存或识别二维码</view>
+    
+    <!-- 加载中状态 -->
+    <view wx:if="{{loading}}" class="qrcode-loading">
+      <view class="loading-spinner"></view>
+      <text>加载中...</text>
+    </view>
+    
+    <!-- 加载成功 -->
+    <image wx:elif="{{qrcodeUrl}}" class="qrcode-image" src="{{qrcodeUrl}}" mode="aspectFit" show-menu-by-longpress="{{true}}"></image>
+    
+    <!-- 加载失败 -->
+    <view wx:elif="{{loadError}}" class="qrcode-error">
+      <text class="error-icon">⚠️</text>
+      <text class="error-text">二维码暂未配置</text>
+      <text class="error-hint">请联系管理员上传群二维码</text>
+    </view>
+    
+    <view class="qrcode-tip" wx:if="{{qrcodeUrl}}">长按图片可保存或识别二维码</view>
   </view>
 </view>

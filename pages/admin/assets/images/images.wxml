@@ -1,0 +1,60 @@
+<view class="container">
+  <view class="header">
+    <view class="title">图片资源管理</view>
+    <view class="subtitle">管理系统中使用的图片资源</view>
+  </view>
+
+  <!-- 下拉选择图片类型 -->
+  <view class="picker-section">
+    <picker mode="selector" range="{{pickerOptions}}" value="{{selectedIndex}}" bindchange="onPickerChange">
+      <view class="picker-cell">
+        <text class="picker-label">选择图片类型</text>
+        <view class="picker-value">
+          <text>{{currentItem.label}}</text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </view>
+    </picker>
+  </view>
+
+  <!-- 当前选中类型的卡片 - 单卡片渲染，不用wx:for -->
+  <view class="card" wx:if="{{currentItem}}">
+    <view class="card-header">
+      <view class="card-title">{{currentItem.label}}</view>
+      <view class="card-desc">{{currentItem.desc}}</view>
+    </view>
+
+    <view class="card-body">
+      <view class="preview-area" bindtap="onPreview" data-url="{{currentItem.previewUrl}}">
+        <image 
+          wx:if="{{currentItem.previewUrl}}"
+          class="preview-image"
+          src="{{currentItem.previewUrl}}" 
+          mode="aspectFit"
+          bindload="onImageLoad"
+          binderror="onImageError"
+        />
+        <view wx:else class="empty-preview">
+          <view class="empty-icon">📷</view>
+          <view class="empty-text">暂无图片</view>
+        </view>
+      </view>
+
+      <view class="info-area" wx:if="{{currentItem.updateTime}}">
+        <text class="update-time">更新时间：{{currentItem.updateTime}}</text>
+      </view>
+    </view>
+
+    <view class="card-footer">
+      <t-button 
+        theme="primary" 
+        size="medium"
+        block
+        loading="{{currentItem.loading}}"
+        bindtap="onUpload"
+      >
+        {{currentItem.previewUrl ? '重新上传' : '选择图片'}}
+      </t-button>
+    </view>
+  </view>
+</view>

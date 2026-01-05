@@ -1,67 +1,41 @@
 // pages/feedback/feedback.js
 
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    qrcodeUrl: '',
+    loading: true,
+    loadError: false
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad(options) {
-
+  onLoad() {
+    this.loadQrcode();
   },
 
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
+  async loadQrcode() {
+    try {
+      // 云存储文件ID - 环境ID: cloud1-5gudbe4m8263c9dc
+      const fileID = 'cloud://cloud1-5gudbe4m8263c9dc.636c-cloud1-5gudbe4m8263c9dc-1379027289/assets/qrcode/wechat-group.png';
+      
+      const res = await wx.cloud.getTempFileURL({
+        fileList: [fileID]
+      });
+      
+      if (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) {
+        this.setData({
+          qrcodeUrl: res.fileList[0].tempFileURL,
+          loading: false
+        });
+      } else {
+        this.setData({ loading: false, loadError: true });
+      }
+    } catch (err) {
+      console.error('加载二维码失败:', err);
+      this.setData({ loading: false, loadError: true });
+    }
   },
 
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload() {
-
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
   onPullDownRefresh() {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom() {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-
+    this.loadQrcode();
+    wx.stopPullDownRefresh();
   }
-})
+});

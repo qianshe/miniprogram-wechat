@@ -62,6 +62,13 @@ Page({
         icon: '📱',
         desc: '扫描商品或订单二维码',
         path: '/pages/admin/product/scan/scan'
+      },
+      {
+        id: 'assets',
+        name: '图片管理',
+        icon: '🖼️',
+        desc: '管理系统图片资源',
+        path: '/pages/admin/assets/images/images'
       }
     ],
     // 今日数据统计

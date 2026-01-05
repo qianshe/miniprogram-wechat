@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "图片管理",
+  "usingComponents": {
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-picker": "tdesign-miniprogram/picker/picker"
+  }
+}
