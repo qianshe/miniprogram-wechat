@@ -22,7 +22,9 @@
 
 .action-buttons {
   display: flex;
-  gap: 20rpx;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* 搜索区域 */

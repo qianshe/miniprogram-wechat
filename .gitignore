@@ -36,5 +36,7 @@ CLAUDE.md
 .codex/
 .gemini/
 .roo/
+.magi/
+.sisyphus/
 rules/
 mcp.json

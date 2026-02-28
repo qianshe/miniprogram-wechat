@@ -1,5 +1,6 @@
 const app = getApp();
 const { adminApi } = require('../../../../utils/api.js');
+const productApi = require('../../../../api/product.js');
 
 Page({
   /**
@@ -177,66 +178,13 @@ Page({
       })
       .catch(err => {
         console.error('获取商品列表失败:', err);
-        // 失败时使用模拟数据作为后备
-        const mockProducts = this.getMockProducts(params);
-        const hasMore = mockProducts.length === this.data.pageSize;
-        const newPage = this.data.page + 1;
-
         this.setData({
-          products: reset ? mockProducts : [...this.data.products, ...mockProducts],
-          page: newPage,
-          hasMore,
-          isLoading: false,
-          total: 100 // 模拟总数
+          isLoading: false
         });
+        wx.showToast({ title: '加载失败', icon: 'none' });
       });
   },
 
-  /**
-   * 生成模拟商品数据
-   */
-  getMockProducts(params) {
-    const products = []
-    const startIndex = (params.page - 1) * params.pageSize
-    const count = Math.min(params.pageSize, 10) // 模拟最多返回10条数据
-
-    for (let i = 0; i < count; i++) {
-      const id = startIndex + i + 1
-      products.push({
-        id,
-        name: `商品 ${id}`,
-        description: `这是商品 ${id} 的详细描述`,
-        price: Math.floor(Math.random() * 1000) + 1,
-        originalPrice: Math.floor(Math.random() * 2000) + 1000,
-        thumb: 'https://tdesign.gtimg.com/mobile/demos/example1.png',
-        stock: Math.floor(Math.random() * 100),
-        sales: Math.floor(Math.random() * 1000),
-        status: Math.random() > 0.3 ? 1 : 0, // 1: 上架, 0: 下架
-        categoryId: Math.ceil(Math.random() * 5),
-        createTime: '2023-01-01 12:00:00'
-      })
-    }
-
-    // 如果有关键词过滤
-    if (params.keyword) {
-      products = products.filter(item => item.name.includes(params.keyword))
-    }
-
-    // 如果有分类过滤
-    if (params.categoryId) {
-      products = products.filter(item => item.categoryId == params.categoryId)
-    }
-
-    // 如果有价格范围过滤
-    if (params.priceMin) {
-      products = products.filter(item => item.price >= parseFloat(params.priceMin))
-    }
-    if (params.priceMax) {
-      products = products.filter(item => item.price <= parseFloat(params.priceMax))
-    }
-
-    return products
-  },
 
   /**
    * 加载更多商品
@@ -443,5 +391,143 @@ Page({
     wx.navigateTo({
       url: '/pages/admin/product/scan/scan'
     });
+  },
+
+  /**
+   * 导出商品数据为 CSV
+   */
+  async exportProducts() {
+    wx.showLoading({ title: '导出中...' });
+    try {
+      const result = await productApi.exportProducts({ showLoading: false });
+      const { fileID, total, fileName } = result;
+      wx.hideLoading();
+
+      // 获取临时下载链接
+      const tempUrlRes = await wx.cloud.getTempFileURL({ fileList: [fileID] });
+      const tempUrl = tempUrlRes.fileList[0].tempFileURL;
+
+      // 下载文件到本地
+      const downloadRes = await wx.downloadFile({ url: tempUrl });
+      if (downloadRes.statusCode !== 200) {
+        throw new Error('下载失败');
+      }
+
+      // 保存到本地（优先持久化，失败则回退到临时路径）
+      let userPath = downloadRes.tempFilePath;
+      try {
+        const saveRes = await wx.saveFile({ tempFilePath: downloadRes.tempFilePath });
+        if (saveRes && saveRes.savedFilePath) {
+          userPath = saveRes.savedFilePath;
+        }
+      } catch (saveErr) {
+        console.warn('保存文件失败，使用临时文件继续分享:', saveErr);
+      }
+
+      // 提示用户分享文件
+      wx.showModal({
+        title: '导出成功',
+        content: `已导出 ${total} 个商品。是否分享文件？`,
+        confirmText: '分享',
+        cancelText: '关闭',
+        success: (res) => {
+          if (res.confirm) {
+            wx.shareFileMessage({
+              filePath: userPath,
+              fileName: fileName,
+              success: () => {
+                wx.showToast({ title: '分享成功', icon: 'success' });
+              },
+              fail: (err) => {
+                console.error('分享失败:', err);
+                wx.showToast({ title: '分享失败', icon: 'none' });
+              }
+            });
+          }
+        }
+      });
+    } catch (err) {
+      wx.hideLoading();
+      console.error('导出商品失败:', err);
+      wx.showToast({ title: '导出失败', icon: 'none' });
+    }
+  },
+
+  /**
+   * 导入商品数据（从 CSV 文件）
+   */
+  importProducts() {
+    wx.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      extension: ['csv'],
+      success: (res) => {
+        const filePath = res.tempFiles[0].path;
+        const fileName = res.tempFiles[0].name;
+
+        // 确认导入
+        wx.showModal({
+          title: '确认导入',
+          content: `将从 "${fileName}" 导入商品数据，新商品将追加到现有列表。确认继续？`,
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              this.doImport(filePath);
+            }
+          }
+        });
+      },
+      fail: (err) => {
+        if (err.errMsg && err.errMsg.includes('cancel')) return;
+        console.error('选择文件失败:', err);
+        wx.showToast({ title: '选择文件失败', icon: 'none' });
+      }
+    });
+  },
+
+  /**
+   * 执行 CSV 导入
+   */
+  async doImport(filePath) {
+    wx.showLoading({ title: '导入中...' });
+    try {
+      // 读取文件内容
+      const fs = wx.getFileSystemManager();
+      const csvContent = fs.readFileSync(filePath, 'utf-8');
+
+      // 移除 BOM
+      const cleanContent = csvContent.replace(/^\uFEFF/, '');
+
+      // 调用云函数导入
+      const result = await productApi.importProducts({
+        csvContent: cleanContent,
+        mode: 'append'
+      }, {
+        showLoading: false
+      });
+
+      wx.hideLoading();
+
+      const { successCount, failCount, errors } = result;
+      let message = `成功导入 ${successCount} 个商品`;
+      if (failCount > 0) {
+        message += `，${failCount} 个失败`;
+        if (errors && errors.length > 0) {
+          message += `\n失败详情：\n` + errors.slice(0, 5).map(e => `第${e.row}行: ${e.error}`).join('\n');
+        }
+      }
+
+      wx.showModal({
+        title: '导入完成',
+        content: message,
+        showCancel: false,
+        success: () => {
+          this.loadProducts(true);
+        }
+      });
+    } catch (err) {
+      wx.hideLoading();
+      console.error('导入商品失败:', err);
+      wx.showToast({ title: err.message || '导入失败', icon: 'none' });
+    }
   }
 })

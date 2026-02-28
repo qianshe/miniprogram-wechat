@@ -244,6 +244,36 @@ const getByQrCode = (data = {}, options = {}) => {
     ...options
   })
 }
+// ============ 导入导出 ============
+
+/**
+ * 导出商品为 CSV
+ * @param {Object} options - 调用选项
+ * @returns {Promise<Object>} { fileID, total, fileName }
+ */
+const exportProducts = (options = {}) => {
+  return call(FUNCTION_NAME, 'exportProducts', {}, {
+    showLoading: true,
+    loadingText: '导出中...',
+    ...options
+  })
+}
+
+/**
+ * 导入商品 CSV 数据
+ * @param {Object} data - 导入数据
+ * @param {string} data.csvContent - CSV 文件内容
+ * @param {string} data.mode - 导入模式: 'append'(追加)
+ * @param {Object} options - 调用选项
+ * @returns {Promise<Object>} { total, successCount, failCount, errors }
+ */
+const importProducts = (data = {}, options = {}) => {
+  return call(FUNCTION_NAME, 'importProducts', data, {
+    showLoading: true,
+    loadingText: '导入中...',
+    ...options
+  })
+}
 
 // ============ 导出 ============
 
@@ -265,5 +295,9 @@ module.exports = {
   publish,
   unpublish,
   batchUpdateStatus,
-  getByQrCode
+  getByQrCode,
+
+  // 导入导出
+  exportProducts,
+  importProducts
 }

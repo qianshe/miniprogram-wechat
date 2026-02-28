@@ -3,6 +3,8 @@
   <view class="page-header">
     <view class="page-title">商品管理</view>
     <view class="action-buttons">
+      <t-button theme="default" size="small" icon="download" variant="outline" bindtap="exportProducts">导出</t-button>
+      <t-button theme="default" size="small" icon="upload" variant="outline" bindtap="importProducts">导入</t-button>
       <t-button theme="default" size="small" icon="scan" bindtap="scanProduct">扫码</t-button>
       <t-button theme="primary" size="small" icon="add" bindtap="createProduct">新增</t-button>
     </view>
