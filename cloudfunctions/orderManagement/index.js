@@ -46,6 +46,38 @@ async function verifyAdminByOpenid(openid) {
   }
 }
 
+async function rollbackTransactionQuietly(transaction, logger, context) {
+  if (!transaction) {
+    return;
+  }
+  try {
+    await transaction.rollback();
+  } catch (rollbackErr) {
+    if (logger && typeof logger.warn === 'function') {
+      logger.warn('Transaction rollback failed', {
+        context,
+        error: rollbackErr.message
+      });
+    } else {
+      console.warn('[ORDER] Transaction rollback failed', {
+        context,
+        error: rollbackErr.message
+      });
+    }
+  }
+}
+
+function getCurrentEnvForGuard() {
+  return process.env.TCB_ENV || process.env.SCF_NAMESPACE || process.env.WX_CLOUD_ENV || '';
+}
+
+function isProductionLikeEnv(envId) {
+  if (!envId || typeof envId !== 'string') {
+    return false;
+  }
+  return /prod|production|正式|release/i.test(envId);
+}
+
 // 订单状态枚举（旧字段，保留兼容）
 const ORDER_STATUS = {
   PENDING: 0,      // 待支付
@@ -539,126 +571,106 @@ async function updateOrderStatus(data, context, logger) {
     { orderNo: orderNo }
   ]);
 
-  // 先查询订单
-  const orderResult = await db.collection('orders').where(whereCondition).get();
-  
-  if (orderResult.data.length === 0) {
-    return notFoundError('订单');
-  }
+  const transaction = await db.startTransaction();
+  try {
+    const ordersCollection = transaction.collection('orders');
+    const orderResult = await ordersCollection.where(whereCondition).get();
 
-  const order = orderResult.data[0];
-  const targetStatus = parseInt(status);
-
-  // 权限检查
-  if (!isAdmin) {
-    // 普通用户只能操作自己的订单
-    if (order.userOpenid !== OPENID) {
-      return permissionError('无权限操作此订单');
+    if (orderResult.data.length === 0) {
+      await rollbackTransactionQuietly(transaction, logger, 'updateOrderStatus:notFound');
+      return notFoundError('订单');
     }
-    
-    // 普通用户只能进行特定状态变更
-    // 1. 取消待支付订单: PENDING(0) -> CANCELLED(4)
-    // 2. 支付待支付订单: PENDING(0) -> PAID(1)
-    // 3. 服务中付款: PROCESSING(2) -> PAID(1) (实际只记录payTime，不改状态)
-    // 4. 已服务待付款付款: SERVED_UNPAID(5) -> PAID(1) (实际变为COMPLETED)
-    const allowedTransitions = [
-      { from: ORDER_STATUS.PENDING, to: ORDER_STATUS.CANCELLED },
-      { from: ORDER_STATUS.PENDING, to: ORDER_STATUS.PAID },
-      { from: ORDER_STATUS.PROCESSING, to: ORDER_STATUS.PAID },
-      { from: ORDER_STATUS.SERVED_UNPAID, to: ORDER_STATUS.PAID }
-    ];
-    
-    const isAllowed = allowedTransitions.some(
-      t => t.from === order.status && t.to === targetStatus
-    );
-    
-    if (!isAllowed) {
-      return permissionError('无权限执行此状态变更');
-    }
-  }
 
-  // 执行更新
-  const updateData = {
-    updateTime: new Date()
-  };
-  
-  // 支付逻辑：根据当前状态决定目标状态
-  if (targetStatus === ORDER_STATUS.PAID) {
-    updateData.payTime = new Date();
-    // updateData.paymentMethod = PAYMENT_METHOD.ONLINE; // 已移除硬编码，改为线下结算模式
-    
-    if (order.status === ORDER_STATUS.PROCESSING) {
-      // 服务中付款：保持服务中状态，只记录支付信息
-      updateData.status = ORDER_STATUS.PROCESSING;
-      // 双写：更新支付状态，保持订单流程状态
-      updateData.paymentStatus = PAYMENT_STATUS.PAID;
-    } else if (order.status === ORDER_STATUS.SERVED_UNPAID) {
-      // 已服务待付款付款：直接进入完成状态
-      updateData.status = ORDER_STATUS.COMPLETED;
+    const order = orderResult.data[0];
+    const targetStatus = parseInt(status);
+
+    if (!isAdmin) {
+      if (order.userOpenid !== OPENID) {
+        await rollbackTransactionQuietly(transaction, logger, 'updateOrderStatus:noPermissionOwner');
+        return permissionError('无权限操作此订单');
+      }
+
+      const allowedTransitions = [
+        { from: ORDER_STATUS.PENDING, to: ORDER_STATUS.CANCELLED },
+        { from: ORDER_STATUS.PENDING, to: ORDER_STATUS.PAID },
+        { from: ORDER_STATUS.PROCESSING, to: ORDER_STATUS.PAID },
+        { from: ORDER_STATUS.SERVED_UNPAID, to: ORDER_STATUS.PAID }
+      ];
+
+      const isAllowed = allowedTransitions.some(
+        t => t.from === order.status && t.to === targetStatus
+      );
+
+      if (!isAllowed) {
+        await rollbackTransactionQuietly(transaction, logger, 'updateOrderStatus:illegalTransition');
+        return permissionError('无权限执行此状态变更');
+      }
+    }
+
+    const updateData = {
+      updateTime: new Date()
+    };
+
+    if (targetStatus === ORDER_STATUS.PAID) {
+      updateData.payTime = new Date();
+
+      if (order.status === ORDER_STATUS.PROCESSING) {
+        updateData.status = ORDER_STATUS.PROCESSING;
+        updateData.paymentStatus = PAYMENT_STATUS.PAID;
+      } else if (order.status === ORDER_STATUS.SERVED_UNPAID) {
+        updateData.status = ORDER_STATUS.COMPLETED;
+        updateData.completeTime = new Date();
+        updateData.orderStatus = ORDER_FLOW_STATUS.COMPLETED;
+        updateData.paymentStatus = PAYMENT_STATUS.PAID;
+      } else {
+        updateData.status = ORDER_STATUS.PAID;
+        updateData.paymentStatus = PAYMENT_STATUS.PAID;
+      }
+    } else {
+      updateData.status = targetStatus;
+      const newFields = mapLegacyStatusToNew(targetStatus, order.payTime);
+      updateData.orderStatus = newFields.orderStatus;
+      updateData.paymentStatus = newFields.paymentStatus;
+    }
+
+    if (targetStatus === ORDER_STATUS.PROCESSING) {
+      updateData.processTime = new Date();
+      updateData.orderStatus = ORDER_FLOW_STATUS.PROCESSING;
+    }
+
+    if (targetStatus === ORDER_STATUS.COMPLETED) {
       updateData.completeTime = new Date();
-      // 双写：服务完成且已付款 -> 完成
       updateData.orderStatus = ORDER_FLOW_STATUS.COMPLETED;
       updateData.paymentStatus = PAYMENT_STATUS.PAID;
-    } else {
-      // 待支付付款：进入已支付状态
-      updateData.status = ORDER_STATUS.PAID;
-      // 双写：已创建 + 已支付
-      updateData.paymentStatus = PAYMENT_STATUS.PAID;
     }
-  } else {
-    updateData.status = targetStatus;
-    // 双写：根据旧status推导新字段
-    const newFields = mapLegacyStatusToNew(targetStatus, order.payTime);
-    updateData.orderStatus = newFields.orderStatus;
-    updateData.paymentStatus = newFields.paymentStatus;
-  }
-  
-  // 如果是进入处理状态，添加处理开始时间
-  if (targetStatus === ORDER_STATUS.PROCESSING) {
-    updateData.processTime = new Date();
-    // 双写：进入处理状态
-    updateData.orderStatus = ORDER_FLOW_STATUS.PROCESSING;
-  }
-  
-  // 如果是完成状态，添加完成时间
-  if (targetStatus === ORDER_STATUS.COMPLETED) {
-    updateData.completeTime = new Date();
-    // 双写：完成状态
-    updateData.orderStatus = ORDER_FLOW_STATUS.COMPLETED;
-    updateData.paymentStatus = PAYMENT_STATUS.PAID;
-  }
 
-  // 如果是已服务待付款状态，设置付款截止时间（7天）
-  if (targetStatus === ORDER_STATUS.SERVED_UNPAID) {
-    updateData.serviceCompletedAt = new Date();
-    const deadline = new Date();
-    deadline.setDate(deadline.getDate() + 7);
-    updateData.payDeadlineAt = deadline;
-    updateData.paymentMethod = PAYMENT_METHOD.NOT_PAID;
-    // 双写：服务完成 + 未支付
-    updateData.orderStatus = ORDER_FLOW_STATUS.SERVICE_DONE;
-    updateData.paymentStatus = PAYMENT_STATUS.UNPAID;
-  }
+    if (targetStatus === ORDER_STATUS.SERVED_UNPAID) {
+      updateData.serviceCompletedAt = new Date();
+      const deadline = new Date();
+      deadline.setDate(deadline.getDate() + 7);
+      updateData.payDeadlineAt = deadline;
+      updateData.paymentMethod = PAYMENT_METHOD.NOT_PAID;
+      updateData.orderStatus = ORDER_FLOW_STATUS.SERVICE_DONE;
+      updateData.paymentStatus = PAYMENT_STATUS.UNPAID;
+    }
 
-  // 如果是取消状态
-  if (targetStatus === ORDER_STATUS.CANCELLED) {
-    // 双写：取消状态
-    updateData.orderStatus = ORDER_FLOW_STATUS.CANCELLED;
-  }
+    if (targetStatus === ORDER_STATUS.CANCELLED) {
+      updateData.orderStatus = ORDER_FLOW_STATUS.CANCELLED;
+    }
 
-  const updateResult = await db.collection('orders')
-    .where(whereCondition)
-    .update({
+    await ordersCollection.doc(order._id).update({
       data: updateData
     });
-  
-  if (updateResult.stats.updated === 0) {
-    return error(ErrorCodes.DB_UPDATE_ERROR, '更新订单状态失败');
-  }
 
-  logger.info('Order status updated', { orderNo, newStatus: targetStatus });
-  
-  return success(null, '订单状态更新成功');
+    await transaction.commit();
+
+    logger.info('Order status updated', { orderNo, newStatus: targetStatus });
+    return success(null, '订单状态更新成功');
+  } catch (err) {
+    await rollbackTransactionQuietly(transaction, logger, 'updateOrderStatus:exception');
+    logger.error('Order status update failed', { orderNo, error: err.message });
+    return error(ErrorCodes.DB_UPDATE_ERROR, '更新订单状态失败', { originalError: err.message });
+  }
 }
 
 /**
@@ -782,60 +794,61 @@ async function markServiceCompleted(data, context, logger) {
   }
 
   const whereCondition = _.or([{ _id: orderNo }, { orderNo: orderNo }]);
-  const orderResult = await db.collection('orders').where(whereCondition).get();
+  const transaction = await db.startTransaction();
+  try {
+    const ordersCollection = transaction.collection('orders');
+    const orderResult = await ordersCollection.where(whereCondition).get();
 
-  if (orderResult.data.length === 0) {
-    return notFoundError('订单');
+    if (orderResult.data.length === 0) {
+      await rollbackTransactionQuietly(transaction, logger, 'markServiceCompleted:notFound');
+      return notFoundError('订单');
+    }
+
+    const order = orderResult.data[0];
+    if (order.status !== ORDER_STATUS.PROCESSING) {
+      await rollbackTransactionQuietly(transaction, logger, 'markServiceCompleted:illegalStatus');
+      return paramError('只有服务中的订单才能标记服务完成');
+    }
+
+    const now = new Date();
+    const isPaid = !!order.payTime || (order.paymentMethod && order.paymentMethod !== PAYMENT_METHOD.NOT_PAID);
+
+    let updateData;
+    let message;
+
+    if (isPaid) {
+      updateData = {
+        status: ORDER_STATUS.COMPLETED,
+        serviceCompletedAt: now,
+        completeTime: now,
+        serviceOperatorOpenid: OPENID,
+        updateTime: now
+      };
+      message = '服务已完成';
+    } else {
+      const deadline = new Date();
+      deadline.setDate(deadline.getDate() + payDeadlineDays);
+      updateData = {
+        status: ORDER_STATUS.SERVED_UNPAID,
+        serviceCompletedAt: now,
+        payDeadlineAt: deadline,
+        paymentMethod: PAYMENT_METHOD.NOT_PAID,
+        serviceOperatorOpenid: OPENID,
+        updateTime: now
+      };
+      message = '已标记服务完成，等待用户付款';
+    }
+
+    await ordersCollection.doc(order._id).update({ data: updateData });
+    await transaction.commit();
+
+    logger.info('Service marked as completed', { orderNo, isPaid, newStatus: updateData.status });
+    return success({ isPaid, status: updateData.status }, message);
+  } catch (err) {
+    await rollbackTransactionQuietly(transaction, logger, 'markServiceCompleted:exception');
+    logger.error('markServiceCompleted failed', { orderNo, error: err.message });
+    return error(ErrorCodes.DB_UPDATE_ERROR, '标记服务完成失败', { originalError: err.message });
   }
-
-  const order = orderResult.data[0];
-
-  // 允许从 PROCESSING 状态标记服务完成
-  if (order.status !== ORDER_STATUS.PROCESSING) {
-    return paramError('只有服务中的订单才能标记服务完成');
-  }
-
-  const now = new Date();
-  
-  // 判断是否已付款
-  const isPaid = !!order.payTime || (order.paymentMethod && order.paymentMethod !== PAYMENT_METHOD.NOT_PAID);
-
-  let updateData;
-  let message;
-
-  if (isPaid) {
-    // 已付款 -> 直接完成
-    updateData = {
-      status: ORDER_STATUS.COMPLETED,
-      serviceCompletedAt: now,
-      completeTime: now,
-      serviceOperatorOpenid: OPENID,
-      updateTime: now
-    };
-    message = '服务已完成';
-  } else {
-    // 未付款 -> 已服务待付款
-    const deadline = new Date();
-    deadline.setDate(deadline.getDate() + payDeadlineDays);
-    updateData = {
-      status: ORDER_STATUS.SERVED_UNPAID,
-      serviceCompletedAt: now,
-      payDeadlineAt: deadline,
-      paymentMethod: PAYMENT_METHOD.NOT_PAID,
-      serviceOperatorOpenid: OPENID,
-      updateTime: now
-    };
-    message = '已标记服务完成，等待用户付款';
-  }
-
-  const updateResult = await db.collection('orders').where(whereCondition).update({ data: updateData });
-
-  if (updateResult.stats.updated === 0) {
-    return error(ErrorCodes.DB_UPDATE_ERROR, '标记服务完成失败');
-  }
-
-  logger.info('Service marked as completed', { orderNo, isPaid, newStatus: updateData.status });
-  return success({ isPaid, status: updateData.status }, message);
 }
 
 /**
@@ -861,57 +874,60 @@ async function recordOfflinePayment(data, context, logger) {
   }
 
   const whereCondition = _.or([{ _id: orderNo }, { orderNo: orderNo }]);
-  const orderResult = await db.collection('orders').where(whereCondition).get();
+  const transaction = await db.startTransaction();
+  try {
+    const ordersCollection = transaction.collection('orders');
+    const orderResult = await ordersCollection.where(whereCondition).get();
 
-  if (orderResult.data.length === 0) {
-    return notFoundError('订单');
+    if (orderResult.data.length === 0) {
+      await rollbackTransactionQuietly(transaction, logger, 'recordOfflinePayment:notFound');
+      return notFoundError('订单');
+    }
+
+    const order = orderResult.data[0];
+    const allowedStatuses = [ORDER_STATUS.PENDING, ORDER_STATUS.PROCESSING, ORDER_STATUS.SERVED_UNPAID];
+    if (!allowedStatuses.includes(order.status)) {
+      await rollbackTransactionQuietly(transaction, logger, 'recordOfflinePayment:illegalStatus');
+      return paramError('当前订单状态不允许记录线下收款');
+    }
+
+    const now = new Date();
+    let updateData;
+
+    if (order.status === ORDER_STATUS.SERVED_UNPAID) {
+      updateData = {
+        status: ORDER_STATUS.COMPLETED,
+        orderStatus: ORDER_FLOW_STATUS.COMPLETED,
+        paymentStatus: PAYMENT_STATUS.PAID,
+        paymentMethod: PAYMENT_METHOD.OFFLINE,
+        payTime: now,
+        completeTime: now,
+        paymentNote: paymentNote,
+        paymentOperatorOpenid: OPENID,
+        updateTime: now
+      };
+    } else {
+      updateData = {
+        status: ORDER_STATUS.PAID,
+        paymentStatus: PAYMENT_STATUS.PAID,
+        paymentMethod: PAYMENT_METHOD.OFFLINE,
+        payTime: now,
+        paymentNote: paymentNote,
+        paymentOperatorOpenid: OPENID,
+        updateTime: now
+      };
+    }
+
+    await ordersCollection.doc(order._id).update({ data: updateData });
+    await transaction.commit();
+
+    logger.info('Offline payment recorded', { orderNo });
+    return success(null, '线下收款已记录');
+  } catch (err) {
+    await rollbackTransactionQuietly(transaction, logger, 'recordOfflinePayment:exception');
+    logger.error('recordOfflinePayment failed', { orderNo, error: err.message });
+    return error(ErrorCodes.DB_UPDATE_ERROR, '记录线下收款失败', { originalError: err.message });
   }
-
-  const order = orderResult.data[0];
-
-  // 允许从 PENDING、PROCESSING 或 SERVED_UNPAID 状态记录线下收款
-  const allowedStatuses = [ORDER_STATUS.PENDING, ORDER_STATUS.PROCESSING, ORDER_STATUS.SERVED_UNPAID];
-  if (!allowedStatuses.includes(order.status)) {
-    return paramError('当前订单状态不允许记录线下收款');
-  }
-
-  const now = new Date();
-  let updateData;
-
-  if (order.status === ORDER_STATUS.SERVED_UNPAID) {
-    // 已服务待付款 -> 收款后直接完成
-    updateData = {
-      status: ORDER_STATUS.COMPLETED,
-      orderStatus: ORDER_FLOW_STATUS.COMPLETED,
-      paymentStatus: PAYMENT_STATUS.PAID,
-      paymentMethod: PAYMENT_METHOD.OFFLINE,
-      payTime: now,
-      completeTime: now,
-      paymentNote: paymentNote,
-      paymentOperatorOpenid: OPENID,
-      updateTime: now
-    };
-  } else {
-    // PENDING/PROCESSING -> 收款后变为已支付
-    updateData = {
-      status: ORDER_STATUS.PAID,
-      paymentStatus: PAYMENT_STATUS.PAID,
-      paymentMethod: PAYMENT_METHOD.OFFLINE,
-      payTime: now,
-      paymentNote: paymentNote,
-      paymentOperatorOpenid: OPENID,
-      updateTime: now
-    };
-  }
-
-  const updateResult = await db.collection('orders').where(whereCondition).update({ data: updateData });
-
-  if (updateResult.stats.updated === 0) {
-    return error(ErrorCodes.DB_UPDATE_ERROR, '记录线下收款失败');
-  }
-
-  logger.info('Offline payment recorded', { orderNo });
-  return success(null, '线下收款已记录');
 }
 
 /**
@@ -1127,6 +1143,12 @@ async function migrateOrderStatus(data, context, logger) {
   const isAdmin = await verifyAdminByOpenid(OPENID);
   if (!isAdmin) {
     return permissionError('仅管理员可执行此操作');
+  }
+
+  const currentEnv = getCurrentEnvForGuard();
+  const allowInProduction = data && data.allowInProduction === true;
+  if (!allowInProduction && isProductionLikeEnv(currentEnv)) {
+    return error(ErrorCodes.BUSINESS_ERROR, '当前环境禁止执行批量迁移，如确认执行请传 allowInProduction=true');
   }
 
   const { batchSize = 100, dryRun = false } = data;

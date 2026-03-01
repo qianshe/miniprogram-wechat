@@ -1,14 +1,15 @@
 {
-  "mcpServers": {
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
     "cloudbase": {
-      "command": "npx",
-      "args": [
-        "npm-global-exec@latest",
-        "@cloudbase/cloudbase-mcp@latest"
-      ],
-      "env": {
+      "type": "local",
+      "command": ["npx","@cloudbase/cloudbase-mcp@latest"],
+      "environment": {
         "INTEGRATION_IDE": "OpenCode"
       }
     }
+  },
+  "tools": {
+    "cloudbase_*": true
   }
 }

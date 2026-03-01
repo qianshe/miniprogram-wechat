@@ -35,6 +35,17 @@ async function verifyAdminByOpenid(openid) {
   }
 }
 
+function getCurrentEnvForGuard() {
+  return process.env.TCB_ENV || process.env.SCF_NAMESPACE || process.env.WX_CLOUD_ENV || '';
+}
+
+function isProductionLikeEnv(envId) {
+  if (!envId || typeof envId !== 'string') {
+    return false;
+  }
+  return /prod|production|正式|release/i.test(envId);
+}
+
 // 分类状态枚举
 const CATEGORY_STATUS = {
   DISABLED: 0,   // 禁用
@@ -421,20 +432,40 @@ async function updateCategory(data, context) {
 
   try {
     // 检查分类是否存在
-    const existingResult = await db.collection('categories').doc(id).get();
+    let existingResult;
+    try {
+      existingResult = await db.collection('categories').doc(id).get();
+    } catch (queryErr) {
+      console.error('[CATEGORY_MANAGEMENT] updateCategory existing query failed:', {
+        categoryId: id,
+        error: queryErr.message
+      });
+      return dbError('查询分类失败', { originalError: queryErr.message });
+    }
+
     if (!existingResult.data) {
       return notFoundError('Category');
     }
 
     // 如果更新名称，检查是否与同类型下其他分类重名
     if (updateData.name && updateData.name !== existingResult.data.name) {
-      const duplicateCheck = await db.collection('categories')
-        .where({
-          name: updateData.name,
-          type: existingResult.data.type,
-          _id: _.neq(id)
-        })
-        .get();
+      let duplicateCheck;
+      try {
+        duplicateCheck = await db.collection('categories')
+          .where({
+            name: updateData.name,
+            type: existingResult.data.type,
+            _id: _.neq(id)
+          })
+          .get();
+      } catch (duplicateErr) {
+        console.error('[CATEGORY_MANAGEMENT] updateCategory duplicate check failed:', {
+          categoryId: id,
+          targetName: updateData.name,
+          error: duplicateErr.message
+        });
+        return dbError('校验分类重名失败', { originalError: duplicateErr.message });
+      }
 
       if (duplicateCheck.data.length > 0) {
         return error(ErrorCodes.BUSINESS_ERROR, 'Category with same name already exists in this type');
@@ -696,6 +727,12 @@ async function migrateCategories(data, context) {
     return permissionError('Only admin can migrate categories');
   }
 
+  const currentEnv = getCurrentEnvForGuard();
+  const allowInProduction = data && data.allowInProduction === true;
+  if (!allowInProduction && isProductionLikeEnv(currentEnv)) {
+    return error(ErrorCodes.BUSINESS_ERROR, '当前环境禁止执行迁移，如确认执行请传 allowInProduction=true');
+  }
+
   // 预定义的白事分类数据
   const whiteCategories = [
     { name: '骨灰盒', sort: 1 },
@@ -789,6 +826,12 @@ async function cleanupRedCategories(data, context) {
   if (!isAdmin) {
     console.warn('[CATEGORY_MANAGEMENT] cleanupRedCategories failed: No admin permission', { openid: OPENID });
     return permissionError('Only admin can cleanup red categories');
+  }
+
+  const currentEnv = getCurrentEnvForGuard();
+  const allowInProduction = data && data.allowInProduction === true;
+  if (!allowInProduction && isProductionLikeEnv(currentEnv)) {
+    return error(ErrorCodes.BUSINESS_ERROR, '当前环境禁止执行清理，如确认执行请传 allowInProduction=true');
   }
 
   try {
