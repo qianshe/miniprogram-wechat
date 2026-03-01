@@ -277,13 +277,15 @@ async function createProduct(data, context) {
     return permissionError('Only admin can create product');
   }
 
-  // [殡葬平台转型] 服务端强制校验，只允许 white 类型
-  if (data?.type && data.type !== 'white') {
-    console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
-      originalType: data.type,
-      forcedType: 'white',
-      function: 'createProduct'
-    });
+  // [殡葬平台转型] 服务端强制校验，只允许 white 类型（含未传 type 的兜底）
+  if (data?.type !== 'white') {
+    if (data?.type !== undefined) {
+      console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
+        originalType: data.type,
+        forcedType: 'white',
+        function: 'createProduct'
+      });
+    }
     data.type = 'white';
   }
 
@@ -602,7 +604,13 @@ async function updateStock(data, context) {
  */
 function csvEscape(value) {
   if (value === null || value === undefined) return '';
-  const str = String(value);
+  let str = String(value);
+
+  // CSV Injection 防护：以 =、+、-、@ 开头的值前置单引号
+  if (/^[=+\-@]/.test(str)) {
+    str = `'${str}`;
+  }
+
   if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     return '"' + str.replace(/"/g, '""') + '"';
   }
@@ -683,21 +691,21 @@ async function exportProducts(data, context) {
   }
 
   try {
-    // 查询所有商品（不分页）
+    // 导出保护：限制最大导出量，避免内存占用过高
     const MAX_LIMIT = 100;
+    const MAX_EXPORT_ITEMS = 1000;
     const countResult = await db.collection('products').count();
     const total = countResult.total;
 
-    const batchTimes = Math.ceil(total / MAX_LIMIT);
-    const tasks = [];
-    for (let i = 0; i < batchTimes; i++) {
-      tasks.push(
-        db.collection('products').skip(i * MAX_LIMIT).limit(MAX_LIMIT).orderBy('createTime', 'desc').get()
+    if (total > MAX_EXPORT_ITEMS) {
+      return error(
+        ErrorCodes.LIMIT_EXCEEDED,
+        `Export limit exceeded: ${total} items (max ${MAX_EXPORT_ITEMS}). Please narrow down and retry.`
       );
     }
-    const results = await Promise.all(tasks);
-    let allProducts = [];
-    results.forEach(r => { allProducts = allProducts.concat(r.data); });
+
+    const exportTotal = Math.min(total, MAX_EXPORT_ITEMS);
+    const batchTimes = Math.ceil(exportTotal / MAX_LIMIT);
 
     // CSV 表头（中文 + 英文字段名映射）
     const csvHeaders = [
@@ -708,24 +716,39 @@ async function exportProducts(data, context) {
 
     // 生成 CSV 内容
     let csvContent = '\uFEFF' + csvHeaders.join(',') + '\n'; // BOM for Excel
+    let exportedCount = 0;
 
-    allProducts.forEach(p => {
-      const row = [
-        csvEscape(p._id),
-        csvEscape(p.name || ''),
-        csvEscape(p.price !== undefined ? (p.price / 100).toFixed(2) : ''),
-        csvEscape(p.originalPrice !== undefined ? (p.originalPrice / 100).toFixed(2) : ''),
-        csvEscape(p.stock !== undefined ? p.stock : ''),
-        csvEscape(p.category || ''),
-        csvEscape(p.categoryName || ''),
-        csvEscape(p.description || ''),
-        csvEscape(p.status !== undefined ? p.status : 1),
-        csvEscape(p.imageUrl || p.thumb || ''),
-        csvEscape(p.sales || 0),
-        csvEscape(p.createTime ? new Date(p.createTime).toISOString() : '')
-      ];
-      csvContent += row.join(',') + '\n';
-    });
+    // 分批生成 CSV，避免将全部商品对象堆积在内存
+    for (let i = 0; i < batchTimes; i++) {
+      const currentLimit = Math.min(MAX_LIMIT, exportTotal - i * MAX_LIMIT);
+      if (currentLimit <= 0) break;
+
+      const batchResult = await db.collection('products')
+        .skip(i * MAX_LIMIT)
+        .limit(currentLimit)
+        .orderBy('createTime', 'desc')
+        .get();
+
+      batchResult.data.forEach(p => {
+        const row = [
+          csvEscape(p._id),
+          csvEscape(p.name || ''),
+          csvEscape(p.price !== undefined ? (p.price / 100).toFixed(2) : ''),
+          csvEscape(p.originalPrice !== undefined ? (p.originalPrice / 100).toFixed(2) : ''),
+          csvEscape(p.stock !== undefined ? p.stock : ''),
+          csvEscape(p.category || ''),
+          csvEscape(p.categoryName || ''),
+          csvEscape(p.description || ''),
+          csvEscape(p.status !== undefined ? p.status : 1),
+          csvEscape(p.imageUrl || p.thumb || ''),
+          csvEscape(p.sales || 0),
+          csvEscape(p.createTime ? new Date(p.createTime).toISOString() : '')
+        ];
+        csvContent += row.join(',') + '\n';
+      });
+
+      exportedCount += batchResult.data.length;
+    }
 
     // 上传到云存储
     const fileName = `temp/products_export_${Date.now()}.csv`;
@@ -736,14 +759,14 @@ async function exportProducts(data, context) {
 
     const executionTime = Date.now() - startTime;
     console.log('[PRODUCT_MANAGEMENT] exportProducts success:', {
-      total: allProducts.length,
+      total: exportedCount,
       fileID: uploadResult.fileID,
       executionTime: `${executionTime}ms`
     });
 
     return success({
       fileID: uploadResult.fileID,
-      total: allProducts.length,
+      total: exportedCount,
       fileName: `products_export_${new Date().toISOString().slice(0, 10)}.csv`
     }, 'Export products success');
   } catch (err) {
@@ -771,6 +794,11 @@ async function importProducts(data, context) {
     return paramError('csvContent', 'CSV content is required');
   }
 
+  // 当前仅支持追加导入，避免前后端语义不一致
+  if (mode !== 'append') {
+    return paramError('mode', 'Only append mode is supported');
+  }
+
   try {
     const records = parseCSV(csvContent);
     if (records.length === 0) {
@@ -783,6 +811,7 @@ async function importProducts(data, context) {
       '价格(元)': 'price',
       '原价(元)': 'originalPrice',
       '库存': 'stock',
+      '类型': 'type',
       '分类ID': 'category',
       '分类名称': 'categoryName',
       '描述': 'description',
@@ -793,6 +822,7 @@ async function importProducts(data, context) {
       'price': 'price',
       'originalPrice': 'originalPrice',
       'stock': 'stock',
+      'type': 'type',
       'category': 'category',
       'categoryName': 'categoryName',
       'description': 'description',
@@ -803,9 +833,11 @@ async function importProducts(data, context) {
     let successCount = 0;
     let failCount = 0;
     const errors = [];
+    const pendingProducts = [];
 
     for (let i = 0; i < records.length; i++) {
       const raw = records[i];
+      const rowNumber = i + 2;
       try {
         // 映射字段
         const mapped = {};
@@ -818,14 +850,38 @@ async function importProducts(data, context) {
 
         // 验证必填字段
         if (!mapped.name) {
-          errors.push({ row: i + 2, error: '商品名称不能为空' });
+          errors.push({ row: rowNumber, error: '商品名称不能为空' });
           failCount++;
           continue;
         }
 
+        // 与 create/update 保持一致：敏感词校验
+        const nameCheck = checkSensitiveWords(mapped.name, 'name');
+        if (!nameCheck.valid) {
+          errors.push({ row: rowNumber, error: `商品名称包含敏感词：${nameCheck.matchedWords.join(', ')}` });
+          failCount++;
+          continue;
+        }
+        if (mapped.description) {
+          const descCheck = checkSensitiveWords(mapped.description, 'description');
+          if (!descCheck.valid) {
+            errors.push({ row: rowNumber, error: `商品描述包含敏感词：${descCheck.matchedWords.join(', ')}` });
+            failCount++;
+            continue;
+          }
+        }
+        if (mapped.categoryName) {
+          const categoryCheck = checkSensitiveWords(mapped.categoryName, 'categoryName');
+          if (!categoryCheck.valid) {
+            errors.push({ row: rowNumber, error: `分类名称包含敏感词：${categoryCheck.matchedWords.join(', ')}` });
+            failCount++;
+            continue;
+          }
+        }
+
         const price = parseFloat(mapped.price);
         if (isNaN(price) || price <= 0) {
-          errors.push({ row: i + 2, error: `价格无效: ${mapped.price}` });
+          errors.push({ row: rowNumber, error: `价格无效: ${mapped.price}` });
           failCount++;
           continue;
         }
@@ -836,6 +892,8 @@ async function importProducts(data, context) {
           price: Math.round(price * 100), // 转换为分
           stock: parseInt(mapped.stock) || 0,
           status: parseInt(mapped.status) === 0 ? 0 : 1,
+          // [殡葬平台转型] 导入场景强制写入白事类型
+          type: 'white',
           description: mapped.description || '',
           category: mapped.category || '',
           categoryName: mapped.categoryName || '',
@@ -846,15 +904,45 @@ async function importProducts(data, context) {
         };
 
         if (mapped.originalPrice) {
-          product.originalPrice = Math.round(parseFloat(mapped.originalPrice) * 100);
+          const originalPrice = parseFloat(mapped.originalPrice);
+          if (isNaN(originalPrice) || originalPrice < 0) {
+            errors.push({ row: rowNumber, error: `原价无效: ${mapped.originalPrice}` });
+            failCount++;
+            continue;
+          }
+          product.originalPrice = Math.round(originalPrice * 100);
         }
 
-        await db.collection('products').add({ data: product });
-        successCount++;
+        pendingProducts.push({ row: rowNumber, product });
       } catch (rowErr) {
-        errors.push({ row: i + 2, error: rowErr.message });
+        errors.push({ row: rowNumber, error: rowErr.message });
         failCount++;
       }
+    }
+
+    // 分块并发写入，避免大批量串行导致超时
+    const BATCH_WRITE_SIZE = 20;
+    for (let i = 0; i < pendingProducts.length; i += BATCH_WRITE_SIZE) {
+      const chunk = pendingProducts.slice(i, i + BATCH_WRITE_SIZE);
+      const chunkResults = await Promise.all(
+        chunk.map(async (item) => {
+          try {
+            await db.collection('products').add({ data: item.product });
+            return { success: true, row: item.row };
+          } catch (err) {
+            return { success: false, row: item.row, error: err.message };
+          }
+        })
+      );
+
+      chunkResults.forEach((result) => {
+        if (result.success) {
+          successCount++;
+        } else {
+          failCount++;
+          errors.push({ row: result.row, error: result.error || '数据库写入失败' });
+        }
+      });
     }
 
     const executionTime = Date.now() - startTime;
@@ -866,6 +954,7 @@ async function importProducts(data, context) {
     });
 
     return success({
+      mode,
       total: records.length,
       successCount,
       failCount,

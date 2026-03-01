@@ -3,6 +3,10 @@
  */
 /**
  * 敏感词列表（与后端保持一致）
+ *
+ * ⚠️ 同步约束：该列表必须与云函数端
+ * `cloudfunctions/productManagement/_shared/sensitiveWords.js` 中的
+ * `SENSITIVE_WORDS` 保持一致，修改任一处时请同步更新另一处。
  */
 const SENSITIVE_WORDS = [
   '烟花爆竹',

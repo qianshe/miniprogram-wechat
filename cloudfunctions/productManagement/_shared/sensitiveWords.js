@@ -1,5 +1,8 @@
 /**
  * 敏感词列表（可配置）
+ *
+ * ⚠️ 同步约束：该列表必须与小程序端 `utils/validation.js` 中的
+ * `SENSITIVE_WORDS` 保持一致，修改任一处时请同步更新另一处。
  */
 const SENSITIVE_WORDS = [
   '烟花爆竹',

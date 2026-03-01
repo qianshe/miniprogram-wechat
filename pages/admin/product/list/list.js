@@ -492,7 +492,14 @@ Page({
     try {
       // 读取文件内容
       const fs = wx.getFileSystemManager();
-      const csvContent = fs.readFileSync(filePath, 'utf-8');
+      const csvContent = await new Promise((resolve, reject) => {
+        fs.readFile({
+          filePath,
+          encoding: 'utf-8',
+          success: (res) => resolve(res.data),
+          fail: reject
+        });
+      });
 
       // 移除 BOM
       const cleanContent = csvContent.replace(/^\uFEFF/, '');

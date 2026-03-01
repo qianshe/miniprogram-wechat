@@ -418,37 +418,63 @@ async function getOrderDetail(data, context, logger) {
  * @param {object} logger - 追踪日志记录器
  */
 async function submitOfflineSettlementIntent(data, context, logger) {
-  const { orderNo, paymentNote, isAdmin } = data || {};
+  const { OPENID } = cloud.getWXContext();
+  const { orderNo, paymentNote, isAdmin: _clientIsAdmin } = data || {};
 
   logger.info('Submitting offline settlement intent', {
     orderNo,
     hasPaymentNote: paymentNote !== undefined
   });
 
-  // 复用 updateOrderStatus 的核心状态流转逻辑
-  const statusUpdateResult = await updateOrderStatus(
-    {
-      orderNo,
-      status: ORDER_STATUS.PAID,
-      isAdmin
-    },
-    context,
-    logger
-  );
-
-  if (statusUpdateResult.code !== ErrorCodes.SUCCESS) {
-    return statusUpdateResult;
+  if (!orderNo) {
+    return paramError('订单号不能为空');
   }
 
-  // 覆盖支付方式为线下，并可选记录付款备注
+  // 服务端验证管理员权限
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+
+  // 支持通过_id或orderNo查询
   const whereCondition = _.or([
     { _id: orderNo },
     { orderNo: orderNo }
   ]);
 
+  // 查询订单并做权限校验
+  const orderResult = await db.collection('orders').where(whereCondition).get();
+  if (orderResult.data.length === 0) {
+    return notFoundError('订单');
+  }
+
+  const order = orderResult.data[0];
+  if (!isAdmin && order.userOpenid !== OPENID) {
+    return permissionError('无权限操作此订单');
+  }
+
+  const currentPaymentStatus = order.paymentStatus !== undefined
+    ? order.paymentStatus
+    : mapLegacyStatusToNew(order.status, order.payTime).paymentStatus;
+  const currentOrderStatus = order.orderStatus !== undefined
+    ? order.orderStatus
+    : mapLegacyStatusToNew(order.status, order.payTime).orderStatus;
+
+  // 仅记录“意向”，不允许在已结单/已取消场景提交
+  if (currentOrderStatus >= ORDER_FLOW_STATUS.COMPLETED) {
+    return error(ErrorCodes.BUSINESS_ERROR, '当前订单状态不支持提交线下结算意向');
+  }
+
+  // 已收款订单不允许重复提交
+  if (currentPaymentStatus === PAYMENT_STATUS.PAID || !!order.payTime) {
+    return error(ErrorCodes.BUSINESS_ERROR, '订单已收款，无需重复提交');
+  }
+
+  const now = new Date();
+
   const updateData = {
+    // [线下结算] 仅记录结算意向，不改变已收款状态
     paymentMethod: PAYMENT_METHOD.OFFLINE,
-    updateTime: new Date()
+    paymentIntentSubmittedAt: now,
+    paymentIntentSubmitterOpenid: OPENID,
+    updateTime: now
   };
 
   if (paymentNote !== undefined) {
@@ -465,8 +491,17 @@ async function submitOfflineSettlementIntent(data, context, logger) {
     return error(ErrorCodes.DB_UPDATE_ERROR, '提交线下结算意向失败');
   }
 
-  logger.info('Offline settlement intent submitted', { orderNo });
-  return success(null, '线下结算意向提交成功');
+  logger.info('Offline settlement intent submitted', {
+    orderNo,
+    submitterOpenid: OPENID,
+    isAdmin
+  });
+  return success({
+    orderNo,
+    paymentMethod: PAYMENT_METHOD.OFFLINE,
+    paymentStatus: currentPaymentStatus,
+    paymentIntentSubmittedAt: now
+  }, '线下结算意向提交成功，待管理员确认收款');
 }
 
 /**
