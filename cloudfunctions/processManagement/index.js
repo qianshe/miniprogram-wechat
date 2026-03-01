@@ -287,11 +287,22 @@ async function createProcessStep(data) {
     return permissionError('无权限执行此操作')
   }
 
+  // [殡葬平台转型] 服务端强制校验，只允许 white 类型
+  if (data?.type && data.type !== 'white') {
+    console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
+      originalType: data.type,
+      forcedType: 'white',
+      function: 'createProcessStep'
+    })
+    data.type = 'white'
+  }
+
   if (!data?.title || !data?.description) {
     return paramError('步骤标题和描述不能为空')
   }
 
-  if (data.type === undefined || ![0, 1].includes(parseInt(data.type))) {
+  const normalizedType = data?.type === 'white' ? 0 : parseInt(data?.type)
+  if (data?.type === undefined || ![0, 1].includes(normalizedType)) {
     return paramError('流程类型必须为0(白事)或1(红事)')
   }
 
@@ -300,7 +311,7 @@ async function createProcessStep(data) {
       title: data.title,
       description: data.description,
       content: data.content || '',
-      type: parseInt(data.type),
+      type: normalizedType,
       order: data.order || 1,
       imageUrl: data.imageUrl || '',
       productList: data.productList || [],
@@ -354,11 +365,28 @@ async function updateProcessStep(data) {
     return paramError('步骤ID不能为空')
   }
 
+  // [殡葬平台转型] 服务端强制校验，只允许 white 类型
+  if (data?.type && data.type !== 'white') {
+    console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
+      originalType: data.type,
+      forcedType: 'white',
+      function: 'updateProcessStep'
+    })
+    data.type = 'white'
+    if (updateData.type !== undefined) {
+      updateData.type = 0
+    }
+  }
+
   try {
     const updateFields = {
       ...updateData,
       updateTime: new Date(),
       updaterOpenid: OPENID
+    }
+
+    if (updateData.type !== undefined) {
+      updateFields.type = updateData.type === 'white' ? 0 : parseInt(updateData.type)
     }
 
     await db.collection('processSteps').doc(id).update({

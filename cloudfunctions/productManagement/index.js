@@ -277,6 +277,16 @@ async function createProduct(data, context) {
     return permissionError('Only admin can create product');
   }
 
+  // [殡葬平台转型] 服务端强制校验，只允许 white 类型
+  if (data?.type && data.type !== 'white') {
+    console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
+      originalType: data.type,
+      forcedType: 'white',
+      function: 'createProduct'
+    });
+    data.type = 'white';
+  }
+
   // 数据验证
   if (!data?.name || !data?.price) {
     console.warn('[PRODUCT_MANAGEMENT] createProduct failed: Missing required fields');
@@ -386,6 +396,19 @@ async function updateProduct(data, context) {
   if (!id) {
     console.warn('[PRODUCT_MANAGEMENT] updateProduct failed: Missing product ID');
     return paramError('id', 'Product ID is required');
+  }
+
+  // [殡葬平台转型] 服务端强制校验，只允许 white 类型
+  if (data?.type && data.type !== 'white') {
+    console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
+      originalType: data.type,
+      forcedType: 'white',
+      function: 'updateProduct'
+    });
+    data.type = 'white';
+    if (updateData.type !== undefined) {
+      updateData.type = 'white';
+    }
   }
 
   // 敏感词检测

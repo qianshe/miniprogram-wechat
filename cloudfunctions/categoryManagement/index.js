@@ -298,6 +298,16 @@ async function createCategory(data, context) {
     return permissionError('Only admin can create category');
   }
 
+  // [殡葬平台转型] 服务端强制校验，只允许 white 类型
+  if (data?.type && data.type !== 'white') {
+    console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
+      originalType: data.type,
+      forcedType: 'white',
+      function: 'createCategory'
+    });
+    data.type = 'white';
+  }
+
   // 数据验证
   if (!data?.name) {
     console.warn('[CATEGORY_MANAGEMENT] createCategory failed: Missing name');
@@ -397,6 +407,16 @@ async function updateCategory(data, context) {
   if (!id) {
     console.warn('[CATEGORY_MANAGEMENT] updateCategory failed: Missing category ID');
     return paramError('id', 'Category ID is required');
+  }
+
+  // [殡葬平台转型] 服务端强制校验，只允许 white 类型
+  if (data?.type && data.type !== 'white') {
+    console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
+      originalType: data.type,
+      forcedType: 'white',
+      function: 'updateCategory'
+    });
+    data.type = 'white';
   }
 
   try {

@@ -457,6 +457,16 @@ async function createPackage(data, context) {
     return permissionError('Only admin can create package');
   }
 
+  // [殡葬平台转型] 服务端强制校验，只允许 white 类型
+  if (data?.type && data.type !== 'white') {
+    console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
+      originalType: data.type,
+      forcedType: 'white',
+      function: 'createPackage'
+    });
+    data.type = 'white';
+  }
+
   // 数据验证
   if (!data?.name) {
     console.warn('[PACKAGE_MANAGEMENT] createPackage failed: Missing package name');
@@ -558,6 +568,19 @@ async function updatePackage(data, context) {
     return paramError('id', 'Package ID is required');
   }
 
+  // [殡葬平台转型] 服务端强制校验，只允许 white 类型
+  if (data?.type && data.type !== 'white') {
+    console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
+      originalType: data.type,
+      forcedType: 'white',
+      function: 'updatePackage'
+    });
+    data.type = 'white';
+    if (updateData.type !== undefined) {
+      updateData.type = 'white';
+    }
+  }
+
   // 验证模板数据格式
   if (updateData.template !== undefined) {
     const templateValidation = validateTemplate(updateData.template);
@@ -582,8 +605,8 @@ async function updatePackage(data, context) {
       updateFields.description = updateData.description;
     }
     if (updateData.type !== undefined) {
-      // 保留type字段更新能力，但不再强制验证
-      updateFields.type = updateData.type || 'white';
+      // [殡葬平台转型] 服务端强制校验，只允许 white 类型
+      updateFields.type = 'white';
     }
     if (updateData.price !== undefined) {
       // 前端已转换为分，直接存储
