@@ -24,6 +24,18 @@ App({
       })
     }
 
+    // [殡葬平台转型] 全局冻结为 WHITE 类型，拦截所有红事路由
+    const launchOptions = wx.getLaunchOptionsSync ? wx.getLaunchOptionsSync() : {};
+    const launchPath = (launchOptions.path || '').toLowerCase();
+    const launchType = String((launchOptions.query && launchOptions.query.type) || '').toLowerCase();
+    // [殡葬平台转型] 检测 URL 参数 type=red 或路径包含 red 时，统一回白事首页
+    if (launchType === 'red' || launchPath.includes('red')) {
+      wx.reLaunch({
+        url: '/pages/index/index'
+      });
+      return;
+    }
+
     // 展示本地存储能力
     const logs = wx.getStorageSync('logs') || []
     logs.unshift(Date.now())

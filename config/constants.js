@@ -127,6 +127,9 @@ const SYSTEM_TYPE = {
   RED: 'red'       // 红事
 };
 
+// [殡葬平台转型] 全局冻结为 WHITE 类型，统一用于系统类型判断
+const CURRENT_SYSTEM_TYPE = SYSTEM_TYPE.WHITE;
+
 const SYSTEM_TYPE_TEXT = {
   [SYSTEM_TYPE.WHITE]: '白事服务',
   [SYSTEM_TYPE.RED]: '红事服务'
@@ -303,6 +306,7 @@ module.exports = {
   USER_ROLE_TEXT,
   // 系统类型
   SYSTEM_TYPE,
+  CURRENT_SYSTEM_TYPE,
   SYSTEM_TYPE_TEXT,
   SYSTEM_TYPE_COLOR,
   // 分页
