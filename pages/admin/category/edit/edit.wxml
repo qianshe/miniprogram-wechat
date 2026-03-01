@@ -28,6 +28,7 @@
       <!-- 分类类型 -->
       <view class="input-group">
         <view class="input-label">分类类型</view>
+        <!-- [殡葬平台转型] 已清理红事关键词 -->
         <block wx:if="{{!isEdit}}">
           <t-radio-group value="{{formData.type}}" bind:change="onTypeChange" borderless class="type-radio-group">
             <t-radio 
@@ -36,9 +37,11 @@
               icon="none"
               class="type-radio-item {{formData.type === 'white' ? 'type-radio-item--active' : ''}}" 
             />
+            <!-- [殡葬平台转型] 已隐藏红事选项 -->
             <t-radio 
+              wx:if="{{false}}"
               value="red" 
-              label="红事" 
+              label="其他服务" 
               icon="none"
               class="type-radio-item {{formData.type === 'red' ? 'type-radio-item--active' : ''}}" 
             />
@@ -46,7 +49,7 @@
         </block>
         <block wx:else>
           <view class="filled-input" style="color: #999;">
-            {{formData.type === 'white' ? '白事' : '红事'}} (不可修改)
+            {{formData.type === 'white' ? '白事' : '服务类型'}} (不可修改)
           </view>
         </block>
       </view>

@@ -46,8 +46,9 @@
         <view class="package-info">
           <text class="package-name">{{packageInfo.name}}</text>
           <text class="package-desc">{{packageInfo.description}}</text>
+          <!-- [殡葬平台转型] 已清理红事关键词 -->
           <view class="package-type-badge {{packageInfo.type}}">
-            <text class="badge-text">{{packageInfo.type === 'white' ? '白事套餐' : '红事套餐'}}</text>
+            <text class="badge-text">{{packageInfo.type === 'white' ? '白事套餐' : '服务套餐'}}</text>
           </view>
         </view>
       </view>
