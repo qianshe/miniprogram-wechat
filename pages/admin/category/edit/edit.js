@@ -1,5 +1,6 @@
 const app = getApp();
 const { adminApi } = require('../../../../utils/api.js');
+const { SYSTEM_TYPE, CURRENT_SYSTEM_TYPE } = require('../../../../config/constants.js');
 
 Page({
   data: {
@@ -8,7 +9,7 @@ Page({
     isSubmitting: false,
     formData: {
       name: '',
-      type: 'white',
+      type: CURRENT_SYSTEM_TYPE,
       sort: 1,
       description: '',
       status: 1,
@@ -40,7 +41,7 @@ Page({
         this.setData({
           formData: {
             name: data.name || '',
-            type: data.type || 'white',
+            type: data.type || CURRENT_SYSTEM_TYPE,
             sort: data.sort || 1,
             description: data.description || '',
             status: data.status !== undefined ? data.status : 1,
@@ -126,7 +127,10 @@ Page({
 
     try {
       const { formData, isEdit, categoryId } = this.data;
-      
+
+      // [殡葬平台转型] 强制类型为 WHITE，隐藏选择器
+      formData.type = CURRENT_SYSTEM_TYPE;
+
       if (isEdit) {
         // 编辑模式
         await adminApi.updateCategory(categoryId, {
@@ -135,7 +139,7 @@ Page({
           description: formData.description,
           status: formData.status
         });
-        
+
         wx.showToast({
           title: '保存成功',
           icon: 'success'
@@ -148,7 +152,7 @@ Page({
           sort: formData.sort,
           description: formData.description
         });
-        
+
         wx.showToast({
           title: '创建成功',
           icon: 'success'

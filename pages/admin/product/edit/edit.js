@@ -1,5 +1,6 @@
 const { adminApi } = require('../../../../utils/api.js');
 const validation = require('../../../../utils/validation.js');
+const { SYSTEM_TYPE, CURRENT_SYSTEM_TYPE } = require('../../../../config/constants.js');
 
 Page({
     data: {
@@ -13,7 +14,9 @@ Page({
             category: '',  // 改为category，存储分类_id
             description: '',
             status: 1,
-            thumb: ''
+            thumb: '',
+            // [殡葬平台转型] 商品类型默认固定为 WHITE
+            type: CURRENT_SYSTEM_TYPE
         },
         fileList: [],
         categories: [],
@@ -62,7 +65,9 @@ Page({
                     category: product.category,  // 使用category字段
                     description: product.description,
                     status: product.status,
-                    thumb: thumb
+                    thumb: thumb,
+                    // [殡葬平台转型] 编辑态仍固定提交 WHITE 类型
+                    type: CURRENT_SYSTEM_TYPE
                 },
                 fileList: thumb ? [{ url: thumb }] : []
             });
@@ -220,6 +225,9 @@ Page({
 
         try {
             wx.showLoading({ title: '保存中...' });
+
+            // [殡葬平台转型] 强制类型为 WHITE
+            formData.type = CURRENT_SYSTEM_TYPE;
 
             if (isEdit) {
                 await adminApi.updateProduct(id, formData);
