@@ -147,7 +147,7 @@
               class="btn-success"
               data-orderid="{{item._id}}"
               data-status="1"
-              bindtap="updateOrderStatus">确认支付</t-button>
+              bindtap="updateOrderStatus">确认收款</t-button>
             <t-button
               size="small"
               theme="primary"

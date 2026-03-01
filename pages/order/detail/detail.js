@@ -547,7 +547,7 @@ Page({
       // 重新加载订单详情
       this.loadOrderDetail();
     } catch (err) {
-      console.error('支付订单失败:', err);
+      console.error('提交线下结算确认失败:', err);
       wx.showToast({
         title: err.message || '提交失败',
         icon: 'none'
@@ -556,7 +556,7 @@ Page({
   },
 
   /**
-   * 用户端操作：去支付（双字段系统）
+   * 用户端操作：线下结算确认（双字段系统）
    * 复用现有的 handlePay 方法
    */
   handlePayOrder() {

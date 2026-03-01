@@ -26,7 +26,7 @@
       <view class="timeline-line {{orderInfo.paymentStatus === 1 || orderInfo.orderStatus >= 1 ? 'active' : ''}}"></view>
       <view class="timeline-item {{orderInfo.paymentStatus === 1 ? (orderInfo.orderStatus === 0 ? 'current' : 'active') : ''}}">
         <view class="timeline-dot"></view>
-        <text class="timeline-text">支付</text>
+        <text class="timeline-text">收款确认</text>
         <text class="timeline-time">{{orderInfo.paymentStatus === 1 ? (orderInfo.timelinePayTime || '-') : ''}}</text>
       </view>
       <view class="timeline-line {{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? 'active' : ''}}"></view>

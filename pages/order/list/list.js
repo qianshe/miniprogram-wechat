@@ -333,7 +333,7 @@ Page({
     });
   },
 
-  // 去支付
+  // 线下结算确认
   handlePay(e) {
     const { id } = e.currentTarget.dataset;
     // 找到对应订单
