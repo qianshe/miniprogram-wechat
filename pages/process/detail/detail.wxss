@@ -34,6 +34,16 @@
   color: var(--danger-color);
 }
 
+.culture-tag {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  background: #fff3e0;
+  color: #e65100;
+  font-size: 24rpx;
+  border-radius: 4rpx;
+  margin-left: 12rpx;
+}
+
 .step-desc {
   font-size: 28rpx;
   color: var(--text-sub);

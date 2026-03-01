@@ -15,10 +15,12 @@
   >
     <!-- Package Cards -->
     <view class="package-cards">
+      <!-- [殡葬平台转型] 渲染过滤：兜底过滤非白事套餐 -->
       <view 
         class="package-card"
         wx:for="{{packages}}"
         wx:key="_id"
+        wx:if="{{item.type === 'white'}}"
         bindtap="onPackageClick"
         data-id="{{item._id}}"
       >

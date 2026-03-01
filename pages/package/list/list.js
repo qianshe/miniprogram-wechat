@@ -5,6 +5,7 @@
 
 const packageApi = require('../../../api/package.js');
 const { normalizePrice } = require('../../../utils/util.js');
+const { SYSTEM_TYPE, CURRENT_SYSTEM_TYPE } = require('../../../config/constants.js');
 
 const PAGE_SIZE = 10;
 
@@ -54,8 +55,10 @@ Page({
     this.setData({ loading: true });
     
     try {
+      // [殡葬平台转型] 查询 + 渲染双重过滤，只显示白事套餐
+      // [殡葬平台转型] 查询过滤：只查询白事套餐
       const result = await packageApi.getList({
-        type: 'white',
+        type: CURRENT_SYSTEM_TYPE || SYSTEM_TYPE.WHITE,
         page,
         size: PAGE_SIZE
       });
