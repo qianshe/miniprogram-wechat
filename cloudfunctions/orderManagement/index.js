@@ -550,7 +550,7 @@ async function updateOrderStatus(data, context, logger) {
   // 支付逻辑：根据当前状态决定目标状态
   if (targetStatus === ORDER_STATUS.PAID) {
     updateData.payTime = new Date();
-    updateData.paymentMethod = PAYMENT_METHOD.ONLINE;
+    // updateData.paymentMethod = PAYMENT_METHOD.ONLINE; // 已移除硬编码，改为线下结算模式
     
     if (order.status === ORDER_STATUS.PROCESSING) {
       // 服务中付款：保持服务中状态，只记录支付信息
