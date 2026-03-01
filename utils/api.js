@@ -223,12 +223,20 @@ const api = {
     });
   },
 
-  // 支付订单 - 调用云函数更新状态为已支付(1)
+  // 提交线下结算意向
+  submitOfflineSettlementIntent: async (data = {}) => {
+    return await callCloudFunction('orderManagement', 'submitOfflineSettlementIntent', {
+      orderNo: data.orderNo,
+      paymentNote: data.paymentNote,
+      isAdmin: false
+    });
+  },
+
+  // 支付订单（兼容方法）- 调用线下结算意向接口
   payOrder: async (orderNo) => {
-    return await callCloudFunction('orderManagement', 'updateOrderStatus', { 
-      orderNo, 
-      status: 1,  // PAID
-      isAdmin: false 
+    return await callCloudFunction('orderManagement', 'submitOfflineSettlementIntent', {
+      orderNo,
+      isAdmin: false
     });
   },
 

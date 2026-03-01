@@ -412,6 +412,68 @@ async function getOrderDetail(data, context, logger) {
 }
 
 /**
+ * 提交线下结算意向
+ * @param {object} data - 请求数据
+ * @param {object} context - 云函数上下文
+ * @param {object} logger - 追踪日志记录器
+ */
+async function submitOfflineSettlementIntent(data, context, logger) {
+  const { orderNo, paymentNote, isAdmin } = data || {};
+
+  logger.info('Submitting offline settlement intent', {
+    orderNo,
+    hasPaymentNote: paymentNote !== undefined
+  });
+
+  // 复用 updateOrderStatus 的核心状态流转逻辑
+  const statusUpdateResult = await updateOrderStatus(
+    {
+      orderNo,
+      status: ORDER_STATUS.PAID,
+      isAdmin
+    },
+    context,
+    logger
+  );
+
+  if (statusUpdateResult.code !== ErrorCodes.SUCCESS) {
+    return statusUpdateResult;
+  }
+
+  // 覆盖支付方式为线下，并可选记录付款备注
+  const whereCondition = _.or([
+    { _id: orderNo },
+    { orderNo: orderNo }
+  ]);
+
+  const updateData = {
+    paymentMethod: PAYMENT_METHOD.OFFLINE,
+    updateTime: new Date()
+  };
+
+  if (paymentNote !== undefined) {
+    updateData.paymentNote = paymentNote;
+  }
+
+  const updateResult = await db.collection('orders')
+    .where(whereCondition)
+    .update({
+      data: updateData
+    });
+
+  if (updateResult.stats.updated === 0) {
+    return error(ErrorCodes.DB_UPDATE_ERROR, '提交线下结算意向失败');
+  }
+
+  logger.info('Offline settlement intent submitted', { orderNo });
+  return success(null, '线下结算意向提交成功');
+}
+
+/**
+ * @deprecated 请使用 submitOfflineSettlementIntent
+ * 保留用于向后兼容
+ */
+/**
  * 更新订单状态
  * @param {object} data - 请求数据
  * @param {object} context - 云函数上下文
@@ -1832,6 +1894,8 @@ const handler = async (event, context, logger) => {
       return await getOrders(data, context, logger);
     case 'getOrderDetail':
       return await getOrderDetail(data, context, logger);
+    case 'submitOfflineSettlementIntent':
+      return await submitOfflineSettlementIntent(data, context, logger);
     case 'updateOrderStatus':
       return await updateOrderStatus(data, context, logger);
     case 'bindOrder':

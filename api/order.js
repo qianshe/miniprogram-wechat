@@ -268,7 +268,6 @@ module.exports = {
   getDetail,
   create,
   cancel,
-  pay,
   submitOfflineSettlementIntent,
   remove,
   bind,

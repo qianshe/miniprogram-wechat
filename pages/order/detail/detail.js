@@ -538,8 +538,8 @@ Page({
 
   async handlePay() {
     try {
-      // 调用云函数支付订单
-      await api.payOrder(this.data.orderNo);
+      // 提交线下结算意向
+      await api.submitOfflineSettlementIntent({ orderNo: this.data.orderNo });
       wx.showToast({
         title: '已提交线下结算确认',
         icon: 'success'
