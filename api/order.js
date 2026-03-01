@@ -119,6 +119,31 @@ const pay = async (data = {}, options = {}) => {
 }
 
 /**
+ * 提交线下结算意向
+ * @param {Object} data - 参数
+ * @param {string} data.orderNo - 订单号
+ * @param {string} [data.paymentNote] - 线下支付备注
+ * @param {Object} options - 调用选项
+ * @returns {Promise<Object>} 结果
+ */
+const submitOfflineSettlementIntent = async (data = {}, options = {}) => {
+  const result = await call(FUNCTION_NAME, 'submitOfflineSettlementIntent', {
+    orderNo: data.orderNo,
+    paymentNote: data.paymentNote,
+    isAdmin: false
+  }, {
+    showLoading: true,
+    loadingText: '提交中...',
+    ...options
+  })
+
+  // 清除订单缓存
+  invalidateOrderCache()
+
+  return result
+}
+
+/**
  * 删除订单
  * @param {Object} data - 参数
  * @param {string} data.orderNo - 订单号
@@ -244,6 +269,7 @@ module.exports = {
   create,
   cancel,
   pay,
+  submitOfflineSettlementIntent,
   remove,
   bind,
   

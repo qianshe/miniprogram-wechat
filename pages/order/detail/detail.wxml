@@ -179,7 +179,7 @@
                   theme="primary"
                   class="btn-pay"
                   bindtap="handlePayOrder">
-          去支付
+          提交线下结算确认
         </t-button>
         
         <!-- 追加商品按钮 -->

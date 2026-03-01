@@ -143,6 +143,15 @@
   color: var(--text-main);
 }
 
+.disclaimer-text {
+  margin: 24rpx 0 20rpx;
+  padding: 0 8rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #999;
+  text-align: center;
+}
+
 .footer {
   position: fixed;
   /* 非tabbar页面：footer直接贴底部，只需考虑safe-area */

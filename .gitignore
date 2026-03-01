@@ -38,5 +38,7 @@ CLAUDE.md
 .roo/
 .magi/
 .sisyphus/
+.serena/
 rules/
 mcp.json
+.ace-tool/

@@ -363,6 +363,15 @@ page {
   height: 180rpx;
 }
 
+.disclaimer-text {
+  margin: 0 24rpx 16rpx;
+  padding: 0 8rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #999;
+  text-align: center;
+}
+
 /* Bottom Bar */
 .bottom-bar {
   position: fixed;

@@ -541,7 +541,7 @@ Page({
       // 调用云函数支付订单
       await api.payOrder(this.data.orderNo);
       wx.showToast({
-        title: '支付成功',
+        title: '已提交线下结算确认',
         icon: 'success'
       });
       // 重新加载订单详情
@@ -549,7 +549,7 @@ Page({
     } catch (err) {
       console.error('支付订单失败:', err);
       wx.showToast({
-        title: err.message || '支付失败',
+        title: err.message || '提交失败',
         icon: 'none'
       });
     }

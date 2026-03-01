@@ -118,7 +118,7 @@
             <button wx:if="{{item.paymentStatus === 0 && item.orderStatus < 3}}"
                     class="btn btn-pay"
                     catchtap="handlePay"
-                    data-id="{{item._id}}">去支付</button>
+                    data-id="{{item._id}}">线下确认</button>
             <button wx:if="{{item.orderStatus === 0 && item.paymentStatus === 0}}"
                     class="btn btn-cancel"
                     catchtap="handleCancel"

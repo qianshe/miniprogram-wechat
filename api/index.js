@@ -52,8 +52,9 @@ const api = {
    * - getDetail() 获取订单详情
    * - create() 创建订单
    * - cancel() 取消订单
-   * - pay() 支付订单
-   * - remove() 删除订单
+ * - pay() 支付订单
+ * - submitOfflineSettlementIntent() 提交线下结算意向
+ * - remove() 删除订单
    * - bind() 绑定订单
    * - adminGetList() 管理员获取列表
    * - adminGetDetail() 管理员获取详情

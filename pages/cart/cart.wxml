@@ -64,9 +64,9 @@
       bindtap="checkout"
       role="button"
       aria-disabled="{{!selectedCount}}"
-      aria-label="确认下单，已选{{selectedCount}}件商品"
+      aria-label="提交意向单，已选{{selectedCount}}件商品"
     >
-      <text class="btn-text">确认下单({{selectedCount}})</text>
+      <text class="btn-text">提交意向单({{selectedCount}})</text>
     </view>
   </view>
 </view>

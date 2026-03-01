@@ -129,6 +129,8 @@
     <!-- Bottom Placeholder -->
     <view class="bottom-placeholder"></view>
 
+    <view class="disclaimer-text">本小程序仅用于展示与需求登记，最终以电话/微信沟通及线下结算为准。</view>
+
     <!-- Bottom Bar -->
     <view class="bottom-bar">
       <view class="bottom-left">
@@ -143,7 +145,7 @@
           <text class="back-text">返回修改</text>
         </view>
         <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="onSubmitOrder">
-          <text class="submit-text">{{submitting ? '提交中...' : '提交订单'}}</text>
+          <text class="submit-text">{{submitting ? '提交中...' : '提交意向单'}}</text>
         </view>
       </view>
     </view>

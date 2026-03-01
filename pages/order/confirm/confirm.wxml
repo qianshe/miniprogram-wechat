@@ -39,6 +39,8 @@
     />
   </view>
 
+  <view class="disclaimer-text">本小程序仅用于展示与需求登记，最终以电话/微信沟通及线下结算为准。</view>
+
   <!-- 底部结算栏 -->
   <view class="footer">
     <view class="total-amount">
@@ -50,7 +52,7 @@
       loading="{{loading}}"
       disabled="{{loading}}"
     >
-      提交订单
+      提交意向单
     </button>
   </view>
 </view>
