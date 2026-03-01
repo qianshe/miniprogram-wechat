@@ -3,6 +3,7 @@
 
 const cloud = require('wx-server-sdk');
 const { ErrorCodes, success, error, paramError, permissionError, notFoundError, dbError, wrapHandler } = require('./_shared/errorHandler');
+const { checkSensitiveWords } = require('./_shared/sensitiveWords');
 
 // 初始化云开发环境
 cloud.init({
@@ -287,6 +288,18 @@ async function createProduct(data, context) {
     return paramError('price', 'Product price must be greater than 0');
   }
 
+  // 敏感词检测
+  const nameCheck = checkSensitiveWords(data.name, 'name');
+  if (!nameCheck.valid) {
+    return paramError('name', `商品名称包含敏感词：${nameCheck.matchedWords.join(', ')}`);
+  }
+  if (data.description) {
+    const descCheck = checkSensitiveWords(data.description, 'description');
+    if (!descCheck.valid) {
+      return paramError('description', `商品描述包含敏感词：${descCheck.matchedWords.join(', ')}`);
+    }
+  }
+
   try {
     // 如果有分类ID,查询分类名称
     let categoryName = '';
@@ -298,6 +311,13 @@ async function createProduct(data, context) {
         }
       } catch (err) {
         console.warn('[PRODUCT_MANAGEMENT] Failed to get category name:', err.message);
+      }
+    }
+
+    if (categoryName) {
+      const categoryCheck = checkSensitiveWords(categoryName, 'categoryName');
+      if (!categoryCheck.valid) {
+        return paramError('categoryName', `分类名称包含敏感词：${categoryCheck.matchedWords.join(', ')}`);
       }
     }
 
@@ -368,6 +388,20 @@ async function updateProduct(data, context) {
     return paramError('id', 'Product ID is required');
   }
 
+  // 敏感词检测
+  if (updateData.name !== undefined) {
+    const nameCheck = checkSensitiveWords(updateData.name, 'name');
+    if (!nameCheck.valid) {
+      return paramError('name', `商品名称包含敏感词：${nameCheck.matchedWords.join(', ')}`);
+    }
+  }
+  if (updateData.description !== undefined) {
+    const descCheck = checkSensitiveWords(updateData.description, 'description');
+    if (!descCheck.valid) {
+      return paramError('description', `商品描述包含敏感词：${descCheck.matchedWords.join(', ')}`);
+    }
+  }
+
   try {
     // 如果更新了分类ID,查询分类名称
     if (updateData.category) {
@@ -378,6 +412,13 @@ async function updateProduct(data, context) {
         }
       } catch (err) {
         console.warn('[PRODUCT_MANAGEMENT] Failed to get category name:', err.message);
+      }
+    }
+
+    if (updateData.categoryName) {
+      const categoryCheck = checkSensitiveWords(updateData.categoryName, 'categoryName');
+      if (!categoryCheck.valid) {
+        return paramError('categoryName', `分类名称包含敏感词：${categoryCheck.matchedWords.join(', ')}`);
       }
     }
 
