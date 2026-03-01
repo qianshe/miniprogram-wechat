@@ -1,4 +1,5 @@
 const { adminApi } = require('../../../../utils/api.js');
+const validation = require('../../../../utils/validation.js');
 
 Page({
     data: {
@@ -149,6 +150,26 @@ Page({
         if (!formData.price) {
             wx.showToast({ title: '请输入价格', icon: 'none' });
             return;
+        }
+
+        // 敏感词预校验
+        const nameCheck = validation.checkSensitiveWords(formData.name);
+        if (!nameCheck.valid) {
+            wx.showToast({
+                title: '商品信息包含敏感词，请修改',
+                icon: 'none'
+            });
+            return;
+        }
+        if (formData.description) {
+            const descCheck = validation.checkSensitiveWords(formData.description);
+            if (!descCheck.valid) {
+                wx.showToast({
+                    title: '商品信息包含敏感词，请修改',
+                    icon: 'none'
+                });
+                return;
+            }
         }
 
         try {

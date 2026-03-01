@@ -1,6 +1,17 @@
 /**
  * 表单验证工具类
  */
+/**
+ * 敏感词列表（与后端保持一致）
+ */
+const SENSITIVE_WORDS = [
+  '烟花爆竹',
+  '烟花',
+  '爆竹',
+  '鞭炮',
+  '烟火',
+  '焰火'
+];
 
 module.exports = {
   /**
@@ -290,6 +301,27 @@ module.exports = {
     return {
       valid: errors.length === 0,
       errors
+    };
+  },
+
+  /**
+   * 检查文本是否包含敏感词
+   * @param {string} text - 待检查文本
+   * @returns {{ valid: boolean, matchedWords: string[] }}
+   */
+  checkSensitiveWords(text) {
+    if (!text) {
+      return { valid: true, matchedWords: [] };
+    }
+
+    const lowerText = text.toLowerCase();
+    const matched = SENSITIVE_WORDS.filter(word =>
+      lowerText.includes(word.toLowerCase())
+    );
+
+    return {
+      valid: matched.length === 0,
+      matchedWords: matched
     };
   },
 

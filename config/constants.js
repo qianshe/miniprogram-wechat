@@ -240,7 +240,7 @@ const getOrderFlowText = (orderStatus) => {
  * @returns {string} 状态文本
  */
 const getPaymentStatusText = (paymentStatus) => {
-  return paymentStatus === PAYMENT_STATUS.PAID ? '已支付' : '待支付';
+  return paymentStatus === PAYMENT_STATUS.PAID ? '已收款' : '待收款确认';
 };
 
 /**
@@ -310,4 +310,3 @@ module.exports = {
   // 响应码
   RESPONSE_CODE
 };
-
