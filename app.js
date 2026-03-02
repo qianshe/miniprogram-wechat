@@ -1,6 +1,7 @@
 // app.js
 const cloudConfig = require('./config/cloud.config.js')
 const errorHandler = require('./utils/errorHandler.js')
+const assetsConfig = require('./config/assets.config.js')
 
 App({
 
@@ -10,7 +11,12 @@ App({
     currentTabIndex: 0,
     isAdmin: false,  // 添加管理员状态标识
     networkStatus: 'unknown', // 网络状态
-    apiVersion: '1.0.0' // API版本
+    apiVersion: '1.0.0', // API版本
+    preloadedImages: {},
+    preloadTasks: {},
+    preloadStatus: {
+      homeImage: 'idle'
+    }
   },
 
   onLaunch() {
@@ -59,6 +65,44 @@ App({
 
     // 检查系统更新
     this.checkForUpdates();
+
+    // 预加载首页核心图片
+    this.preloadCoreImages();
+  },
+
+  /**
+   * 预加载首页核心图片
+   */
+  preloadCoreImages() {
+    const imageMap = {
+      homeImage: assetsConfig.homeImage
+    }
+
+    Object.keys(imageMap).forEach((key) => {
+      const src = imageMap[key]
+      if (!src) {
+        return
+      }
+
+      this.globalData.preloadStatus[key] = 'loading'
+
+      this.globalData.preloadTasks[key] = new Promise((resolve) => {
+        wx.getImageInfo({
+          src,
+          success: (res) => {
+            this.globalData.preloadedImages[key] = res.path || src
+            this.globalData.preloadStatus[key] = 'success'
+            resolve(this.globalData.preloadedImages[key])
+          },
+          fail: () => {
+            // 失败时保留原图地址兜底，避免影响页面展示
+            this.globalData.preloadedImages[key] = src
+            this.globalData.preloadStatus[key] = 'failed'
+            resolve(src)
+          }
+        })
+      })
+    })
   },
 
   /**

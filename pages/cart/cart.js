@@ -2,6 +2,7 @@
 const cartApi = require('../../api/cart.js');
 const auth = require('../../utils/auth.js');
 const { debounce } = require('../../utils/util.js');
+const { buildThumbUrl } = require('../../utils/imageThumb.js');
 
 const LOCAL_STORAGE_KEY = 'cartListLocal';
 
@@ -50,11 +51,12 @@ Page({
       const cloudItems = result || [];
       
       const cartItems = cloudItems.map(item => ({
+        image: item.image || '/images/default-product.png',
         _id: item._id,
         id: item.productId,
         name: item.name,
         price: item.price,
-        image: item.image,
+        thumbSrc: buildThumbUrl(item.image || '/images/default-product.png', { size: 120, quality: 75 }),
         quantity: item.quantity,
         selected: item.selected || false,
         displayPrice: Number(item.price || 0).toFixed(2)
@@ -89,6 +91,8 @@ Page({
 
     const cartItems = validList.map(item => ({
       ...item,
+      image: item.image || '/images/default-product.png',
+      thumbSrc: buildThumbUrl(item.image || '/images/default-product.png', { size: 120, quality: 75 }),
       displayPrice: Number(item.price || 0).toFixed(2),
       selected: item.selected || false
     }));

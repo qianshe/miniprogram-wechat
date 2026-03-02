@@ -9,7 +9,8 @@
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 20rpx;
   padding: 10rpx 0 30rpx;
 }
 
@@ -18,13 +19,22 @@
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -1rpx;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .action-buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12rpx;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  width: 420rpx;
+  flex: 0 0 420rpx;
+}
+
+.action-btn-item,
+.action-btn {
+  width: 100%;
 }
 
 /* 搜索区域 */

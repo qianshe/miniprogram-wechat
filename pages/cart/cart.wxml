@@ -26,8 +26,9 @@
         </label>
         <image 
           class="item-image" 
-          src="{{item.image}}" 
-          mode="aspectFill">
+          src="{{item.thumbSrc || item.image}}" 
+          mode="aspectFill"
+          lazy-load="{{true}}">
         </image>
         <view class="item-info">
           <view class="item-name">{{item.name}}</view>

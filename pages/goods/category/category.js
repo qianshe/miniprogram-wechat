@@ -1,4 +1,5 @@
 const { api, priceToYuan } = require('../../../utils/api.js');
+const { buildThumbUrl } = require('../../../utils/imageThumb.js');
 const PAGE_SIZE = 15;
 
 Page({
@@ -104,10 +105,13 @@ Page({
 
       const newProducts = result.records.map(product => {
         const parsedPrice = Number(product.price || 0);
+        const image = product.imageUrl || '/images/default-product.png';
+
         return {
           id: product._id,
           label: product.name,
-          image: product.imageUrl || '/images/default-product.png',
+          image,
+          thumbSrc: buildThumbUrl(image, { size: 200, quality: 75 }),
           price: parsedPrice,
           displayPrice: parsedPrice.toFixed(2)
         };
