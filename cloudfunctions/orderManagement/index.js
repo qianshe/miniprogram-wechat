@@ -918,10 +918,53 @@ async function recordOfflinePayment(data, context, logger) {
       };
     }
 
+    // [销量计数] 幂等性检查：如果已计数则跳过
+    if (!order.salesCounted) {
+      updateData.salesCounted = true;
+      updateData.salesCountedAt = now;
+
+      // 增加商品销量
+      const productsCollection = transaction.collection('products');
+      for (const item of order.items) {
+        try {
+          const productResult = await productsCollection.doc(item.productId).get();
+          const productNotFound = !productResult || !productResult.data ||
+            (Array.isArray(productResult.data) && productResult.data.length === 0);
+          if (productNotFound) {
+            logger.warn('Product not found, skipping sales increment', {
+              productId: item.productId,
+              orderNo
+            });
+            continue;
+          }
+
+          await productsCollection.doc(item.productId).update({
+            data: {
+              sales: _.inc(item.quantity)
+            }
+          });
+          logger.info('Product sales incremented', {
+            productId: item.productId,
+            quantity: item.quantity,
+            orderNo
+          });
+        } catch (productErr) {
+          logger.warn('Failed to increment product sales', {
+            productId: item.productId,
+            error: productErr.message,
+            orderNo
+          });
+          // 继续处理其他商品，不因单个商品失败而回滚整个订单
+        }
+      }
+    } else {
+      logger.info('Sales already counted for this order', { orderNo });
+    }
+
     await ordersCollection.doc(order._id).update({ data: updateData });
     await transaction.commit();
 
-    logger.info('Offline payment recorded', { orderNo });
+    logger.info('Offline payment recorded', { orderNo, salesCounted: !order.salesCounted });
     return success(null, '线下收款已记录');
   } catch (err) {
     await rollbackTransactionQuietly(transaction, logger, 'recordOfflinePayment:exception');
@@ -1064,6 +1107,7 @@ async function updatePaymentStatus(data, context, logger) {
   }
 
   const targetPaymentStatus = parseInt(paymentStatus);
+  const transaction = await db.startTransaction();
 
   // 查询订单
   const whereCondition = _.or([
@@ -1071,62 +1115,112 @@ async function updatePaymentStatus(data, context, logger) {
     { orderNo: orderIdentifier }
   ]);
 
-  const orderResult = await db.collection('orders').where(whereCondition).get();
+  try {
+    const ordersCollection = transaction.collection('orders');
+    const productsCollection = transaction.collection('products');
+    const orderResult = await ordersCollection.where(whereCondition).get();
 
-  if (orderResult.data.length === 0) {
-    return notFoundError('订单');
-  }
-
-  const order = orderResult.data[0];
-  let currentOrderStatus = order.orderStatus !== undefined ? order.orderStatus : ORDER_FLOW_STATUS.CREATED;
-
-  // 构建更新数据
-  const updateData = {
-    paymentStatus: targetPaymentStatus,
-    updateTime: new Date()
-  };
-
-  // 如果是标记为已支付，添加支付相关信息
-  if (targetPaymentStatus === PAYMENT_STATUS.PAID) {
-    updateData.payTime = new Date();
-    updateData.paymentMethod = paymentMethod || PAYMENT_METHOD.OFFLINE;
-    if (paymentNote) {
-      updateData.paymentNote = paymentNote;
+    if (orderResult.data.length === 0) {
+      await rollbackTransactionQuietly(transaction, logger, 'updatePaymentStatus:notFound');
+      return notFoundError('订单');
     }
-    updateData.paymentOperatorOpenid = OPENID;
 
-    // 特殊处理：如果 orderStatus>=SERVICE_DONE 且 paymentStatus=PAID，自动推进 orderStatus 到 COMPLETED
-    if (currentOrderStatus >= ORDER_FLOW_STATUS.SERVICE_DONE && currentOrderStatus !== ORDER_FLOW_STATUS.CANCELLED) {
-      currentOrderStatus = ORDER_FLOW_STATUS.COMPLETED;
-      updateData.orderStatus = ORDER_FLOW_STATUS.COMPLETED;
-      updateData.completeTime = new Date();
-      logger.info('Auto-advancing orderStatus to COMPLETED (service done + now paid)', { orderId: orderIdentifier });
+    const order = orderResult.data[0];
+    let currentOrderStatus = order.orderStatus !== undefined ? order.orderStatus : ORDER_FLOW_STATUS.CREATED;
+    const now = new Date();
+
+    // 构建更新数据
+    const updateData = {
+      paymentStatus: targetPaymentStatus,
+      updateTime: now
+    };
+
+    // 如果是标记为已支付，添加支付相关信息
+    if (targetPaymentStatus === PAYMENT_STATUS.PAID) {
+      updateData.payTime = now;
+      updateData.paymentMethod = paymentMethod || PAYMENT_METHOD.OFFLINE;
+      if (paymentNote) {
+        updateData.paymentNote = paymentNote;
+      }
+      updateData.paymentOperatorOpenid = OPENID;
+
+      // [销量计数] 幂等性检查：如果已计数则跳过
+      if (!order.salesCounted) {
+        updateData.salesCounted = true;
+        updateData.salesCountedAt = now;
+
+        // 增加商品销量（使用事务）
+        for (const item of order.items) {
+          try {
+            const productResult = await productsCollection.doc(item.productId).get();
+            const productNotFound = !productResult || !productResult.data ||
+              (Array.isArray(productResult.data) && productResult.data.length === 0);
+            if (productNotFound) {
+              logger.warn('Product not found, skipping sales increment', {
+                productId: item.productId,
+                orderId: orderIdentifier
+              });
+              continue;
+            }
+
+            await productsCollection.doc(item.productId).update({
+              data: {
+                sales: _.inc(item.quantity)
+              }
+            });
+            logger.info('Product sales incremented', {
+              productId: item.productId,
+              quantity: item.quantity,
+              orderId: orderIdentifier
+            });
+          } catch (productErr) {
+            logger.warn('Failed to increment product sales', {
+              productId: item.productId,
+              error: productErr.message,
+              orderId: orderIdentifier
+            });
+            // 继续处理其他商品，不因单个商品失败而回滚整个订单
+          }
+        }
+      } else {
+        logger.info('Sales already counted for this order', { orderId: orderIdentifier });
+      }
+
+      // 特殊处理：如果 orderStatus>=SERVICE_DONE 且 paymentStatus=PAID，自动推进 orderStatus 到 COMPLETED
+      if (currentOrderStatus >= ORDER_FLOW_STATUS.SERVICE_DONE && currentOrderStatus !== ORDER_FLOW_STATUS.CANCELLED) {
+        currentOrderStatus = ORDER_FLOW_STATUS.COMPLETED;
+        updateData.orderStatus = ORDER_FLOW_STATUS.COMPLETED;
+        updateData.completeTime = now;
+        logger.info('Auto-advancing orderStatus to COMPLETED (service done + now paid)', { orderId: orderIdentifier });
+      }
     }
+
+    // 双写：根据新字段推导旧 status
+    updateData.status = mapNewStatusToLegacy(currentOrderStatus, targetPaymentStatus);
+
+    await ordersCollection.doc(order._id).update({
+      data: updateData
+    });
+    await transaction.commit();
+
+    logger.info('Payment status updated', {
+      orderId: orderIdentifier,
+      newPaymentStatus: targetPaymentStatus,
+      newOrderStatus: updateData.orderStatus || currentOrderStatus,
+      newLegacyStatus: updateData.status,
+      salesCounted: targetPaymentStatus === PAYMENT_STATUS.PAID && !order.salesCounted
+    });
+
+    return success({
+      paymentStatus: targetPaymentStatus,
+      orderStatus: updateData.orderStatus || currentOrderStatus,
+      status: updateData.status
+    }, '支付状态更新成功');
+  } catch (err) {
+    await rollbackTransactionQuietly(transaction, logger, 'updatePaymentStatus:exception');
+    logger.error('updatePaymentStatus failed', { orderId: orderIdentifier, error: err.message });
+    return error(ErrorCodes.DB_UPDATE_ERROR, '更新支付状态失败', { originalError: err.message });
   }
-
-  // 双写：根据新字段推导旧 status
-  updateData.status = mapNewStatusToLegacy(currentOrderStatus, targetPaymentStatus);
-
-  const updateResult = await db.collection('orders').where(whereCondition).update({
-    data: updateData
-  });
-
-  if (updateResult.stats.updated === 0) {
-    return error(ErrorCodes.DB_UPDATE_ERROR, '更新支付状态失败');
-  }
-
-  logger.info('Payment status updated', {
-    orderId: orderIdentifier,
-    newPaymentStatus: targetPaymentStatus,
-    newOrderStatus: updateData.orderStatus || currentOrderStatus,
-    newLegacyStatus: updateData.status
-  });
-
-  return success({
-    paymentStatus: targetPaymentStatus,
-    orderStatus: updateData.orderStatus || currentOrderStatus,
-    status: updateData.status
-  }, '支付状态更新成功');
 }
 
 /**
