@@ -3,6 +3,7 @@ const cartApi = require('../../api/cart.js');
 const auth = require('../../utils/auth.js');
 const { debounce } = require('../../utils/util.js');
 const { buildThumbUrl } = require('../../utils/imageThumb.js');
+const { handlePageShow } = require('../../utils/tabbar.js');
 
 const LOCAL_STORAGE_KEY = 'cartListLocal';
 
@@ -30,6 +31,7 @@ Page({
   },
 
   onShow() {
+    handlePageShow(this, { updateTheme: false, delay: 0 });
     this.setData({ loading: true });
     this.checkLoginAndLoad();
   },

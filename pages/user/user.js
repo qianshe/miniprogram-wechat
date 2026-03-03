@@ -42,7 +42,7 @@ Page({
   },
 
   toShoppingCart() {
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/cart/cart'
     });
   },
@@ -78,8 +78,6 @@ Page({
   },
 
   toIndexHome() {
-    // 重置app.globalData.index
-    app.globalData.currentTabIndex = 0;
     wx.navigateTo({
       url: '/pages/index_home/index_home'
     });

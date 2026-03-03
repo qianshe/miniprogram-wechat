@@ -94,7 +94,7 @@ Page({
       // 如果是权限错误，跳转到首页
       if (err.code === 403 || errorMsg.includes('permission') || errorMsg.includes('admin')) {
         setTimeout(() => {
-          wx.switchTab({ url: '/pages/index_home/index_home' })
+          wx.reLaunch({ url: '/pages/index_home/index_home' })
         }, 1500)
       }
     } finally {
@@ -362,4 +362,3 @@ Page({
     return `${y}-${m}-${d}`
   }
 })
-

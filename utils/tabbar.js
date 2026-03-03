@@ -7,22 +7,36 @@
  * 更新 TabBar 列表
  * @param {Object} pageInstance - 页面实例 (this)
  * @param {string} systemType - 系统类型 ('white' | 'red')
- * @param {number} delay - 延迟时间（毫秒），默认100ms
+ * @param {number} delay - 延迟时间（毫秒），默认0ms
+ * @param {number} retries - 重试次数，默认2次
+ * @param {number} retryInterval - 重试间隔（毫秒），默认80ms
  */
-const updateTabBar = (pageInstance, systemType, delay = 100) => {
+const updateTabBar = (pageInstance, systemType, delay = 0, retries = 2, retryInterval = 80) => {
   if (!pageInstance) {
     console.warn('[TabBar] 页面实例不存在');
     return;
   }
 
-  setTimeout(() => {
-    if (typeof pageInstance.getTabBar === 'function') {
-      const tabBar = pageInstance.getTabBar();
-      if (tabBar && typeof tabBar.updateTabList === 'function') {
-        tabBar.updateTabList(systemType);
-      }
+  let attempts = 0;
+
+  const sync = () => {
+    if (typeof pageInstance.getTabBar !== 'function') {
+      return;
     }
-  }, delay);
+
+    const tabBar = pageInstance.getTabBar();
+    if (tabBar && typeof tabBar.updateTabList === 'function') {
+      tabBar.updateTabList(systemType);
+      return;
+    }
+
+    if (attempts < retries) {
+      attempts += 1;
+      setTimeout(sync, retryInterval);
+    }
+  };
+
+  setTimeout(sync, delay);
 };
 
 /**
@@ -31,7 +45,7 @@ const updateTabBar = (pageInstance, systemType, delay = 100) => {
  * @param {number} delay - 延迟时间（毫秒）
  * @returns {string} 当前系统类型
  */
-const syncTabBarWithSystem = (pageInstance, delay = 100) => {
+const syncTabBarWithSystem = (pageInstance, delay = 0) => {
   const app = getApp();
   const systemType = app.globalData.systemType || 'white';
   
@@ -46,11 +60,11 @@ const syncTabBarWithSystem = (pageInstance, delay = 100) => {
  * @param {Object} pageInstance - 页面实例 (this)
  * @param {Object} options - 配置选项
  * @param {boolean} options.updateTheme - 是否更新主题色，默认true
- * @param {number} options.delay - TabBar更新延迟，默认100ms
+ * @param {number} options.delay - TabBar更新延迟，默认0ms
  * @returns {Object} { systemType, themeColor }
  */
 const handlePageShow = (pageInstance, options = {}) => {
-  const { updateTheme = true, delay = 100 } = options;
+  const { updateTheme = true, delay = 0 } = options;
   
   const app = getApp();
   const systemType = app.globalData.systemType || 'white';
@@ -99,4 +113,3 @@ module.exports = {
   handlePageShow,
   handlePageLoad
 };
-

@@ -75,7 +75,7 @@ Page({
         icon: 'none'
       });
       setTimeout(() => {
-        wx.switchTab({
+        wx.reLaunch({
           url: '/pages/index_home/index_home'
         });
       }, 1500);

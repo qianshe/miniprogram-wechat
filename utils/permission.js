@@ -40,6 +40,15 @@ const PAGE_PERMISSIONS = {
   ]
 }
 
+const TAB_BAR_PAGES = [
+  '/pages/index/index',
+  '/pages/goods/category/category',
+  '/pages/cart/cart',
+  '/pages/user/user'
+]
+
+const isTabBarPage = (path = '') => TAB_BAR_PAGES.includes(path)
+
 /**
  * 获取当前用户信息
  */
@@ -141,12 +150,16 @@ const pageGuard = (pageInstance, options = {}) => {
     // 延迟跳转
     setTimeout(() => {
       if (result.redirect) {
-        wx.redirectTo({
-          url: result.redirect,
-          fail: () => {
-            wx.switchTab({ url: result.redirect })
-          }
-        })
+        if (isTabBarPage(result.redirect)) {
+          wx.switchTab({ url: result.redirect })
+        } else {
+          wx.redirectTo({
+            url: result.redirect,
+            fail: () => {
+              wx.reLaunch({ url: result.redirect })
+            }
+          })
+        }
       } else {
         wx.navigateBack()
       }

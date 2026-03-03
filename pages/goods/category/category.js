@@ -1,5 +1,6 @@
 const { api, priceToYuan } = require('../../../utils/api.js');
 const { buildThumbUrl } = require('../../../utils/imageThumb.js');
+const { handlePageShow } = require('../../../utils/tabbar.js');
 const PAGE_SIZE = 15;
 
 Page({
@@ -44,6 +45,8 @@ Page({
         this.loadCategories();
       });
     }
+
+    handlePageShow(this, { updateTheme: false, delay: 0 });
   },
 
   async loadCategories() {
