@@ -1,6 +1,6 @@
 const app = getApp()
 const { adminApi } = require('../../../utils/api')
-const { user: userApi } = require('../../../api/index')
+const userApi = require('../api/user')
 const { ORDER_FLOW_STATUS, PAYMENT_STATUS } = require('../../../config/constants')
 
 Page({

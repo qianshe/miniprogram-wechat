@@ -1,6 +1,6 @@
 const packageApi = require('../../../../api/package.js')
-const categoryApi = require('../../../../api/category.js')
 const productApi = require('../../../../api/product.js')
+const { adminApi } = require('../../../../utils/api')
 
 Page({
   data: {
@@ -121,7 +121,7 @@ Page({
 
   async loadCategories() {
     try {
-      const result = await categoryApi.adminGetList({ page: 1, size: 100 })
+      const result = await adminApi.getCategories({ page: 1, size: 100 })
       const categories = (result.records || []).map(cat => ({
         label: cat.name,
         value: cat._id,

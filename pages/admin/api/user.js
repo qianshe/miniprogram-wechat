@@ -3,7 +3,7 @@
  * 提供用户相关的所有API接口封装
  */
 
-const { call, createApiMethod } = require('../utils/cloudFunction.js')
+const { call, createApiMethod } = require('../../../utils/cloudFunction.js')
 
 // 云函数名称
 const FUNCTION_NAME = 'login'

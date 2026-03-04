@@ -1,4 +1,4 @@
-const { user: userApi } = require('../../../../api/index')
+const userApi = require('../../api/user')
 const app = getApp()
 
 Page({
