@@ -1,3 +1,5 @@
+const cloudConfig = require('../../../../config/cloud.config.js')
+
 Page({
   data: {
     imageTypes: [
@@ -44,7 +46,8 @@ Page({
 
   async loadImagePreviews() {
     const { imageTypes, selectedIndex } = this.data;
-    const fileList = imageTypes.map(item => `cloud://cloud1-5gudbe4m8263c9dc.636c-cloud1-5gudbe4m8263c9dc-1379027289/${item.cloudPath}`);
+    const envId = cloudConfig.envId
+    const fileList = imageTypes.map(item => `cloud://${envId}.636c-${envId}-1379027289/${item.cloudPath}`);
     
     try {
       const res = await wx.cloud.getTempFileURL({ fileList });

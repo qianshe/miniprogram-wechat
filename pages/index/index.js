@@ -1,5 +1,3 @@
-const { api, priceToYuan } = require('../../utils/api.js');
-const mockData = require('../../config/mock.js');
 const assetsConfig = require('../../config/assets.config.js');
 const { handlePageShow, handlePageLoad } = require('../../utils/tabbar.js');
 
@@ -77,9 +75,13 @@ Page({
 
   // 专业服务项
   onTapService() {
-    // 跳转到服务项目列表，可能是商品分类下的服务类目
     wx.switchTab({
       url: '/pages/goods/category/category'
     });
+  },
+
+  onPullDownRefresh() {
+    this.applyPreloadedHomeImage();
+    wx.stopPullDownRefresh();
   }
 });

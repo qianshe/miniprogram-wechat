@@ -1,9 +1,4 @@
 {
-  "component": true,
-  "styleIsolation": "shared",
-  "usingComponents": {
-    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
-    "t-cell": "tdesign-miniprogram/cell/cell"
-  },
+  "usingComponents": {},
   "navigationBarTitleText": "个人信息"
 }

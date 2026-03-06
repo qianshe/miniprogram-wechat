@@ -3,7 +3,7 @@
  * 提供用户相关的所有API接口封装
  */
 
-const { call, createApiMethod } = require('../../../utils/cloudFunction.js')
+const { call, createApiMethod } = require('../utils/cloudFunction.js')
 
 // 云函数名称
 const FUNCTION_NAME = 'login'
@@ -48,7 +48,6 @@ const adminLogin = (data = {}, options = {}) => {
  */
 const getCurrentUser = async (options = {}) => {
   try {
-    // 优先从本地存储获取
     const userInfo = wx.getStorageSync('userInfo')
     if (userInfo) {
       return userInfo
@@ -103,7 +102,7 @@ const isLoggedIn = () => {
  */
 const isAdmin = () => {
   const userInfo = wx.getStorageSync('userInfo')
-  return userInfo && userInfo.role === 'admin'
+  return userInfo && (userInfo.isAdmin === true || userInfo.role === 'admin' || userInfo.role === 1)
 }
 
 /**
@@ -114,10 +113,10 @@ const isAdmin = () => {
 const getOpenId = async (options = {}) => {
   try {
     const result = await wx.cloud.callFunction({
-      name: 'getOpenId',
-      data: {}
+      name: 'login',
+      data: { action: 'checkUserExists' }
     })
-    return result.result?.openid || null
+    return result.result?.data?.userInfo?.openid || null
   } catch (error) {
     console.error('[User API] 获取openid失败:', error)
     return null
@@ -141,7 +140,6 @@ const submitFeedback = async (data = {}, options = {}) => {
     createTime: new Date()
   }
 
-  // 添加用户ID
   const userInfo = wx.getStorageSync('userInfo')
   if (userInfo) {
     feedbackData.userId = userInfo.id || userInfo.openid
@@ -155,7 +153,6 @@ const submitFeedback = async (data = {}, options = {}) => {
     })
   } catch (cloudError) {
     console.warn('[User API] submitFeedback云函数不存在，使用本地模拟:', cloudError.message)
-    // 模拟提交成功
     return {
       id: Date.now().toString(),
       ...feedbackData
@@ -167,13 +164,6 @@ const submitFeedback = async (data = {}, options = {}) => {
 
 /**
  * 管理员获取用户列表
- * @param {Object} data - 查询参数
- * @param {number} data.page - 页码
- * @param {number} data.size - 每页数量
- * @param {string} data.keyword - 搜索关键词
- * @param {boolean} data.isAdmin - 筛选管理员
- * @param {Object} options - 调用选项
- * @returns {Promise<Object>} 用户列表
  */
 const adminGetUsers = (data = {}, options = {}) => {
   return call('userManagement', 'getUsers', data, {
@@ -185,9 +175,6 @@ const adminGetUsers = (data = {}, options = {}) => {
 
 /**
  * 管理员获取用户详情
- * @param {string} id - 用户ID
- * @param {Object} options - 调用选项
- * @returns {Promise<Object>} 用户详情
  */
 const adminGetUserDetail = (id, options = {}) => {
   return call('userManagement', 'getUserDetail', { id }, {
@@ -198,10 +185,6 @@ const adminGetUserDetail = (id, options = {}) => {
 
 /**
  * 设置/取消管理员权限
- * @param {string} id - 用户ID
- * @param {boolean} isAdmin - 是否设为管理员
- * @param {Object} options - 调用选项
- * @returns {Promise<Object>} 结果
  */
 const adminSetAdminRole = (id, isAdmin, options = {}) => {
   return call('userManagement', 'setAdminRole', { id, isAdmin }, {
@@ -213,10 +196,6 @@ const adminSetAdminRole = (id, isAdmin, options = {}) => {
 
 /**
  * 更新用户状态（启用/禁用）
- * @param {string} id - 用户ID
- * @param {number} status - 状态 0=禁用 1=启用
- * @param {Object} options - 调用选项
- * @returns {Promise<Object>} 结果
  */
 const adminUpdateUserStatus = (id, status, options = {}) => {
   return call('userManagement', 'updateUserStatus', { id, status }, {
@@ -228,8 +207,6 @@ const adminUpdateUserStatus = (id, status, options = {}) => {
 
 /**
  * 获取用户总数（用于统计）
- * @param {Object} options - 调用选项
- * @returns {Promise<number>} 用户总数
  */
 const adminGetUserCount = async (options = {}) => {
   try {
@@ -247,24 +224,15 @@ const adminGetUserCount = async (options = {}) => {
 // ============ 导出 ============
 
 module.exports = {
-  // 登录相关
   login,
   adminLogin,
   logout,
-
-  // 用户信息
   getCurrentUser,
   saveUserInfo,
   getOpenId,
-
-  // 状态检查
   isLoggedIn,
   isAdmin,
-
-  // 其他
   submitFeedback,
-
-  // 管理员用户管理
   adminGetUsers,
   adminGetUserDetail,
   adminSetAdminRole,

@@ -48,16 +48,14 @@ const config = {
   // ============ 云函数配置 ============
   // 云函数名称映射，便于统一管理和引用
   cloudFunction: {
-    // 用户登录
     login: 'login',
-    // 商品管理
     productManagement: 'productManagement',
-    // 分类管理
     categoryManagement: 'categoryManagement',
-    // 订单管理
     orderManagement: 'orderManagement',
-    // 流程管理
-    processManagement: 'processManagement'
+    processManagement: 'processManagement',
+    userManagement: 'userManagement',
+    userDataManagement: 'userDataManagement',
+    packageManagement: 'packageManagement'
   },
 
   // ============ 数据库集合名称 ============
@@ -168,7 +166,10 @@ const config = {
     orderManagement: 'orderManagement',
     processManagement: 'processManagement',
     categoryManagement: 'categoryManagement',
-    login: 'login'
+    login: 'login',
+    userManagement: 'userManagement',
+    userDataManagement: 'userDataManagement',
+    packageManagement: 'packageManagement'
   }
 }
 

@@ -13,7 +13,13 @@ const EXPIRES_KEY = 'auth_expires';
 // 引入权限校验模块
 const permission = require('./permission');
 
-const app = getApp();
+let _app = null;
+const getAppInstance = () => {
+  if (!_app) {
+    _app = getApp();
+  }
+  return _app;
+};
 
 // 安全配置
 const SECURITY_CONFIG = {
@@ -66,7 +72,7 @@ module.exports = {
       // 设置安全环境
       this.setupSecurityEnvironment();
 
-      // 更新全局状态
+      const app = getAppInstance();
       if (app) {
         app.globalData.userInfo = secureUserInfo;
         app.globalData.isAdmin = userInfo.isAdmin || false;
@@ -90,7 +96,7 @@ module.exports = {
   clearAuth() {
     wx.removeStorageSync(USER_INFO_KEY);
 
-    // 清除全局状态
+    const app = getAppInstance();
     if (app) {
       app.globalData.userInfo = null;
       app.globalData.isAdmin = false;
@@ -118,6 +124,7 @@ module.exports = {
   async login(userInfo) {
     try {
       // 调用云函数登录
+      const app = getAppInstance();
       const result = await app.globalData.api.login(userInfo);
 
       // 保存认证信息
@@ -136,6 +143,7 @@ module.exports = {
   async adminLogin(account, password) {
     try {
       // 调用云函数管理员登录
+      const app = getAppInstance();
       const result = await app.globalData.api.adminLogin(account, password);
 
       // 保存管理员认证信息
@@ -323,13 +331,12 @@ module.exports = {
         }
       });
 
-      // 重置全局状态
+      const app = getAppInstance();
       if (app) {
         app.globalData.userInfo = null;
         app.globalData.isAdmin = false;
       }
       
-      // 同步清除权限模块的权限信息
       permission.clearPermissions();
     } catch (error) {
       console.error('Failed to clear auth data:', error);

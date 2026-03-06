@@ -4,8 +4,8 @@
 
 const cloud = require('wx-server-sdk');
 const { ErrorCodes, success, error, paramError, permissionError, notFoundError, dbError, wrapHandler } = require('./_shared/errorHandler');
+const { verifyAdminByOpenid: _verifyAdmin } = require('./_shared/permission');
 
-// 初始化云开发环境
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 });
@@ -13,27 +13,7 @@ cloud.init({
 const db = cloud.database();
 const _ = db.command;
 
-/**
- * 服务端验证管理员身份
- * 通过查询数据库中的用户记录来验证，而不是信任客户端传来的 isAdmin
- * @param {string} openid - 用户的 openid
- * @returns {Promise<boolean>} 是否为管理员
- */
-async function verifyAdminByOpenid(openid) {
-  if (!openid) return false;
-  
-  try {
-    const userResult = await db.collection('users')
-      .where({ openid })
-      .field({ isAdmin: true })
-      .get();
-    
-    return userResult.data.length > 0 && userResult.data[0].isAdmin === true;
-  } catch (err) {
-    console.error('[CATEGORY_MANAGEMENT] verifyAdminByOpenid error:', err);
-    return false;
-  }
-}
+const verifyAdminByOpenid = (openid) => _verifyAdmin(openid, db);
 
 function getCurrentEnvForGuard() {
   return process.env.TCB_ENV || process.env.SCF_NAMESPACE || process.env.WX_CLOUD_ENV || '';

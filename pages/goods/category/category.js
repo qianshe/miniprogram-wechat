@@ -1,4 +1,4 @@
-const { api, priceToYuan } = require('../../../utils/api.js');
+const { api } = require('../../../utils/api.js');
 const { buildThumbUrl } = require('../../../utils/imageThumb.js');
 const { handlePageShow } = require('../../../utils/tabbar.js');
 const PAGE_SIZE = 15;

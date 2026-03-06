@@ -313,6 +313,26 @@ const checkOwnershipOrAdmin = async (event, context, resourceOwnerId) => {
   return null
 }
 
+/**
+ * 通过 openid 查询数据库验证管理员身份
+ * @param {string} openid - 用户的 openid
+ * @param {object} db - 数据库实例
+ * @returns {Promise<boolean>} 是否为管理员
+ */
+const verifyAdminByOpenid = async (openid, db) => {
+  if (!openid || !db) return false
+  try {
+    const userResult = await db.collection('users')
+      .where({ openid })
+      .field({ isAdmin: true })
+      .get()
+    return userResult.data.length > 0 && userResult.data[0].isAdmin === true
+  } catch (err) {
+    console.error('verifyAdminByOpenid error:', err)
+    return false
+  }
+}
+
 module.exports = {
   // 错误码
   ErrorCodes,
@@ -324,6 +344,9 @@ module.exports = {
   requireAdmin,
   requireOwnership,
   requireOwnershipOrAdmin,
+  
+  // 简易管理员验证
+  verifyAdminByOpenid,
   
   // 包装器
   withAuth,

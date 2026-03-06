@@ -5,8 +5,8 @@
 
 const cloud = require('wx-server-sdk')
 const { ErrorCodes, success, error, paramError, permissionError, notFoundError, dbError, wrapHandler } = require('./_shared/errorHandler')
+const { verifyAdminByOpenid: _verifyAdmin } = require('./_shared/permission')
 
-// 初始化云开发环境
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 })
@@ -14,24 +14,7 @@ cloud.init({
 const db = cloud.database()
 const _ = db.command
 
-/**
- * 通过openid验证用户是否为管理员
- * @param {string} openid - 用户的openid
- * @returns {Promise<boolean>} - 是否为管理员
- */
-async function verifyAdminByOpenid(openid) {
-  if (!openid) return false;
-  try {
-    const userResult = await db.collection('users')
-      .where({ openid })
-      .field({ isAdmin: true })
-      .get();
-    return userResult.data.length > 0 && userResult.data[0].isAdmin === true;
-  } catch (err) {
-    console.error('[PROCESS] verifyAdminByOpenid error:', err);
-    return false;
-  }
-}
+const verifyAdminByOpenid = (openid) => _verifyAdmin(openid, db)
 
 /**
  * 检查集合是否存在

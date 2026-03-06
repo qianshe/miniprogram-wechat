@@ -19,7 +19,8 @@ const {
 } = require('./_shared/fieldFilter');
 const config = require('./config');
 
-// 初始化云开发环境
+const { verifyAdminByOpenid: _verifyAdmin } = require('./_shared/permission');
+
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 });
@@ -27,24 +28,7 @@ cloud.init({
 const db = cloud.database();
 const _ = db.command;
 
-/**
- * 通过openid验证用户是否为管理员
- * @param {string} openid - 用户的openid
- * @returns {Promise<boolean>} - 是否为管理员
- */
-async function verifyAdminByOpenid(openid) {
-  if (!openid) return false;
-  try {
-    const userResult = await db.collection('users')
-      .where({ openid })
-      .field({ isAdmin: true })
-      .get();
-    return userResult.data.length > 0 && userResult.data[0].isAdmin === true;
-  } catch (err) {
-    console.error('[ORDER] verifyAdminByOpenid error:', err);
-    return false;
-  }
-}
+const verifyAdminByOpenid = (openid) => _verifyAdmin(openid, db);
 
 async function rollbackTransactionQuietly(transaction, logger, context) {
   if (!transaction) {

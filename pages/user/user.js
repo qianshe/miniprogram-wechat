@@ -360,10 +360,9 @@ Page({
     }
   },
 
-  // 检查用户角色
   checkUserRole() {
     const userInfo = wx.getStorageSync('userInfo');
-    if (userInfo && userInfo.role === 'admin') {
+    if (userInfo && (userInfo.isAdmin === true || userInfo.role === 'admin' || userInfo.role === 1)) {
       this.setData({
         isAdmin: true
       });

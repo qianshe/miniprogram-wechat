@@ -162,9 +162,6 @@ App({
           duration: 1000
         });
       }
-
-      // 保存网络状态历史
-      this.saveNetworkStatusHistory(res.isConnected, res.networkType);
     });
   },
 
@@ -194,65 +191,6 @@ App({
     updateManager.onUpdateFailed(() => {
       console.error('新版本下载失败');
     });
-  },
-
-  /**
-   * 保存网络状态历史
-   */
-  saveNetworkStatusHistory(isConnected, networkType) {
-    try {
-      const networkHistory = wx.getStorageSync('networkHistory') || [];
-      networkHistory.push({
-        timestamp: new Date().toISOString(),
-        isConnected,
-        networkType
-      });
-
-      // 只保留最近1000条记录
-      if (networkHistory.length > 1000) {
-        networkHistory.shift();
-      }
-
-      wx.setStorageSync('networkHistory', networkHistory);
-    } catch (err) {
-      console.error('Failed to save network history:', err);
-    }
-  },
-
-  /**
-   * 获取网络状态
-   */
-  getNetworkStatus() {
-    return this.globalData.networkStatus;
-  },
-
-  /**
-   * 检查是否在线
-   */
-  isOnline() {
-    return this.globalData.networkStatus !== 'none';
-  },
-
-  /**
-   * 清理本地缓存
-   */
-  clearCache() {
-    try {
-      // 清理图片缓存
-      wx.clearStorage();
-
-      // 清理API响应缓存
-      const cacheKeys = ['cachedProducts', 'cachedOrders', 'cachedUserInfo'];
-      cacheKeys.forEach(key => {
-        try {
-          wx.removeStorageSync(key);
-        } catch (err) {
-          console.warn(`Failed to clear cache ${key}:`, err);
-        }
-      });
-    } catch (err) {
-      console.error('Failed to clear cache:', err);
-    }
   },
 
   /**

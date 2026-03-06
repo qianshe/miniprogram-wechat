@@ -1,9 +1,6 @@
 {
   "navigationBarTitleText": "首页",
-  "usingComponents": {
-    "t-loading": "tdesign-miniprogram/loading/loading",
-    "t-empty": "tdesign-miniprogram/empty/empty"
-  },
+  "usingComponents": {},
   "enablePullDownRefresh": true,
   "backgroundColor": "#f6f0e7"
 }

@@ -1,10 +1,9 @@
-// Components/tabBar/tabBar.js
 Component({
   data: {
     index: 0,
     list: [],
     ready: false,
-    show: true  // 控制 tabbar 显示/隐藏，非 tabBar 页面可设置为 false
+    show: true
   },
 
   lifetimes: {
@@ -18,9 +17,7 @@ Component({
 
     ready() {
       this.setData({ ready: true }, () => {
-        const app = getApp();
-        const systemType = app.globalData.systemType || 'white';
-        this.scheduleTabSync(systemType, 0);
+        this.scheduleTabSync(0);
       });
     },
 
@@ -34,20 +31,18 @@ Component({
 
   pageLifetimes: {
     show() {
-      const app = getApp();
-      const systemType = app.globalData.systemType || 'white';
-      this.scheduleTabSync(systemType, this.data.ready ? 20 : 80, 0);
+      this.scheduleTabSync(this.data.ready ? 20 : 80, 0);
     }
   },
 
   methods: {
-    scheduleTabSync(systemType, delay = 0, retryCount = 0) {
+    scheduleTabSync(delay = 0, retryCount = 0) {
       if (this.syncTimer) {
         clearTimeout(this.syncTimer);
       }
 
       this.syncTimer = setTimeout(() => {
-        this.updateTabList(systemType, retryCount);
+        this.updateTabList(retryCount);
         this.syncTimer = null;
       }, delay);
     },
@@ -70,45 +65,35 @@ Component({
     },
 
     initTabBar() {
-      const app = getApp();
-      const systemType = app.globalData.systemType || 'white';
-      this.scheduleTabSync(systemType, 0);
+      this.scheduleTabSync(0);
     },
 
-    updateTabList(systemType, retryCount = 0) {
-      if (!systemType) {
-        console.warn('systemType is undefined, using default "white"');
-        systemType = 'white';
-      }
+    updateTabList(retryCount = 0) {
+      const list = [
+        {
+          pagePath: "/pages/index/index",
+          text: "首页",
+          emoji: "🏠"
+        },
+        {
+          pagePath: "/pages/goods/category/category",
+          text: "服务/产品分类",
+          emoji: "📦"
+        },
+        {
+          pagePath: "/pages/cart/cart",
+          text: "治丧清单",
+          emoji: "📋"
+        },
+        {
+          pagePath: "/pages/user/user",
+          text: "我的",
+          emoji: "👤"
+        }
+      ];
 
-      const tabConfig = {
-        list: [
-          {
-            pagePath: "/pages/index/index",
-            text: "首页",
-            emoji: "🏠"
-          },
-          {
-            pagePath: "/pages/goods/category/category",
-            text: "服务/产品分类",
-            emoji: "📦"
-          },
-          {
-            pagePath: "/pages/cart/cart",
-            text: "治丧清单",
-            emoji: "📋"
-          },
-          {
-            pagePath: "/pages/user/user",
-            text: "我的",
-            emoji: "👤"
-          }
-        ]
-      };
       const app = getApp();
-
-      const list = tabConfig.list;
-      const pageIndex = this.getIndexByPath(tabConfig.list, this.getCurrentPagePath());
+      const pageIndex = this.getIndexByPath(list, this.getCurrentPagePath());
 
       if (pageIndex < 0) {
         const currentIndex = Number(this.data.index);
@@ -124,18 +109,16 @@ Component({
         });
 
         if (retryCount < 3) {
-          this.scheduleTabSync(systemType, 80, retryCount + 1);
+          this.scheduleTabSync(80, retryCount + 1);
         }
         return;
       }
 
-      const resolvedIndex = pageIndex;
-
-      app.globalData.currentTabIndex = resolvedIndex;
+      app.globalData.currentTabIndex = pageIndex;
 
       this.setData({
         list,
-        index: resolvedIndex
+        index: pageIndex
       });
     },
 
@@ -145,15 +128,12 @@ Component({
       const targetIndex = Number(index);
       const safeIndex = Number.isInteger(targetIndex) && targetIndex >= 0 ? targetIndex : 0;
 
-      // 更新全局状态
       app.globalData.currentTabIndex = safeIndex;
 
-      // 更新当前组件状态
       this.setData({
         index: safeIndex
       });
 
-      // 跳转到对应页面
       wx.switchTab({
         url: path
       });

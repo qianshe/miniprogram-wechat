@@ -95,8 +95,11 @@ miniprogram1/
 │   ├── userDataManagement/       # 用户数据管理
 │   └── wxpaycommon/              # 微信支付通用模块
 ├── components/                   # 自定义组件
-│   ├── c-card/                   # 卡片组件
-│   └── c-page-header/            # 页面头部组件
+│   ├── c-empty/                  # 空状态组件
+│   ├── c-loading/                # 加载组件
+│   ├── c-price/                  # 价格组件
+│   ├── c-quantity-stepper/       # 数量步进器组件
+│   └── product-selector/         # 商品选择器组件
 ├── config/                       # 配置文件
 ├── custom-tab-bar/               # 自定义底部导航栏
 ├── database/                     # 数据库索引配置
@@ -146,6 +149,7 @@ miniprogram1/
 | `pages/address` | 地址管理 |
 | `pages/feedback` | 意见反馈 |
 | `pages/scan-result` | 扫码结果 |
+| `pages/order/append-items` | 订单追加商品 |
 
 ### 管理后台分包（pages/admin）
 
@@ -164,6 +168,8 @@ miniprogram1/
 | `admin/order/qr-code` | 订单二维码 |
 | `admin/package/list` | 套餐管理列表 |
 | `admin/package/edit` | 套餐编辑 |
+| `admin/user/list` | 用户管理列表 |
+| `admin/assets/images` | 图片资源管理 |
 
 ## 配置文件说明
 
@@ -190,7 +196,6 @@ miniprogram1/
 | `trace.js` | 请求追踪 ID 生成 |
 | `permission.js` | 前端权限校验 |
 | `sensitive.js` | 敏感数据脱敏 |
-| `fieldAccess.js` | 字段访问控制 |
 | `errorHandler.js` | 错误处理工具 |
 | `validation.js` | 数据验证工具 |
 | `util.js` | 通用工具函数 |
@@ -199,11 +204,8 @@ miniprogram1/
 
 | 文件 | 说明 |
 |------|------|
-| `index.js` | 统一 API 入口 |
-| `user.js` | 用户相关 API |
 | `order.js` | 订单相关 API |
 | `product.js` | 商品相关 API |
-| `category.js` | 分类相关 API |
 | `process.js` | 流程相关 API |
 | `package.js` | 套餐相关 API |
 | `cart.js` | 购物车相关 API |
@@ -215,14 +217,16 @@ miniprogram1/
 
 | 云函数名称 | 说明 |
 |------------|------|
-| `login` | 管理员登录认证 |
+| `login` | 用户/管理员登录认证 |
 | `orderManagement` | 订单增删改查 |
 | `productManagement` | 商品增删改查 |
 | `categoryManagement` | 分类增删改查 |
 | `processManagement` | 流程步骤管理 |
 | `packageManagement` | 套餐管理 |
-| `userDataManagement` | 用户数据管理 |
-| `wxpaycommon` | 微信支付通用模块 |
+| `userManagement` | 用户管理（管理员端） |
+| `userDataManagement` | 用户数据管理（地址、购物车） |
+
+> **注意**：旧版 `wxpaycommon` 目录已清理（未完成的支付预留模块，无功能代码）。
 
 ### 共享模块（cloudfunctions/_shared/）
 
