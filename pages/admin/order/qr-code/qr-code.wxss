@@ -92,15 +92,15 @@
 }
 
 .action-btn.primary {
-  background-color: #1989fa;
+  background-color: var(--admin-primary);
   color: #fff;
-  box-shadow: 0 6rpx 16rpx rgba(25, 137, 250, 0.3);
+  box-shadow: 0 6rpx 16rpx rgba(160, 114, 78, 0.3);
 }
 
 .action-btn.secondary {
-  background-color: var(--primary-color);
+  background-color: var(--admin-primary);
   color: #fff;
-  box-shadow: 0 6rpx 16rpx rgba(7, 193, 96, 0.3);
+  box-shadow: 0 6rpx 16rpx rgba(160, 114, 78, 0.3);
 }
 
 .action-btn.plain {
@@ -121,7 +121,7 @@
   font-weight: bold;
   color: var(--text-main);
   margin-bottom: 24rpx;
-  border-left: 8rpx solid #1989fa;
+  border-left: 8rpx solid var(--admin-primary);
   padding-left: 16rpx;
   line-height: 1;
 }

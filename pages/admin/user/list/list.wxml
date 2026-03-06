@@ -44,7 +44,7 @@
     </view>
 
     <!-- 空状态 -->
-    <t-empty wx:elif="{{!users.length}}" icon="user" description="暂无用户"></t-empty>
+    <c-empty wx:elif="{{!loading && users.length === 0}}" title="暂无用户" description="用户登录后将在此显示"></c-empty>
 
     <!-- 用户卡片 -->
     <view class="users" wx:else>

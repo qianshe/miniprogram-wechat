@@ -1,4 +1,5 @@
 const { adminApi } = require('../../../../utils/api.js');
+const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
 
 Page({
   /**
@@ -14,6 +15,7 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
+    if (!checkAdminAccess()) return
     if (options.orderNo && options.qrCodeUrl) {
       this.setData({
         orderNo: options.orderNo, // 订单号

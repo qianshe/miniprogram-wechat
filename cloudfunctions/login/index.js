@@ -123,7 +123,8 @@ const userLogin = async (event, wxContext) => {
 
 // 管理员登录处理
 const adminLogin = async (event, wxContext) => {
-  const { account, password } = event
+  const payload = (event.data && typeof event.data === 'object') ? event.data : event
+  const { account, password } = payload
 
   logger.info('adminLogin started', { openid: wxContext.OPENID })
 

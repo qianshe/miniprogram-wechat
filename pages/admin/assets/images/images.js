@@ -1,4 +1,5 @@
 const cloudConfig = require('../../../../config/cloud.config.js')
+const { checkAdminAccess } = require('../../../../utils/adminGuard.js')
 
 Page({
   data: {
@@ -28,6 +29,7 @@ Page({
   },
 
   onLoad() {
+    if (!checkAdminAccess()) return;
     this.setData({ currentItem: this.data.imageTypes[0] });
     this.loadImagePreviews();
   },

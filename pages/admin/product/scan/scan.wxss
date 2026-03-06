@@ -207,13 +207,13 @@
   font-size: 30rpx;
   font-weight: 600;
   border-radius: 44rpx;
-  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
+  box-shadow: 0 8rpx 20rpx rgba(160, 114, 78, 0.3);
   transition: all 0.3s;
 }
 
 .scan-btn:active {
   transform: scale(0.98);
-  box-shadow: 0 4rpx 10rpx rgba(7, 193, 96, 0.2);
+  box-shadow: 0 4rpx 10rpx rgba(160, 114, 78, 0.2);
 }
 
 .error-message {

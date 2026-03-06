@@ -1,5 +1,5 @@
 .admin-container {
-  padding: 30rpx;
+  padding: 24rpx;
   background-color: var(--bg-color);
   min-height: 100vh;
 }
@@ -31,8 +31,8 @@
   align-items: center;
   padding: 32rpx;
   background: #fff;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  border-radius: 24rpx;
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
 }
 
@@ -90,10 +90,10 @@
 /* 单个数据统计卡片 */
 .stat-card {
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 24rpx;
   padding: 32rpx 24rpx;
   text-align: center;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
 }
 
@@ -138,9 +138,9 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 16rpx;
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .status-item {
@@ -159,9 +159,9 @@
   color: var(--text-sub);
 }
 
-.status-pending { color: #faad14; }
-.status-wait-service { color: #52c41a; }
-.status-processing { color: #1890ff; }
-.status-served-unpaid { color: #722ed1; }
-.status-completed { color: #8c8c8c; }
-.status-cancelled { color: #ff4d4f; }
+.status-pending { color: var(--admin-warning); }
+.status-wait-service { color: var(--admin-success); }
+.status-processing { color: var(--admin-primary); }
+.status-served-unpaid { color: var(--admin-primary); }
+.status-completed { color: var(--text-sub); }
+.status-cancelled { color: var(--admin-danger); }

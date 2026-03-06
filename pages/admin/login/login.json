@@ -1,6 +1,10 @@
 {
   "navigationBarTitleText": "管理员登录",
-  "navigationBarBackgroundColor": "#667eea",
+  "navigationBarBackgroundColor": "#a0724e",
   "navigationBarTextStyle": "white",
-  "backgroundColor": "#f8f9fa"
+  "backgroundColor": "#f3ede4",
+  "usingComponents": {
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-button": "tdesign-miniprogram/button/button"
+  }
 }

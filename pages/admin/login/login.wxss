@@ -1,7 +1,7 @@
 /* pages/admin/login/login.wxss */
 .login-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--admin-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,14 +26,14 @@
   display: block;
   font-size: 48rpx;
   font-weight: bold;
-  color: #333;
+  color: var(--text-main);
   margin-bottom: 20rpx;
 }
 
 .login-subtitle {
   display: block;
   font-size: 28rpx;
-  color: #666;
+  color: var(--text-sub);
 }
 
 .form-item {
@@ -48,47 +48,32 @@
   border: 2rpx solid #e0e0e0;
   border-radius: 10rpx;
   font-size: 30rpx;
-  color: #333;
-  background: #f8f9fa;
+  color: var(--text-main);
+  background: var(--admin-card-bg);
   transition: all 0.3s ease;
 }
 
 .form-input:focus {
-  border-color: #667eea;
+  border-color: var(--admin-primary);
   background: #fff;
-  box-shadow: 0 0 0 6rpx rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 6rpx var(--admin-primary-light);
 }
 
 .error-message {
-  background: #ffebee;
-  border: 2rpx solid #f44336;
+  background: rgba(192, 85, 70, 0.1);
+  border: 2rpx solid var(--admin-danger);
   border-radius: 8rpx;
   padding: 20rpx;
   margin-bottom: 30rpx;
-  color: #c62828;
+  color: var(--admin-danger);
   font-size: 24rpx;
   text-align: center;
 }
 
-.login-btn {
-  width: 100%;
-  height: 100rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 10rpx;
-  font-size: 32rpx;
-  font-weight: bold;
+.login-btn-wrapper {
   margin-top: 40rpx;
-  transition: all 0.3s ease;
-}
-
-.login-btn:active {
-  transform: scale(0.98);
-  opacity: 0.9;
-}
-
-.login-btn[disabled] {
-  opacity: 0.6;
-  transform: none;
+  --td-button-primary-bg-color: var(--admin-primary);
+  --td-button-primary-border-color: var(--admin-primary);
+  --td-button-primary-active-bg-color: #8a6243;
+  --td-button-primary-active-border-color: #8a6243;
 }

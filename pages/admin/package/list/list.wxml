@@ -40,7 +40,7 @@
 
   <!-- 套餐列表 -->
   <view class="package-list" wx:else>
-    <t-empty wx:if="{{packages.length === 0 && !isLoading}}" description="暂无套餐数据" icon="info-circle-filled" />
+    <c-empty wx:if="{{packages.length === 0 && !isLoading}}" title="暂无套餐" description="点击右上角添加新套餐"></c-empty>
     
     <block wx:else>
       <view class="package-item" wx:for="{{packages}}" wx:key="id" bindtap="editPackage" data-id="{{item.id}}">

@@ -1,5 +1,6 @@
 const app = getApp();
 const { adminApi } = require('../../../../utils/api.js');
+const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
 
 // 列表项高度配置 (rpx) - 与 list.wxss 中 .category-item 的高度保持同步
 const ITEM_HEIGHT_RPX = 240;
@@ -29,6 +30,7 @@ Page({
   },
 
   onLoad(options) {
+    if (!checkAdminAccess()) return;
     // 计算 rpx 到 px 的转换
     const systemInfo = wx.getSystemInfoSync();
     const scale = systemInfo.windowWidth / 750;

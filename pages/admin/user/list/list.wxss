@@ -1,6 +1,6 @@
 /* 用户管理页面 - 参考订单列表样式 */
 .admin-users-container {
-  padding: 20rpx 24rpx;
+  padding: 24rpx;
   background-color: #f5f5f5;
   min-height: 100vh;
 }
@@ -79,9 +79,9 @@
 }
 
 .tab-item.active {
-  color: var(--primary-color, #0052d9);
+  color: var(--admin-primary);
   font-weight: 600;
-  background: rgba(0, 82, 217, 0.08);
+  background: var(--admin-primary-light);
 }
 
 .tab-item.active::after {
@@ -92,7 +92,7 @@
   transform: translateX(-50%);
   width: 36rpx;
   height: 6rpx;
-  background-color: var(--primary-color, #0052d9);
+  background-color: var(--admin-primary);
   border-radius: 3rpx;
 }
 
@@ -140,7 +140,7 @@
 
 /* 管理员状态条 - 蓝色 */
 .user-item.status-admin::before {
-  background: var(--primary-color, #0052d9);
+  background: var(--admin-primary);
 }
 
 /* 禁用状态条 - 红色 */
@@ -188,11 +188,11 @@
   margin-left: auto;
 }
 
-/* 管理员标签 - 蓝色 */
+/* 管理员标签 - 主色 */
 .status-tag-admin {
-  color: #0052d9;
-  background: linear-gradient(135deg, #e8f0fe 0%, #d4e4fc 100%);
-  border: 1rpx solid rgba(0, 82, 217, 0.2);
+  color: var(--admin-primary);
+  background: var(--admin-primary-light);
+  border: 1rpx solid rgba(160, 114, 78, 0.2);
 }
 
 /* 普通用户标签 - 灰色 */
@@ -262,12 +262,12 @@
 
 .load-more {
   text-align: center;
-  color: var(--primary-color, #0052d9);
+  color: var(--admin-primary);
   font-size: 28rpx;
   padding: 16rpx 40rpx;
   background: #fff;
   border-radius: 32rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 82, 217, 0.12);
+  box-shadow: 0 4rpx 12rpx rgba(160, 114, 78, 0.12);
 }
 
 .load-more:active {

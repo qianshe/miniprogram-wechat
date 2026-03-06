@@ -54,8 +54,8 @@
 
 .filter-item.active {
   color: #fff;
-  background: linear-gradient(135deg, #0052d9, #003cab);
-  box-shadow: 0 6rpx 16rpx rgba(0, 82, 217, 0.25);
+  background: var(--admin-primary);
+  box-shadow: 0 6rpx 16rpx var(--admin-primary-light);
   transform: translateY(-2rpx);
 }
 
@@ -143,8 +143,8 @@
 }
 
 .category-status.status-off {
-  color: #e34d59;
-  background-color: rgba(227, 77, 89, 0.1);
+  color: var(--admin-danger);
+  background-color: rgba(192, 85, 70, 0.1);
 }
 
 .drag-handle {
@@ -173,15 +173,15 @@
 }
 
 .edit-btn {
-  background-color: #0052d9;
+  background-color: var(--admin-primary);
 }
 
 .toggle-btn {
-  background-color: #fa9550;
+  background-color: var(--admin-warning);
 }
 
 .delete-btn {
-  background-color: #e34d59;
+  background-color: var(--admin-danger);
 }
 
 /* 加载更多 */
@@ -276,7 +276,7 @@
   width: 30rpx;
   height: 30rpx;
   border: 4rpx solid #e0e0e0;
-  border-top-color: #0052d9;
+  border-top-color: var(--admin-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-right: 12rpx;

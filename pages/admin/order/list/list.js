@@ -1,4 +1,4 @@
-const { adminApi } = require('../../../../utils/api.js');
+const { adminApi, callCloudFunction } = require('../../../../utils/api.js');
 const auth = require('../../../../utils/auth.js');
 const {
   getOrderStatusText,
@@ -61,7 +61,7 @@ Page({
       });
       setTimeout(() => {
         wx.navigateTo({
-          url: '/pages/login/login'
+          url: '/pages/admin/login/login'
         });
       }, 1500);
       return;
@@ -354,9 +354,9 @@ Page({
   },
 
   onOrderClick(e) {
-    const { orderid } = e.currentTarget.dataset;
+    const { orderno } = e.currentTarget.dataset;
     wx.navigateTo({
-      url: `/pages/order/detail/detail?orderNo=${orderid}&isAdmin=true`
+      url: `/pages/order/detail/detail?orderNo=${orderno}&isAdmin=true`
     });
   },
 
@@ -364,12 +364,11 @@ Page({
 
   // 修改订单状态
   async updateOrderStatus(e) {
-    const { orderid, status } = e.currentTarget.dataset;
+    const { orderno, status } = e.currentTarget.dataset;
     try {
       wx.showLoading({ title: '处理中...' });
 
-      // 调用统一API更新订单状态
-      await adminApi.updateOrderStatus(orderid, parseInt(status));
+      await adminApi.updateOrderStatus(orderno, parseInt(status));
 
       wx.hideLoading();
       wx.showToast({ title: '更新成功' });
@@ -395,7 +394,7 @@ Page({
    * 将订单状态从待服务改为服务中
    */
   async startService(e) {
-    const { orderid } = e.currentTarget.dataset;
+    const { orderno } = e.currentTarget.dataset;
     wx.showModal({
       title: '确认操作',
       content: '确认开始为客户提供服务？',
@@ -403,8 +402,7 @@ Page({
         if (res.confirm) {
           try {
             wx.showLoading({ title: '处理中...' });
-            // 调用统一API更新订单状态为服务中
-            await adminApi.updateOrderStatus(orderid, ORDER_STATUS.PROCESSING);
+            await adminApi.updateOrderStatus(orderno, ORDER_STATUS.PROCESSING);
             wx.hideLoading();
             wx.showToast({ title: '已开始服务' });
             this.setData({ 'pagination.page': 1, orders: [] }, () => this.loadOrders());
@@ -421,7 +419,7 @@ Page({
    * 确认线下收款
    */
   async recordOfflinePayment(e) {
-    const { orderid } = e.currentTarget.dataset;
+    const { orderno } = e.currentTarget.dataset;
     wx.showModal({
       title: '确认收款',
       content: '确认已收到客户的线下付款？',
@@ -429,19 +427,8 @@ Page({
         if (res.confirm) {
           try {
             wx.showLoading({ title: '处理中...' });
-            const result = await wx.cloud.callFunction({
-              name: 'orderManagement',
-              data: {
-                action: 'recordOfflinePayment',
-                data: { orderNo: orderid }
-              }
-            });
+            await callCloudFunction('orderManagement', 'recordOfflinePayment', { orderNo: orderno });
             wx.hideLoading();
-            // 检查云函数返回结果
-            if (result.result && result.result.success === false) {
-              wx.showToast({ title: result.result.message || '操作失败', icon: 'none' });
-              return;
-            }
             wx.showToast({ title: '收款已确认' });
             setTimeout(() => {
               this.setData({ 'pagination.page': 1, orders: [] }, () => this.loadOrders());

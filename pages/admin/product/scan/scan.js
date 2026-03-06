@@ -1,3 +1,5 @@
+const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
+
 Page({
   /**
    * 页面的初始数据
@@ -14,6 +16,7 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
+    if (!checkAdminAccess()) return
     // 如果有参数中有scanResultPath，表示从扫描页面返回
     if (options.scanResultPath) {
       this.setData({

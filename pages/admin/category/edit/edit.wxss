@@ -3,7 +3,7 @@ page {
   --bg-color: #f5f5f5;
   --text-main: #333;
   --text-sub: #999;
-  --primary-color: #0052d9;
+  --admin-container-padding: 24rpx;
   --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
@@ -16,7 +16,7 @@ page {
 
 /* 顶部区域 */
 .header-section {
-  padding: 40rpx 32rpx;
+  padding: 40rpx var(--admin-container-padding);
   background-color: var(--bg-color);
 }
 
@@ -35,13 +35,13 @@ page {
 
 /* 表单容器 */
 .form-container {
-  padding: 0 32rpx;
+  padding: 0 var(--admin-container-padding);
 }
 
 .form-card {
   background-color: #fff;
   border-radius: 32rpx;
-  padding: 40rpx 32rpx;
+  padding: 40rpx var(--admin-container-padding);
   margin-bottom: 32rpx;
   box-shadow: var(--shadow-sm);
 }
@@ -52,7 +52,7 @@ page {
   color: var(--text-main);
   margin-bottom: 32rpx;
   padding-left: 16rpx;
-  border-left: 8rpx solid var(--primary-color);
+  border-left: 8rpx solid var(--admin-primary);
   line-height: 1;
 }
 
@@ -78,7 +78,7 @@ page {
   background-color: #f7f8fa !important;
   border: 2rpx solid #e5e7eb !important;
   border-radius: 16rpx !important;
-  padding: 24rpx 32rpx !important;
+  padding: 24rpx var(--admin-container-padding) !important;
   font-size: 28rpx;
   color: var(--text-main);
   transition: all 0.3s;
@@ -86,7 +86,7 @@ page {
 }
 
 .filled-input:focus {
-  border-color: var(--primary-color) !important;
+  border-color: var(--admin-primary) !important;
   background-color: #fff !important;
 }
 
@@ -111,9 +111,9 @@ page {
 }
 
 .type-radio-item--active {
-  background-color: rgba(0, 82, 217, 0.05);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background-color: var(--admin-primary-light);
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
 }
 
 /* 设置行样式 (Switch) */
@@ -146,7 +146,7 @@ page {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 24rpx 32rpx;
+  padding: 24rpx var(--admin-container-padding);
   background-color: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
   z-index: 100;
@@ -154,7 +154,7 @@ page {
 }
 
 .submit-btn {
-  box-shadow: 0 8rpx 16rpx rgba(0, 82, 217, 0.2);
+  box-shadow: 0 8rpx 16rpx var(--admin-primary-light);
 }
 
 /* 商品数量提示 */
@@ -165,7 +165,7 @@ page {
   border: 1rpx solid rgba(255, 213, 145, 0.5);
   border-radius: 16rpx;
   font-size: 26rpx;
-  color: #fa9550;
+  color: var(--admin-warning);
   display: flex;
   align-items: center;
 }

@@ -1,6 +1,7 @@
 const { adminApi } = require('../../../../utils/api.js');
 const validation = require('../../../../utils/validation.js');
 const { SYSTEM_TYPE, CURRENT_SYSTEM_TYPE } = require('../../../../config/constants.js');
+const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
 
 Page({
     data: {
@@ -25,6 +26,7 @@ Page({
     },
 
     async onLoad(options) {
+        if (!checkAdminAccess()) return
         await this.loadCategories();
         if (options.id) {
             this.setData({

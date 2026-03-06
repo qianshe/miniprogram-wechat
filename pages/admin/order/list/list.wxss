@@ -1,5 +1,5 @@
 .admin-orders-container {
-  padding: 20rpx 24rpx;
+  padding: 24rpx;
   background-color: #f5f5f5;
   min-height: 100vh;
 }
@@ -23,13 +23,13 @@
 }
 
 .create-btn {
-  background-color: var(--primary-color);
+  background-color: var(--admin-primary);
   color: #fff;
   font-size: 28rpx;
   padding: 12rpx 32rpx;
   border-radius: 32rpx;
   line-height: 1.5;
-  box-shadow: 0 6rpx 16rpx rgba(7, 193, 96, 0.35);
+  box-shadow: 0 6rpx 16rpx rgba(160, 114, 78, 0.35);
 }
 
 .search-container {
@@ -262,9 +262,9 @@
 }
 
 .tab-item.active {
-  color: var(--primary-color);
+  color: var(--admin-primary);
   font-weight: 600;
-  background: rgba(7, 193, 96, 0.08);
+  background: var(--admin-primary-light);
 }
 
 .tab-item.active::after {
@@ -275,7 +275,7 @@
   transform: translateX(-50%);
   width: 36rpx;
   height: 6rpx;
-  background-color: var(--primary-color);
+  background-color: var(--admin-primary);
   border-radius: 3rpx;
 }
 
@@ -331,7 +331,7 @@
   top: 0;
   bottom: 0;
   width: 8rpx;
-  background: var(--primary-color);
+  background: var(--admin-primary);
   border-radius: 8rpx 0 0 8rpx;
 }
 
@@ -426,9 +426,9 @@
 }
 
 .status-1 {
-  color: #07c160;
-  background: linear-gradient(135deg, #e8f5e9 0%, #e0f2e0 100%);
-  border: 1rpx solid rgba(7, 193, 96, 0.2);
+  color: var(--admin-primary);
+  background: var(--admin-primary-light);
+  border: 1rpx solid rgba(160, 114, 78, 0.2);
 }
 
 .status-2 {
@@ -579,13 +579,13 @@
 
 .confirm-btn {
   color: #fff;
-  background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
+  background: var(--admin-primary);
   border: none;
-  box-shadow: 0 4rpx 12rpx rgba(7, 193, 96, 0.3);
+  box-shadow: 0 4rpx 12rpx rgba(160, 114, 78, 0.3);
 }
 
 .confirm-btn:active {
-  box-shadow: 0 2rpx 6rpx rgba(7, 193, 96, 0.2);
+  box-shadow: 0 2rpx 6rpx rgba(160, 114, 78, 0.2);
 }
 
 .process-btn {

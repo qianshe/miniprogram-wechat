@@ -1,5 +1,6 @@
 const { adminApi, api } = require('../../../../utils/api.js');
 const validation = require('../../../../utils/validation.js');
+const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
 
 Page({
   /**
@@ -45,6 +46,7 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
+    if (!checkAdminAccess()) return
     // 设置默认服务时间（明天）
     this.setDefaultServiceTime();
     // 加载分类列表

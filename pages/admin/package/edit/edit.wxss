@@ -13,7 +13,7 @@
 .page-title {
   font-size: 40rpx;
   font-weight: 600;
-  color: #333333;
+  color: var(--text-main);
 }
 
 /* 表单区块 */
@@ -28,7 +28,7 @@
 .section-title {
   font-size: 32rpx;
   font-weight: 600;
-  color: #333333;
+  color: var(--text-main);
   margin-bottom: 24rpx;
 }
 
@@ -56,7 +56,7 @@
 
 .form-label {
   font-size: 28rpx;
-  color: #333333;
+  color: var(--text-main);
   margin-bottom: 16rpx;
   font-weight: 600;
   margin-left: 8rpx;
@@ -70,11 +70,11 @@
 .price-display {
   font-size: 32rpx;
   font-weight: 600;
-  color: #b8865c;
+  color: var(--admin-primary);
 }
 
 .required {
-  color: #e53935;
+  color: var(--admin-danger);
   margin-left: 4rpx;
 }
 
@@ -107,7 +107,7 @@
 }
 
 .type-option.active .type-text {
-  color: #b8865c;
+  color: var(--admin-primary);
   font-weight: 500;
 }
 
@@ -158,7 +158,7 @@
 
 .upload-text {
   font-size: 24rpx;
-  color: #999999;
+  color: var(--text-sub);
 }
 
 /* 添加分类按钮 */
@@ -173,7 +173,7 @@
 
 .add-slot-text {
   font-size: 26rpx;
-  color: #b8865c;
+  color: var(--admin-primary);
   font-weight: 500;
 }
 
@@ -202,7 +202,7 @@
 .template-index {
   font-size: 28rpx;
   font-weight: 600;
-  color: #333333;
+  color: var(--text-main);
 }
 
 .template-delete {
@@ -244,7 +244,7 @@
 
 .field-label {
   font-size: 28rpx;
-  color: #333333;
+  color: var(--text-main);
   margin-bottom: 16rpx;
   font-weight: 600;
   margin-left: 8rpx;
@@ -267,7 +267,7 @@
 
 .picker-text {
   font-size: 28rpx;
-  color: #333333;
+  color: var(--text-main);
   flex: 1;
   margin-right: 16rpx;
   /* 确保文字过长能截断，防止撑破布局 */
@@ -277,7 +277,7 @@
 }
 
 .picker-text.placeholder {
-  color: #999999;
+  color: var(--text-sub);
 }
 
 /* 商品区域 */
@@ -305,7 +305,7 @@
 
 .add-product-text {
   font-size: 24rpx;
-  color: #b8865c;
+  color: var(--admin-primary);
   font-weight: 500;
 }
 
@@ -343,7 +343,7 @@
 
 .product-card-name {
   font-size: 26rpx;
-  color: #333333;
+  color: var(--text-main);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -352,7 +352,7 @@
 
 .product-card-price {
   font-size: 24rpx;
-  color: #b8865c;
+  color: var(--admin-primary);
 }
 
 .product-card-actions {
@@ -394,14 +394,14 @@
 
 .step-btn text {
   font-size: 28rpx;
-  color: var(--primary-color, #b8865c);
+  color: var(--primary-color, var(--admin-primary));
   font-weight: 600;
 }
 
 .step-value {
   font-size: 28rpx;
   font-weight: 600;
-  color: var(--text-main, #333);
+  color: var(--text-main);
   min-width: 40rpx;
   text-align: center;
 }
@@ -419,7 +419,7 @@
 
 .delete-btn text {
   font-size: 24rpx;
-  color: var(--primary-color, #b8865c);
+  color: var(--primary-color, var(--admin-primary));
   font-weight: 500;
 }
 
@@ -431,7 +431,7 @@
 
 .empty-products-text {
   font-size: 24rpx;
-  color: #999999;
+  color: var(--text-sub);
 }
 
 /* 套餐总价区域 */
@@ -453,7 +453,7 @@
 .total-price-value {
   font-size: 32rpx;
   font-weight: 600;
-  color: #b8865c;
+  color: var(--admin-primary);
 }
 
 /* 空模板提示 */
@@ -464,7 +464,7 @@
 
 .empty-text {
   font-size: 26rpx;
-  color: #999999;
+  color: var(--text-sub);
 }
 
 /* 底部操作栏 */
@@ -551,7 +551,7 @@
 .picker-title {
   font-size: 32rpx;
   font-weight: 600;
-  color: #333333;
+  color: var(--text-main);
 }
 
 .picker-close {
@@ -577,11 +577,11 @@
 
 .picker-item-text {
   font-size: 30rpx;
-  color: #333333;
+  color: var(--text-main);
 }
 
 .picker-item.selected .picker-item-text {
-  color: #b8865c;
+  color: var(--admin-primary);
   font-weight: 500;
 }
 
@@ -609,7 +609,7 @@
 
 .product-name {
   font-size: 28rpx;
-  color: #333333;
+  color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -617,7 +617,7 @@
 
 .product-price {
   font-size: 24rpx;
-  color: #b8865c;
+  color: var(--admin-primary);
 }
 
 /* 空状态 */
@@ -628,7 +628,7 @@
 
 .picker-empty-text {
   font-size: 28rpx;
-  color: #999999;
+  color: var(--text-sub);
 }
 
 /* TDesign组件样式覆盖 */
@@ -637,7 +637,7 @@
   border: 2rpx solid #e5e7eb !important;
   border-radius: 16rpx !important;
   padding: 24rpx 32rpx !important;
-  color: #333 !important;
+  color: var(--text-main) !important;
   overflow: hidden !important;
 }
 
@@ -646,12 +646,12 @@
   border: 2rpx solid #e5e7eb !important;
   border-radius: 16rpx !important;
   padding: 24rpx 32rpx !important;
-  color: #333 !important;
+  color: var(--text-main) !important;
   overflow: hidden !important;
 }
 
 .input-control {
-  color: #333 !important;
+  color: var(--text-main) !important;
 }
 
 .textarea-control {

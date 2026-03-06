@@ -46,7 +46,7 @@
         </view>
       </view>
     </view>
-    <t-empty wx:elif="{{categories.length === 0 && !isLoading}}" description="暂无分类数据" />
+    <c-empty wx:elif="{{categories.length === 0 && !isLoading}}" title="暂无分类" description="点击右上角添加新分类"></c-empty>
     <block wx:else>
       
       <!-- 普通模式列表 (非排序状态) -->

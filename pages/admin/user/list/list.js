@@ -1,5 +1,6 @@
 const userApi = require('../../../../api/user')
 const app = getApp()
+const { checkAdminAccess } = require('../../../../utils/adminGuard.js')
 
 Page({
   data: {
@@ -30,6 +31,7 @@ Page({
   },
 
   onLoad() {
+    if (!checkAdminAccess()) return;
     // 获取当前登录用户的 openid
     const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo') || {}
     this.setData({ currentOpenid: userInfo.openid || '' })

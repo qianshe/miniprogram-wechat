@@ -1,4 +1,3 @@
-<!--pages/admin/login/login.wxml-->
 <view class="login-container">
   <view class="login-form">
     <view class="login-header">
@@ -7,23 +6,21 @@
     </view>
 
     <view class="form-item">
-      <input
-        class="form-input"
+      <t-input
         placeholder="请输入管理员账号"
         value="{{adminAccount}}"
-        bindinput="onAccountInput"
-        type="text"
+        bind:change="onAccountInput"
+        clearable
       />
     </view>
 
     <view class="form-item">
-      <input
-        class="form-input"
+      <t-input
         placeholder="请输入密码"
         value="{{password}}"
-        bindinput="onPasswordInput"
         type="password"
-        password
+        bind:change="onPasswordInput"
+        clearable
       />
     </view>
 
@@ -31,13 +28,13 @@
       <text>{{errorMessage}}</text>
     </view>
 
-    <button
-      class="login-btn"
-      type="primary"
+    <t-button
+      theme="primary"
+      block
+      size="large"
       loading="{{loading}}"
       bindtap="onLogin"
-    >
-      {{loading ? '登录中...' : '登录'}}
-    </button>
+      class="login-btn-wrapper"
+    >{{loading ? '登录中...' : '登录'}}</t-button>
   </view>
 </view>

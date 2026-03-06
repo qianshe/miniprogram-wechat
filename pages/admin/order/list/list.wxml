@@ -117,7 +117,7 @@
             <view class="status-tag payment-status-{{item.paymentStatus !== undefined ? item.paymentStatus : (item.status === 1 || item.status === 2 || item.status === 3 ? 1 : 0)}}">{{item.paymentStatusText}}</view>
           </view>
         </view>
-        <view class="order-info" bindtap="onOrderClick" data-orderid="{{item._id}}">
+        <view class="order-info" bindtap="onOrderClick" data-orderno="{{item.orderNo}}">
           <view class="info-row">
             <text class="label">联系人：</text>
             <text>{{item.contactName}}</text>
@@ -145,14 +145,14 @@
               size="small"
               theme="success"
               class="btn-success"
-              data-orderid="{{item._id}}"
+              data-orderno="{{item.orderNo}}"
               data-status="1"
               bindtap="updateOrderStatus">确认收款</t-button>
             <t-button
               size="small"
               theme="primary"
               class="btn-primary"
-              data-orderid="{{item._id}}"
+              data-orderno="{{item.orderNo}}"
               bindtap="startService">开始服务</t-button>
           </block>
           <block wx:elif="{{item.showActionCreatedPaid}}">
@@ -160,7 +160,7 @@
               size="small"
               theme="primary"
               class="btn-primary"
-              data-orderid="{{item._id}}"
+              data-orderno="{{item.orderNo}}"
               data-status="2"
               bindtap="updateOrderStatus">开始服务</t-button>
           </block>
@@ -169,7 +169,7 @@
               size="small"
               theme="primary"
               class="btn-primary"
-              data-orderid="{{item._id}}"
+              data-orderno="{{item.orderNo}}"
               data-status="3"
               bindtap="updateOrderStatus">服务完成</t-button>
           </block>
@@ -178,7 +178,7 @@
               size="small"
               theme="success"
               class="btn-success"
-              data-orderid="{{item._id}}"
+              data-orderno="{{item.orderNo}}"
               bindtap="recordOfflinePayment">确认线下收款</t-button>
           </block>
           <block wx:elif="{{item.showActionServiceDonePaid}}">
@@ -186,7 +186,7 @@
               size="small"
               theme="primary"
               class="btn-primary"
-              data-orderid="{{item._id}}"
+              data-orderno="{{item.orderNo}}"
               data-status="3"
               bindtap="updateOrderStatus">完成订单</t-button>
           </block>
@@ -195,7 +195,7 @@
               size="small"
               theme="danger"
               class="btn-danger"
-              data-orderid="{{item._id}}"
+              data-orderno="{{item.orderNo}}"
               data-status="4"
               bindtap="updateOrderStatus">取消订单</t-button>
           </block>

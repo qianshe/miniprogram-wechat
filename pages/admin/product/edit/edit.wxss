@@ -57,7 +57,7 @@
 
 .upload-text {
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-sub);
   margin-top: 16rpx;
 }
 
@@ -160,7 +160,7 @@
 }
 
 .placeholder-style {
-  color: #bbb;
+  color: var(--text-sub);
 }
 
 .textarea-input {
@@ -193,7 +193,7 @@
 }
 
 .text-placeholder {
-  color: #bbb;
+  color: var(--text-sub);
 }
 
 /* ... (中间省略) ... */

@@ -1,6 +1,7 @@
 const packageApi = require('../../../../api/package.js')
 const productApi = require('../../../../api/product.js')
 const { adminApi } = require('../../../../utils/api')
+const { checkAdminAccess } = require('../../../../utils/adminGuard.js')
 
 Page({
   data: {
@@ -109,6 +110,7 @@ Page({
   },
 
   async onLoad(options) {
+    if (!checkAdminAccess()) return;
     await this.loadCategories()
     if (options.id) {
       this.setData({

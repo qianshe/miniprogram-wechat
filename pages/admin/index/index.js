@@ -1,5 +1,6 @@
 const app = getApp()
 const { adminApi } = require('../../../utils/api')
+const { checkAdminAccess } = require('../../../utils/adminGuard.js')
 const userApi = require('../../../api/user')
 const { ORDER_FLOW_STATUS, PAYMENT_STATUS } = require('../../../config/constants')
 
@@ -112,6 +113,7 @@ Page({
   },
 
   onLoad() {
+    if (!checkAdminAccess()) return
     this.loadUserInfo();
     this.loadTodayStats();
   },
