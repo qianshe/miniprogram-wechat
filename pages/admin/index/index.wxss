@@ -159,6 +159,13 @@
   color: var(--text-sub);
 }
 
+.status-hint {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #9CA3AF;
+  line-height: 1.2;
+}
+
 .status-pending { color: var(--admin-warning); }
 .status-wait-service { color: var(--admin-success); }
 .status-processing { color: var(--admin-primary); }

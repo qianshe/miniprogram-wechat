@@ -81,10 +81,10 @@ Page({
     },
     // 展示用主状态分布（单一主状态）
     mainStatus: {
-      pendingPayment: 0, // 待支付
+      pendingPayment: 0, // 待付款（未开始服务）
       waitService: 0,    // 待服务
       processing: 0,     // 服务中
-      serviceDone: 0,    // 待收款
+      serviceDone: 0,    // 待尾款（服务已完成）
       completed: 0,      // 已完成
       cancelled: 0       // 已取消
     },
@@ -106,7 +106,7 @@ Page({
     },
     // 支付状态分布
     paymentStatusDist: {
-      unpaid: 0,  // 待支付
+      unpaid: 0,  // 待付款
       paid: 0     // 已支付
     },
     loading: false

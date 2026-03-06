@@ -189,10 +189,10 @@ const PAYMENT_STATUS = {
  */
 const ADMIN_ORDER_TABS = [
   { index: '0', name: '全部', orderStatus: null, paymentStatus: null },
-  { index: '1', name: '待支付', orderStatus: 0, paymentStatus: 0 },   // CREATED + UNPAID
+  { index: '1', name: '待付款', orderStatus: 0, paymentStatus: 0 },   // CREATED + UNPAID
   { index: '2', name: '待服务', orderStatus: 0, paymentStatus: 1 },   // CREATED + PAID
   { index: '3', name: '服务中', orderStatus: 1, paymentStatus: null }, // PROCESSING
-  { index: '4', name: '待收款', orderStatus: 2, paymentStatus: 0 },   // SERVICE_DONE + UNPAID
+  { index: '4', name: '待尾款', orderStatus: 2, paymentStatus: 0 },   // SERVICE_DONE + UNPAID
   { index: '5', name: '已完成', orderStatus: 3, paymentStatus: null }, // COMPLETED
   { index: '6', name: '已取消', orderStatus: 4, paymentStatus: null }  // CANCELLED
 ];
