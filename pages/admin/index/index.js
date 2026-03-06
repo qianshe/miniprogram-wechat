@@ -1,7 +1,6 @@
 const app = getApp()
 const { adminApi } = require('../../../utils/api')
-const { checkAdminAccess } = require('../../../utils/adminGuard.js')
-const userApi = require('../../../api/user')
+const { checkAdminAccess } = require('../common/adminGuard.js')
 const { ORDER_FLOW_STATUS, PAYMENT_STATUS } = require('../../../config/constants')
 
 Page({
@@ -220,7 +219,7 @@ Page({
 
   async getUserCount() {
     try {
-      return await userApi.adminGetUserCount()
+      return await adminApi.getUserCount()
     } catch (err) {
       console.error('获取用户数失败:', err);
       return 0;

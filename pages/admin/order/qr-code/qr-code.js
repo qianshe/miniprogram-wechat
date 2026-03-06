@@ -1,5 +1,5 @@
 const { adminApi } = require('../../../../utils/api.js');
-const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
+const { checkAdminAccess } = require('../../common/adminGuard.js');
 
 Page({
   /**

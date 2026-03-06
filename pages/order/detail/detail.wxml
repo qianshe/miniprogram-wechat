@@ -70,10 +70,7 @@
       </view>
       <view class="info-item info-item--center">
         <text class="label">联系电话</text>
-        <view class="value-with-action value-with-action--center-btn">
-          <text class="value">{{orderInfo.contactPhone}}</text>
-          <t-button size="small" theme="primary" bindtap="callPhone">拨打</t-button>
-        </view>
+        <text class="value">{{orderInfo.contactPhone}}</text>
       </view>
       <view class="info-item">
         <text class="label">服务地址</text>
@@ -156,6 +153,18 @@
       <view class="remark">{{orderInfo.remark}}</view>
     </view>
 
+    <!-- 用户端状态提示（放在内容流中，避免撑高底部固定栏） -->
+    <view wx:if="{{!isAdmin && orderInfo.orderStatus < 3}}" class="section section-compact status-tip-section">
+      <view class="user-status-tip user-status-tip-inline">
+        <text wx:if="{{orderInfo.orderStatus === 0 && orderInfo.paymentStatus === 0}}">订单已提交，请联系工作人员安排服务；费用可在线下于服务前或服务后支付。</text>
+        <text wx:if="{{orderInfo.orderStatus === 0 && orderInfo.paymentStatus === 1}}">订单已确认收款，等待工作人员安排服务。</text>
+        <text wx:if="{{orderInfo.orderStatus === 1 && orderInfo.paymentStatus === 0}}">服务进行中，如尚未付款，可在线下支付，待管理员确认收款后生效。</text>
+        <text wx:if="{{orderInfo.orderStatus === 1 && orderInfo.paymentStatus === 1}}">服务进行中，请耐心等待...</text>
+        <text wx:if="{{orderInfo.orderStatus === 2 && orderInfo.paymentStatus === 0}}">服务已完成，请线下支付尾款；管理员确认收款后订单才会完成。</text>
+        <text wx:if="{{orderInfo.orderStatus === 2 && orderInfo.paymentStatus === 1}}">服务已完成，已确认收款。</text>
+      </view>
+    </view>
+
     <view class="actions">
       <!-- 管理员按钮（双字段状态系统） -->
       <block wx:if="{{isAdmin}}">
@@ -174,14 +183,6 @@
       </block>
       <!-- 用户端操作按钮（双字段状态系统） -->
       <view class="user-action-buttons" wx:if="{{!isAdmin}}">
-        <!-- 去支付按钮 -->
-        <t-button wx:if="{{showPayBtn}}"
-                  theme="primary"
-                  class="btn-pay"
-                  bindtap="handlePayOrder">
-          提交线下结算确认
-        </t-button>
-        
         <!-- 追加商品按钮 -->
         <t-button wx:if="{{showAppendItemsBtn}}"
                   theme="default"
@@ -197,13 +198,6 @@
                   bindtap="handleUserCancelOrder">
           取消订单
         </t-button>
-        
-        <!-- 等待状态提示 -->
-        <view wx:if="{{showUserNoActionTip && orderInfo.orderStatus < 3}}" class="user-status-tip">
-          <text wx:if="{{orderInfo.orderStatus === 0}}">订单已提交，等待服务...</text>
-          <text wx:if="{{orderInfo.orderStatus === 1}}">服务进行中，请耐心等待...</text>
-          <text wx:if="{{orderInfo.orderStatus === 2}}">服务已完成，请确认...</text>
-        </view>
         
         <!-- 订单结束状态 -->
         <view wx:if="{{orderInfo.orderStatus >= 3}}" class="ended-actions">

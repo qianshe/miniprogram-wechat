@@ -136,17 +136,17 @@ Page({
         const deadline = new Date(orderData.payDeadlineAt);
         customStatusDesc = `服务已完成，请于 ${deadline.getMonth()+1}月${deadline.getDate()}日 前完成付款`;
       } else if (orderData.status === 2 && !isPaid) {
-        customStatusDesc = '服务进行中，可随时付款';
+        customStatusDesc = '服务进行中，可线下付款，待管理员确认收款';
       }
       
       // 根据双字段系统生成状态描述
       let flowStatusDesc = '';
       if (orderStatus === ORDER_FLOW_STATUS.CREATED) {
-        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '已付款，等待服务' : '等待服务开始';
+        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '已确认收款，等待服务开始' : '等待服务开始，可在服务前或服务后线下付款';
       } else if (orderStatus === ORDER_FLOW_STATUS.PROCESSING) {
-        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '服务进行中' : '服务进行中，可随时付款';
+        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '服务进行中，已确认收款' : '服务进行中，可线下付款，待管理员确认收款';
       } else if (orderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
-        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '服务已完成，订单即将结束' : '服务已完成，请尽快完成付款';
+        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '服务与收款均已确认，订单已完成' : '服务已完成，请线下付款，待管理员确认收款后订单完成';
       } else if (orderStatus === ORDER_FLOW_STATUS.COMPLETED) {
         flowStatusDesc = '订单已完成';
       } else if (orderStatus === ORDER_FLOW_STATUS.CANCELLED) {
@@ -279,11 +279,11 @@ Page({
    * 按钮规则：
    * | orderStatus | paymentStatus | 用户端显示的按钮 |
    * |-------------|---------------|-----------------|
-   * | CREATED(0) | UNPAID(0) | 去支付、取消订单 |
+   * | CREATED(0) | UNPAID(0) | 取消订单 + 线下付款提示 |
    * | CREATED(0) | PAID(1) | (等待服务，无操作按钮) |
-   * | PROCESSING(1) | UNPAID(0) | 去支付 |
+   * | PROCESSING(1) | UNPAID(0) | 线下付款提示 |
    * | PROCESSING(1) | PAID(1) | (服务中，无操作按钮) |
-   * | SERVICE_DONE(2) | UNPAID(0) | 去支付（支付后自动转为 COMPLETED）|
+   * | SERVICE_DONE(2) | UNPAID(0) | 尾款提示 |
    * | SERVICE_DONE(2) | PAID(1) | (通常已自动完成，无按钮) |
    * | COMPLETED(3) | - | 无操作按钮 |
    * | CANCELLED(4) | - | 无操作按钮 |
@@ -293,8 +293,8 @@ Page({
     const paymentStatus = order.paymentStatus !== undefined ? order.paymentStatus : 0;
     
     return {
-      // 显示"去支付"按钮: 未支付 且 订单未完成/未取消
-      showPayBtn: paymentStatus === PAYMENT_STATUS.UNPAID && orderStatus < ORDER_FLOW_STATUS.COMPLETED,
+      // 用户端不再显示“提交线下结算确认”按钮，统一改为提示线下付款
+      showPayBtn: false,
       // 显示"取消订单"按钮: 仅在 CREATED 状态且未支付时
       showUserCancelBtn: orderStatus === ORDER_FLOW_STATUS.CREATED && paymentStatus === PAYMENT_STATUS.UNPAID,
       // 显示"无操作"提示: 已完成/已取消 或 已支付但订单未完成
@@ -346,15 +346,6 @@ Page({
         });
       }
     });
-  },
-
-  // 拨打电话
-  callPhone() {
-    if (this.data.orderInfo.contactPhone) {
-      wx.makePhoneCall({
-        phoneNumber: this.data.orderInfo.contactPhone
-      });
-    }
   },
 
   // 查看位置
@@ -553,33 +544,6 @@ Page({
         icon: 'none'
       });
     }
-  },
-
-  async handlePay() {
-    try {
-      // 提交线下结算意向
-      await api.submitOfflineSettlementIntent({ orderNo: this.data.orderNo });
-      wx.showToast({
-        title: '已提交线下结算确认',
-        icon: 'success'
-      });
-      // 重新加载订单详情
-      this.loadOrderDetail();
-    } catch (err) {
-      console.error('提交线下结算确认失败:', err);
-      wx.showToast({
-        title: err.message || '提交失败',
-        icon: 'none'
-      });
-    }
-  },
-
-  /**
-   * 用户端操作：线下结算确认（双字段系统）
-   * 复用现有的 handlePay 方法
-   */
-  handlePayOrder() {
-    this.handlePay();
   },
 
   /**

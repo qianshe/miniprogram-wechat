@@ -1,7 +1,7 @@
 const app = getApp();
 const { adminApi } = require('../../../../utils/api.js');
 const productApi = require('../../../../api/product.js');
-const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
+const { checkAdminAccess } = require('../../common/adminGuard.js');
 
 Page({
   /**

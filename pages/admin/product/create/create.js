@@ -1,6 +1,6 @@
 const { adminApi } = require('../../../../utils/api.js');
 const validation = require('../../../../utils/validation.js');
-const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
+const { checkAdminAccess } = require('../../common/adminGuard.js');
 
 Page({
     data: {

@@ -1,7 +1,7 @@
 const app = getApp();
 const { adminApi } = require('../../../../utils/api.js');
 const { SYSTEM_TYPE, CURRENT_SYSTEM_TYPE } = require('../../../../config/constants.js');
-const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
+const { checkAdminAccess } = require('../../common/adminGuard.js');
 
 Page({
   data: {

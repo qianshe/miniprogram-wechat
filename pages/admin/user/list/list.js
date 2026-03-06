@@ -1,6 +1,6 @@
-const userApi = require('../../../../api/user')
+const { adminApi } = require('../../../../utils/api.js')
 const app = getApp()
-const { checkAdminAccess } = require('../../../../utils/adminGuard.js')
+const { checkAdminAccess } = require('../../common/adminGuard.js')
 
 Page({
   data: {
@@ -74,7 +74,7 @@ Page({
       }
 
       // call 函数成功时直接返回 data 字段，不需要再判断 code
-      const res = await userApi.adminGetUsers(params)
+      const res = await adminApi.getUsers(params)
 
       // res 就是云函数返回的 data 部分（records, total, hasMore等）
       const newUsers = (res.records || []).map(user => ({
@@ -313,27 +313,23 @@ Page({
       let res
       switch (dialogAction) {
         case 'setAdmin':
-          res = await userApi.adminSetAdminRole(currentUser._id, true)
+          await adminApi.setAdminRole(currentUser._id, true)
           break
         case 'removeAdmin':
-          res = await userApi.adminSetAdminRole(currentUser._id, false)
+          await adminApi.setAdminRole(currentUser._id, false)
           break
         case 'enable':
-          res = await userApi.adminUpdateUserStatus(currentUser._id, 1)
+          await adminApi.updateUserStatus(currentUser._id, 1)
           break
         case 'disable':
-          res = await userApi.adminUpdateUserStatus(currentUser._id, 0)
+          await adminApi.updateUserStatus(currentUser._id, 0)
           break
       }
 
-      if (res && (res.code === 200 || res.code === 0)) {
-        wx.showToast({ title: '操作成功', icon: 'success' })
-        // 刷新列表
-        this.setData({ page: 1, users: [], hasMore: true })
-        this.loadUsers()
-      } else {
-        wx.showToast({ title: res?.message || '操作失败', icon: 'none' })
-      }
+      wx.showToast({ title: '操作成功', icon: 'success' })
+      // 刷新列表
+      this.setData({ page: 1, users: [], hasMore: true })
+      this.loadUsers()
     } catch (err) {
       console.error('[UserList] action error:', err)
       wx.showToast({ title: '操作失败', icon: 'none' })

@@ -1,7 +1,7 @@
 const packageApi = require('../../../../api/package.js')
 const productApi = require('../../../../api/product.js')
 const { adminApi } = require('../../../../utils/api')
-const { checkAdminAccess } = require('../../../../utils/adminGuard.js')
+const { checkAdminAccess } = require('../../common/adminGuard.js')
 
 Page({
   data: {

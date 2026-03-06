@@ -1,6 +1,6 @@
 const app = getApp();
 const { adminApi } = require('../../../../utils/api.js');
-const { checkAdminAccess } = require('../../../../utils/adminGuard.js');
+const { checkAdminAccess } = require('../../common/adminGuard.js');
 
 // 列表项高度配置 (rpx) - 与 list.wxss 中 .category-item 的高度保持同步
 const ITEM_HEIGHT_RPX = 240;

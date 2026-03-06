@@ -289,6 +289,49 @@ const adminApi = {
     return call('categoryManagement', 'migrateCategories', {}, { showLoading: true, loadingText: '迁移中...' })
   },
 
+  // ============ 用户管理 ============
+  getUsers: (params = {}) => {
+    return call('userManagement', 'getUsers', params, {
+      showLoading: true,
+      loadingText: '加载中...'
+    })
+  },
+
+  getUserDetail: (id) => {
+    return call('userManagement', 'getUserDetail', { id }, {
+      showLoading: true
+    })
+  },
+
+  setAdminRole: (id, isAdmin) => {
+    return call('userManagement', 'setAdminRole', { id, isAdmin }, {
+      showLoading: true,
+      loadingText: isAdmin ? '设置中...' : '取消中...'
+    })
+  },
+
+  updateUserStatus: (id, status) => {
+    return call('userManagement', 'updateUserStatus', { id, status }, {
+      showLoading: true,
+      loadingText: status === 1 ? '启用中...' : '禁用中...'
+    })
+  },
+
+  getUserCount: async () => {
+    try {
+      const res = await call('userManagement', 'getUsers', {
+        page: 1,
+        size: 1
+      }, {
+        showLoading: false
+      })
+      return res?.total || 0
+    } catch (err) {
+      console.error('[adminApi] 获取用户数失败:', err)
+      return 0
+    }
+  },
+
   // ============ 订单管理 ============
   getOrders: (params) => {
     return call('orderManagement', 'getOrders', { ...params })

@@ -339,18 +339,6 @@ Page({
     });
   },
 
-  // 线下结算确认
-  handlePay(e) {
-    const { id } = e.currentTarget.dataset;
-    // 找到对应订单
-    const order = this.data.orders.find(o => o._id === id);
-    if (order) {
-      wx.navigateTo({
-        url: `/pages/order/detail/detail?orderNo=${order.orderNo}`
-      });
-    }
-  },
-
   // 取消订单
   handleCancel(e) {
     const { id } = e.currentTarget.dataset;

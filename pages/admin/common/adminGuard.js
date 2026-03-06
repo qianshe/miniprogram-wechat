@@ -1,13 +1,6 @@
 /**
- * 管理端统一权限守卫
+ * 管理端统一权限守卫（admin 分包内）
  * 在管理端页面 onLoad 中调用，校验管理员身份
- *
- * 用法：
- *   const { checkAdminAccess } = require('路径/utils/adminGuard.js')
- *   onLoad(options) {
- *     if (!checkAdminAccess()) return
- *     // 正常业务逻辑...
- *   }
  */
 
 const checkAdminAccess = () => {

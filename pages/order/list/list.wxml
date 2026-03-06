@@ -115,10 +115,6 @@
           </view>
           <!-- 根据状态显示操作按钮 -->
           <view class="order-actions">
-            <button wx:if="{{item.paymentStatus === 0 && item.orderStatus < 3}}"
-                    class="btn btn-pay"
-                    catchtap="handlePay"
-                    data-id="{{item._id}}">线下确认</button>
             <button wx:if="{{item.orderStatus === 0 && item.paymentStatus === 0}}"
                     class="btn btn-cancel"
                     catchtap="handleCancel"
