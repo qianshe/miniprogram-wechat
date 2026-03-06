@@ -6,7 +6,8 @@ const {
   ORDER_FLOW_STATUS,
   PAYMENT_STATUS,
   getOrderFlowText,
-  getPaymentStatusText,
+  getPaymentStatusDisplayText,
+  shouldShowPaymentStatusTag,
   getTabByStatusParams: getTabByStatusParamsFromConstants,
   getStatusByTabIndex,
   mapLegacyStatusToNew
@@ -284,9 +285,8 @@ Page({
           orderStatusText: hasNewFields
             ? getOrderFlowText(order.orderStatus)
             : getOrderStatusText(order.status),
-          paymentStatusText: hasNewFields
-            ? getPaymentStatusText(order.paymentStatus)
-            : (order.status === 1 || order.status === 2 || order.status === 3 ? '已支付' : '待支付'),
+          paymentStatusText: getPaymentStatusDisplayText(os, ps, true),
+          showPaymentStatusTag: shouldShowPaymentStatusTag(os),
           statusText: hasNewFields
             ? getOrderFlowText(order.orderStatus)
             : getOrderStatusText(order.status),

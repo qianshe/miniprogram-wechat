@@ -114,7 +114,7 @@
           <!-- 双状态标签显示 -->
           <view class="order-status-tags">
             <view class="status-tag flow-status-{{item.orderStatus !== undefined ? item.orderStatus : item.status}}">{{item.orderStatusText}}</view>
-            <view class="status-tag payment-status-{{item.paymentStatus !== undefined ? item.paymentStatus : (item.status === 1 || item.status === 2 || item.status === 3 ? 1 : 0)}}">{{item.paymentStatusText}}</view>
+            <view wx:if="{{item.showPaymentStatusTag}}" class="status-tag payment-status-{{item.paymentStatus !== undefined ? item.paymentStatus : (item.status === 1 || item.status === 2 || item.status === 3 ? 1 : 0)}}">{{item.paymentStatusText}}</view>
           </view>
         </view>
         <view class="order-info" bindtap="onOrderClick" data-orderno="{{item.orderNo}}">

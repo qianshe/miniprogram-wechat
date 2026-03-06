@@ -12,7 +12,7 @@
       <view class="status-label">订单状态</view>
       <view class="status-tags">
         <view class="status-tag flow-status-{{orderInfo.orderStatus}}">{{orderInfo.orderStatusText}}</view>
-        <view class="status-tag payment-status-{{orderInfo.paymentStatus}}">{{orderInfo.paymentStatusText}}</view>
+        <view wx:if="{{orderInfo.showPaymentStatusTag}}" class="status-tag payment-status-{{orderInfo.paymentStatus}}">{{orderInfo.paymentStatusText}}</view>
       </view>
     </view>
 

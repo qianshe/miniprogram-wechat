@@ -3,7 +3,8 @@ const {
   ORDER_FLOW_STATUS,
   PAYMENT_STATUS,
   getOrderFlowText,
-  getPaymentStatusText,
+  getPaymentStatusDisplayText,
+  shouldShowPaymentStatusTag,
   mapLegacyStatusToNew
 } = require('../../../config/constants.js');
 const { formatDate } = require('../../../utils/util.js');
@@ -72,7 +73,11 @@ Page({
 
   onSearchClear() {
     this.setData({
-      searchKeyword: ''
+      searchKeyword: '',
+      'pagination.page': 1,
+      orders: [],
+      hasMore: true,
+      loading: true
     }, () => {
       this.loadOrders();
     });
@@ -223,7 +228,8 @@ Page({
           ...order,
           // 新系统的状态文本
           orderStatusText: getOrderFlowText(order.orderStatus),
-          paymentStatusText: getPaymentStatusText(order.paymentStatus),
+          paymentStatusText: getPaymentStatusDisplayText(order.orderStatus, order.paymentStatus, false),
+          showPaymentStatusTag: shouldShowPaymentStatusTag(order.orderStatus),
           createdTime: formatDate(order.createTime),
           serviceTime: formatDate(order.serviceTime),
           totalAmount: Number(order.totalAmount).toFixed(2)
@@ -358,10 +364,17 @@ Page({
         if (res.confirm) {
           try {
             wx.showLoading({ title: '取消中...' });
-            await api.updateOrderFlowStatus(order.orderNo, ORDER_FLOW_STATUS.CANCELLED);
+            await api.cancelOrder(order.orderNo);
             wx.hideLoading();
             wx.showToast({ title: '订单已取消', icon: 'success' });
-            this.loadOrders(false);
+            this.setData({
+              'pagination.page': 1,
+              orders: [],
+              hasMore: true,
+              loading: true
+            }, () => {
+              this.loadOrders();
+            });
           } catch (err) {
             wx.hideLoading();
             wx.showToast({ title: err.message || '取消失败', icon: 'none' });

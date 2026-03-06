@@ -273,15 +273,59 @@ async function getOrders(data, context, logger) {
     size = 10,
     status,
     orderStatus,
+    orderStatusList,
     paymentStatus,
+    keyword,
+    startDate,
+    endDate,
+    minPrice,
+    maxPrice,
     userId,
     isAdmin: _clientIsAdmin
   } = data;
 
+  const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
+  const parsedSize = Math.max(parseInt(size, 10) || 10, 1);
+  const parsedOrderStatusList = Array.isArray(orderStatusList)
+    ? orderStatusList.map(item => parseInt(item, 10)).filter(item => !Number.isNaN(item))
+    : [];
+
+  const parseDateBoundary = (value, endOfDay = false) => {
+    if (!value) return null;
+    const [year, month, day] = String(value).split('-').map(Number);
+    if (!year || !month || !day) return null;
+    return endOfDay
+      ? new Date(year, month - 1, day, 23, 59, 59, 999)
+      : new Date(year, month - 1, day, 0, 0, 0, 0);
+  };
+
+  const startDateValue = parseDateBoundary(startDate, false);
+  const endDateValue = parseDateBoundary(endDate, true);
+
+  const parsedMinPrice = minPrice !== undefined && minPrice !== null && minPrice !== ''
+    ? parseInt(minPrice, 10)
+    : null;
+  const parsedMaxPrice = maxPrice !== undefined && maxPrice !== null && maxPrice !== ''
+    ? parseInt(maxPrice, 10)
+    : null;
+
   // 服务端验证管理员权限
   const isAdmin = await verifyAdminByOpenid(OPENID);
 
-  logger.info('Getting orders', { page, size, status, orderStatus, paymentStatus, isAdmin });
+  logger.info('Getting orders', {
+    page: parsedPage,
+    size: parsedSize,
+    status,
+    orderStatus,
+    orderStatusList: parsedOrderStatusList,
+    paymentStatus,
+    keyword,
+    startDate,
+    endDate,
+    minPrice: parsedMinPrice,
+    maxPrice: parsedMaxPrice,
+    isAdmin
+  });
   
   let query = db.collection('orders');
   
@@ -293,8 +337,10 @@ async function getOrders(data, context, logger) {
     conditions.push({ userOpenid: OPENID });
   }
   
-  // 支持新的 orderStatus 和 paymentStatus 查询参数
-  if (orderStatus !== undefined && orderStatus !== null) {
+  // 支持新的 orderStatus / orderStatusList / paymentStatus 查询参数
+  if (parsedOrderStatusList.length > 0) {
+    conditions.push({ orderStatus: _.in(parsedOrderStatusList) });
+  } else if (orderStatus !== undefined && orderStatus !== null) {
     conditions.push({ orderStatus: parseInt(orderStatus) });
   }
   
@@ -306,18 +352,43 @@ async function getOrders(data, context, logger) {
   if (status !== undefined && status !== null && orderStatus === undefined && paymentStatus === undefined) {
     conditions.push({ status: parseInt(status) });
   }
+
+  if (keyword) {
+    conditions.push({
+      orderNo: db.RegExp({
+        regexp: keyword,
+        options: 'i'
+      })
+    });
+  }
+
+  if (startDateValue) {
+    conditions.push({ createTime: _.gte(startDateValue) });
+  }
+
+  if (endDateValue) {
+    conditions.push({ createTime: _.lte(endDateValue) });
+  }
+
+  if (parsedMinPrice !== null && !Number.isNaN(parsedMinPrice)) {
+    conditions.push({ totalAmount: _.gte(parsedMinPrice) });
+  }
+
+  if (parsedMaxPrice !== null && !Number.isNaN(parsedMaxPrice)) {
+    conditions.push({ totalAmount: _.lte(parsedMaxPrice) });
+  }
   
   if (conditions.length > 0) {
     query = query.where(_.and(conditions));
   }
 
   // 分页查询 - 并行执行查询和计数，提升性能
-  const skip = (page - 1) * size;
+  const skip = (parsedPage - 1) * parsedSize;
   const [ordersResult, countResult] = await Promise.all([
     query
       .orderBy('createTime', 'desc')
       .skip(skip)
-      .limit(size)
+      .limit(parsedSize)
       .get(),
     query.count()
   ]);
@@ -345,9 +416,9 @@ async function getOrders(data, context, logger) {
   return success({
     records: orders,
     total: countResult.total,
-    page,
-    size,
-    hasMore: orders.length === size
+    page: parsedPage,
+    size: parsedSize,
+    hasMore: orders.length === parsedSize
   }, '获取订单列表成功');
 }
 

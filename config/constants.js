@@ -247,6 +247,38 @@ const getPaymentStatusText = (paymentStatus) => {
 };
 
 /**
+ * 是否显示支付状态标签
+ * 取消订单只显示“已取消”，不再额外显示支付标签
+ * @param {number} orderStatus - 订单流程状态码
+ * @returns {boolean}
+ */
+const shouldShowPaymentStatusTag = (orderStatus) => {
+  return orderStatus !== ORDER_FLOW_STATUS.CANCELLED;
+};
+
+/**
+ * 获取支付状态标签显示文案
+ * 用户端与管理端采用不同口径：
+ * - 用户端：待付款 / 已付款
+ * - 管理端：待收款确认 / 已收款
+ * @param {number} orderStatus - 订单流程状态码
+ * @param {number} paymentStatus - 支付状态码
+ * @param {boolean} isAdmin - 是否管理员视角
+ * @returns {string}
+ */
+const getPaymentStatusDisplayText = (orderStatus, paymentStatus, isAdmin = false) => {
+  if (!shouldShowPaymentStatusTag(orderStatus)) {
+    return '';
+  }
+
+  if (paymentStatus === PAYMENT_STATUS.PAID) {
+    return isAdmin ? '已收款' : '已付款';
+  }
+
+  return isAdmin ? '待收款确认' : '待付款';
+};
+
+/**
  * 旧 status 到新字段的映射（用于数据迁移和兼容）
  * @param {number} status - 旧的订单状态码
  * @param {Date|null} payTime - 支付时间，用于判断是否已支付
@@ -295,6 +327,8 @@ module.exports = {
   PAYMENT_STATUS,
   getOrderFlowText,
   getPaymentStatusText,
+  shouldShowPaymentStatusTag,
+  getPaymentStatusDisplayText,
   mapLegacyStatusToNew,
   mapNewStatusToLegacy,
   // 管理端订单Tab配置

@@ -302,6 +302,14 @@ const adminApi = {
     return call('orderManagement', 'updateOrderStatus', { orderNo, status }, { showLoading: true, loadingText: '更新中...' })
   },
 
+  updateOrderFlowStatus: (orderId, orderStatus) => {
+    return call('orderManagement', 'updateOrderFlowStatus', { orderId, orderStatus }, { showLoading: true, loadingText: '更新中...' })
+  },
+
+  updatePaymentStatus: (orderId, paymentStatus, paymentMethod = 'offline', paymentNote = '') => {
+    return call('orderManagement', 'updatePaymentStatus', { orderId, paymentStatus, paymentMethod, paymentNote }, { showLoading: true, loadingText: '更新中...' })
+  },
+
   getStatistics: () => {
     return call('orderManagement', 'getStatistics', {})
   },

@@ -6,7 +6,8 @@ const {
   ORDER_FLOW_STATUS,
   PAYMENT_STATUS,
   getOrderFlowText,
-  getPaymentStatusText,
+  getPaymentStatusDisplayText,
+  shouldShowPaymentStatusTag,
   mapLegacyStatusToNew
 } = require('../../../config/constants.js');
 const { formatDate } = require('../../../utils/util.js');
@@ -114,7 +115,8 @@ Page({
       
       // 获取双字段状态文本
       const orderStatusText = getOrderFlowText(orderStatus);
-      const paymentStatusText = getPaymentStatusText(paymentStatus);
+      const paymentStatusText = getPaymentStatusDisplayText(orderStatus, paymentStatus, this.data.isAdmin);
+      const showPaymentStatusTag = shouldShowPaymentStatusTag(orderStatus);
       
       // 根据角色生成状态栏主标题
       const getDisplayStatusText = (os, ps, admin) => {
@@ -167,6 +169,7 @@ Page({
         paymentStatus: paymentStatus,
         orderStatusText: orderStatusText,
         paymentStatusText: paymentStatusText,
+        showPaymentStatusTag: showPaymentStatusTag,
         flowStatusDesc: flowStatusDesc,
         createdTime: formatDate(orderData.createTime),
         serviceTime: formatDate(orderData.serviceTime),
@@ -517,6 +520,21 @@ Page({
     wx.navigateBack();
   },
 
+  refreshPrevOrderList() {
+    const pages = getCurrentPages();
+    const prevPage = pages[pages.length - 2];
+
+    if (prevPage && typeof prevPage.loadOrders === 'function') {
+      prevPage.setData({
+        'pagination.page': 1,
+        orders: [],
+        hasMore: true
+      }, () => {
+        prevPage.loadOrders();
+      });
+    }
+  },
+
   async handleCancel() {
     try {
       // 调用云函数取消订单
@@ -527,6 +545,7 @@ Page({
       });
       // 重新加载订单详情
       this.loadOrderDetail();
+      this.refreshPrevOrderList();
     } catch (err) {
       console.error('取消订单失败:', err);
       wx.showToast({
@@ -574,27 +593,15 @@ Page({
         if (res.confirm) {
           try {
             wx.showLoading({ title: '处理中...' });
-            const result = await wx.cloud.callFunction({
-              name: 'orderManagement',
-              data: {
-                action: 'updateOrderFlowStatus',
-                data: {
-                  orderId: this.data.orderInfo._id,
-                  orderStatus: ORDER_FLOW_STATUS.CANCELLED
-                }
-              }
-            });
+            await api.cancelOrder(this.data.orderNo);
             wx.hideLoading();
-            if (result.result && result.result.code === 0) {
-              wx.showToast({ title: '订单已取消', icon: 'success' });
-              this.loadOrderDetail();
-            } else {
-              wx.showToast({ title: (result.result && result.result.message) || '取消失败', icon: 'none' });
-            }
+            wx.showToast({ title: '订单已取消', icon: 'success' });
+            this.loadOrderDetail();
+            this.refreshPrevOrderList();
           } catch (err) {
             wx.hideLoading();
             console.error('取消订单失败:', err);
-            wx.showToast({ title: '取消失败', icon: 'none' });
+            wx.showToast({ title: err.message || '取消失败', icon: 'none' });
           }
         }
       }
@@ -813,28 +820,13 @@ Page({
       success: async (res) => {
         if (res.confirm) {
           try {
-            wx.showLoading({ title: '处理中...' });
-            const result = await wx.cloud.callFunction({
-              name: 'orderManagement',
-              data: {
-                action: 'updateOrderFlowStatus',
-                data: {
-                  orderId: this.data.orderInfo._id,
-                  orderStatus: newStatus
-                }
-              }
-            });
-            wx.hideLoading();
-            if (result.result && result.result.code === 0) {
-              wx.showToast({ title: '操作成功', icon: 'success' });
-              this.loadOrderDetail(); // 刷新详情
-            } else {
-              wx.showToast({ title: (result.result && result.result.message) || '操作失败', icon: 'none' });
-            }
+            await adminApi.updateOrderFlowStatus(this.data.orderInfo._id, newStatus);
+            wx.showToast({ title: '操作成功', icon: 'success' });
+            this.loadOrderDetail(); // 刷新详情
+            this.refreshPrevOrderList();
           } catch (err) {
-            wx.hideLoading();
             console.error('更新订单流程状态失败:', err);
-            wx.showToast({ title: '操作失败', icon: 'none' });
+            wx.showToast({ title: err.message || '操作失败', icon: 'none' });
           }
         }
       }
@@ -846,29 +838,13 @@ Page({
    */
   async updatePaymentStatus(newStatus) {
     try {
-      wx.showLoading({ title: '处理中...' });
-      const result = await wx.cloud.callFunction({
-        name: 'orderManagement',
-        data: {
-          action: 'updatePaymentStatus',
-          data: {
-            orderId: this.data.orderInfo._id,
-            paymentStatus: newStatus,
-            paymentMethod: 'offline' // 线下收款
-          }
-        }
-      });
-      wx.hideLoading();
-      if (result.result && result.result.code === 0) {
-        wx.showToast({ title: '收款确认成功', icon: 'success' });
-        this.loadOrderDetail(); // 刷新详情
-      } else {
-        wx.showToast({ title: (result.result && result.result.message) || '操作失败', icon: 'none' });
-      }
+      await adminApi.updatePaymentStatus(this.data.orderInfo._id, newStatus, 'offline');
+      wx.showToast({ title: '收款确认成功', icon: 'success' });
+      this.loadOrderDetail(); // 刷新详情
+      this.refreshPrevOrderList();
     } catch (err) {
-      wx.hideLoading();
       console.error('更新支付状态失败:', err);
-      wx.showToast({ title: '操作失败', icon: 'none' });
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
     }
   },
 

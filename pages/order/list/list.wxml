@@ -95,7 +95,7 @@
           <!-- 双状态标签显示 -->
           <view class="order-status-tags">
             <text class="status-tag flow-status-{{item.orderStatus}}">{{item.orderStatusText}}</text>
-            <text class="status-tag payment-status-{{item.paymentStatus}}">{{item.paymentStatusText}}</text>
+            <text wx:if="{{item.showPaymentStatusTag}}" class="status-tag payment-status-{{item.paymentStatus}}">{{item.paymentStatusText}}</text>
           </view>
         </view>
         <view class="order-info">
