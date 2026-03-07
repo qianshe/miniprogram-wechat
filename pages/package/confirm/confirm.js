@@ -4,8 +4,8 @@
  */
 
 const { api } = require('../../../utils/api.js');
+const { loadSelectableAddresses, pickDefaultAddress } = require('../../../utils/addressSelection.js');
 
-const ADDRESS_STORAGE_KEY = 'addressList';
 
 Page({
   data: {
@@ -46,29 +46,20 @@ Page({
     this.loadAddressList();
   },
 
-  // Load address list from localStorage
-  loadAddressList() {
-    const addressList = wx.getStorageSync(ADDRESS_STORAGE_KEY) || [];
-    
-    // Convert address format (address management format -> order format)
-    const formattedList = addressList.map(addr => ({
-      id: addr.id,
-      userName: addr.name,
-      telNumber: addr.phone,
-      provinceName: addr.province,
-      cityName: addr.city,
-      countyName: addr.district,
-      detailInfo: addr.detail,
-      fullAddress: `${addr.province}${addr.city}${addr.district}${addr.detail}`,
-      isDefault: addr.isDefault
-    }));
-    
-    this.setData({ addressList: formattedList });
-    
-    // Auto-select default address or first address if no address selected
-    if (!this.data.address && formattedList.length > 0) {
-      const defaultAddr = formattedList.find(addr => addr.isDefault) || formattedList[0];
-      this.setData({ address: defaultAddr });
+  // 加载地址列表（云端优先 + 本地兜底）
+  async loadAddressList() {
+    try {
+      const formattedList = await loadSelectableAddresses();
+      this.setData({ addressList: formattedList });
+      
+      // 自动选择默认地址或第一个地址
+      if (!this.data.address && formattedList.length > 0) {
+        const defaultAddr = pickDefaultAddress(formattedList);
+        this.setData({ address: defaultAddr });
+      }
+    } catch (err) {
+      console.error('[package-confirm] 加载地址失败:', err);
+      this.setData({ addressList: [] });
     }
   },
 

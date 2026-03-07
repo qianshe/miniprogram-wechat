@@ -11,6 +11,15 @@ const FUNCTION_NAME = 'productManagement'
 // 默认缓存时间(毫秒)
 const DEFAULT_CACHE_TIME = 60000  // 1分钟
 
+const stripCostFields = (product) => {
+  if (!product || typeof product !== 'object') {
+    return product
+  }
+
+  const { costPrice, originalPrice, ...rest } = product
+  return rest
+}
+
 // ============ 用户端API ============
 
 /**
@@ -31,7 +40,10 @@ const getList = (data = {}, options = {}) => {
     showLoading: true,
     loadingText: '加载中...',
     ...options
-  })
+  }).then((result) => ({
+    ...result,
+    records: Array.isArray(result?.records) ? result.records.map(stripCostFields) : []
+  }))
 }
 
 /**
@@ -49,7 +61,7 @@ const getDetail = (data = {}, options = {}) => {
     showLoading: true,
     loadingText: '加载中...',
     ...options
-  })
+  }).then(stripCostFields)
 }
 
 /**

@@ -90,7 +90,7 @@
             <view class="product-price">
               <text class="currency">¥</text>{{item.price}}
             </view>
-            <text class="original-price" wx:if="{{item.originalPrice > item.price}}">¥{{item.originalPrice}}</text>
+            <text class="original-price" wx:if="{{item.costPrice > 0}}">进价 ¥{{item.costPrice}}</text>
           </view>
           
           <view class="product-stats">

@@ -291,7 +291,7 @@ Page({
             ? getOrderFlowText(order.orderStatus)
             : getOrderStatusText(order.status),
           createdTime: formatDate(order.createTime),
-          serviceTime: formatDate(order.serviceTime),
+          serviceTime: formatDate(order.serviceTime) || '未指定',
           totalAmount: order.totalAmount.toFixed(2),
           showActionCreatedUnpaid,
           showActionCreatedPaid,

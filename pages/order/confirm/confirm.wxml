@@ -31,6 +31,13 @@
 
   <!-- 备注 -->
   <view class="remarks-section">
+    <text class="remarks-label">服务时间（选填）</text>
+    <picker mode="date" value="{{serviceTime}}" bindchange="onServiceTimeChange" style="flex: 1;">
+      <view>{{serviceTime || '请选择服务时间'}}</view>
+    </picker>
+  </view>
+
+  <view class="remarks-section">
     <input 
       type="text" 
       placeholder="请输入订单备注" 

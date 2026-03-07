@@ -10,6 +10,15 @@ const priceToYuan = (price) => {
   return (parseFloat(price || 0) / 100).toFixed(2)
 }
 
+const stripCostFields = (product) => {
+  if (!product || typeof product !== 'object') {
+    return product
+  }
+
+  const { costPrice, originalPrice, ...rest } = product
+  return rest
+}
+
 // 普通用户 API
 const api = {
   // ============ 商品 ============
@@ -17,11 +26,14 @@ const api = {
     return call('productManagement', 'getProducts', {
       status: 1,
       ...params
-    }, { showError: false })
+    }, { showError: false }).then((data) => ({
+      ...data,
+      records: Array.isArray(data?.records) ? data.records.map(stripCostFields) : []
+    }))
   },
 
   getProductDetail: (id) => {
-    return call('productManagement', 'getProductDetail', { id })
+    return call('productManagement', 'getProductDetail', { id }).then(stripCostFields)
   },
 
   getProductsByIds: (ids) => {
@@ -38,7 +50,7 @@ const api = {
         orderDirection: 'desc',
         ...params
       }, { showError: false })
-      return data.records
+      return Array.isArray(data?.records) ? data.records.map(stripCostFields) : []
     } catch (err) {
       console.error('获取推荐商品失败:', err)
       return []

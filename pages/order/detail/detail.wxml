@@ -70,7 +70,15 @@
       </view>
       <view class="info-item info-item--center">
         <text class="label">联系电话</text>
-        <text class="value">{{orderInfo.contactPhone}}</text>
+        <view class="value-with-action value-with-action--center-btn">
+          <text class="value">{{orderInfo.contactPhone}}</text>
+          <t-button
+            wx:if="{{isAdmin && orderInfo.contactPhone}}"
+            size="small"
+            theme="default"
+            bindtap="handleCallContact"
+          >拨打</t-button>
+        </view>
       </view>
       <view class="info-item">
         <text class="label">服务地址</text>
@@ -183,20 +191,20 @@
       </block>
       <!-- 用户端操作按钮（双字段状态系统） -->
       <view class="user-action-buttons" wx:if="{{!isAdmin}}">
-        <!-- 追加商品按钮 -->
-        <t-button wx:if="{{showAppendItemsBtn}}"
-                  theme="default"
-                  class="btn-append"
-                  bindtap="handleAppendItems">
-          追加商品
-        </t-button>
-        
         <!-- 取消订单按钮 -->
         <t-button wx:if="{{showUserCancelBtn}}"
                   theme="default"
                   class="btn-cancel-light"
                   bindtap="handleUserCancelOrder">
           取消订单
+        </t-button>
+        
+        <!-- 追加商品按钮 -->
+        <t-button wx:if="{{showAppendItemsBtn}}"
+                  theme="primary"
+                  class="btn-append"
+                  bindtap="handleAppendItems">
+          追加商品
         </t-button>
         
         <!-- 订单结束状态 -->

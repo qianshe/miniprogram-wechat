@@ -153,6 +153,8 @@ Page({
         flowStatusDesc = '订单已取消';
       }
       
+      const order = orderData;
+
       const orderInfo = {
         ...orderData,
         contactName: contactName,
@@ -172,7 +174,7 @@ Page({
         showPaymentStatusTag: showPaymentStatusTag,
         flowStatusDesc: flowStatusDesc,
         createdTime: formatDate(orderData.createTime),
-        serviceTime: formatDate(orderData.serviceTime),
+        serviceTime: formatDate(order.serviceTime) || '未指定',
         payTime: orderData.payTime ? formatDate(orderData.payTime) : '',
         processTime: orderData.processTime ? formatDate(orderData.processTime) : '',
         completeTime: orderData.completeTime ? formatDate(orderData.completeTime) : '',
@@ -299,6 +301,12 @@ Page({
       showUserCancelBtn: orderStatus === ORDER_FLOW_STATUS.CREATED && paymentStatus === PAYMENT_STATUS.UNPAID,
       // 显示"无操作"提示: 已完成/已取消 或 已支付但订单未完成
       showUserNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED || (paymentStatus === PAYMENT_STATUS.PAID && orderStatus < ORDER_FLOW_STATUS.COMPLETED),
+      ...this.getAppendItemsBtnState(paymentStatus, orderStatus)
+    };
+  },
+
+  getAppendItemsBtnState(paymentStatus, orderStatus) {
+    return {
       // 显示"追加商品"按钮: 未支付 且 服务未完成（CREATED 或 PROCESSING）
       showAppendItemsBtn: paymentStatus === PAYMENT_STATUS.UNPAID && orderStatus < ORDER_FLOW_STATUS.SERVICE_DONE
     };
@@ -330,8 +338,7 @@ Page({
       showCancelBtn: orderStatus <= ORDER_FLOW_STATUS.PROCESSING,
       // 无操作提示：已完成或已取消
       showNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED,
-      // 追加商品：未支付 且 服务未完成
-      showAppendItemsBtn: paymentStatus === PAYMENT_STATUS.UNPAID && orderStatus < ORDER_FLOW_STATUS.SERVICE_DONE
+      ...this.getAppendItemsBtnState(paymentStatus, orderStatus)
     };
   },
 
@@ -359,6 +366,29 @@ Page({
         scale: 18
       });
     }
+  },
+
+  handleCallContact() {
+    const { isAdmin, orderInfo } = this.data;
+    const phone = (orderInfo && orderInfo.contactPhone ? String(orderInfo.contactPhone) : '').trim();
+
+    if (!isAdmin || !phone) {
+      wx.showToast({
+        title: '暂无可拨打电话',
+        icon: 'none'
+      });
+      return;
+    }
+
+    wx.makePhoneCall({
+      phoneNumber: phone,
+      fail: () => {
+        wx.showToast({
+          title: '拨打电话失败',
+          icon: 'none'
+        });
+      }
+    });
   },
 
   // 申请退款

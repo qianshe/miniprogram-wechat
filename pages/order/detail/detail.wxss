@@ -519,22 +519,35 @@
 /* ===== 用户端操作按钮样式 ===== */
 .user-action-buttons {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 16rpx;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
+}
+
+.user-action-buttons .btn-append {
+  flex: 2;
+  min-width: 220rpx;
+  --td-button-height: 84rpx;
+  --td-button-font-size: 30rpx;
+  font-weight: 600;
 }
 
 .btn-pay {
   flex: 2;
   min-width: 200rpx;
+  font-size: 30rpx;
 }
 
 .btn-cancel-light {
   flex: 1;
   min-width: 140rpx;
-  background: #f5f5f5 !important;
-  color: #666 !important;
+  background: #fff !important;
+  color: #8a8a8a !important;
+  border: 1rpx solid #e2e2e2 !important;
+  --td-button-height: 72rpx;
+  --td-button-font-size: 26rpx;
 }
 
 .user-status-tip {

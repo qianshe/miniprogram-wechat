@@ -10,7 +10,7 @@ Page({
         formData: {
             name: '',
             price: '',
-            originalPrice: '',
+            costPrice: '',
             stock: '',
             category: '',  // 改为category，存储分类_id
             description: '',
@@ -62,7 +62,7 @@ Page({
                 formData: {
                     name: product.name,
                     price: product.price,
-                    originalPrice: product.originalPrice,
+                    costPrice: product.costPrice ?? product.originalPrice ?? '',
                     stock: product.stock,
                     category: product.category,  // 使用category字段
                     description: product.description,
@@ -96,8 +96,8 @@ Page({
         this.setData({ 'formData.price': e.detail.value });
     },
 
-    onOriginalPriceChange(e) {
-        this.setData({ 'formData.originalPrice': e.detail.value });
+    onCostPriceChange(e) {
+        this.setData({ 'formData.costPrice': e.detail.value });
     },
 
     onStockChange(e) {

@@ -15,6 +15,47 @@ const _ = db.command;
 
 const verifyAdminByOpenid = (openid) => _verifyAdmin(openid, db);
 
+function getProvidedCostPrice(data = {}) {
+  if (data.costPrice !== undefined && data.costPrice !== null && data.costPrice !== '') {
+    return data.costPrice
+  }
+
+  if (data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '') {
+    return data.originalPrice
+  }
+
+  return undefined
+}
+
+function getStoredCostPrice(product = {}) {
+  if (product.costPrice !== undefined && product.costPrice !== null && product.costPrice !== '') {
+    return product.costPrice
+  }
+
+  if (product.originalPrice !== undefined && product.originalPrice !== null && product.originalPrice !== '') {
+    return product.originalPrice
+  }
+
+  return undefined
+}
+
+function normalizeProductOutput(product = {}) {
+  const normalized = {
+    ...product,
+    price: product.price / 100,
+    displayPrice: (product.price / 100).toFixed(2)
+  }
+
+  const costPriceFen = getStoredCostPrice(product)
+  if (costPriceFen !== undefined) {
+    const costPrice = costPriceFen / 100
+    normalized.costPrice = costPrice
+    normalized.originalPrice = costPrice
+  }
+
+  return normalized
+}
+
 /**
  * 云函数主处理逻辑
  */
@@ -147,11 +188,7 @@ async function getProducts(data, context) {
     ]);
     
     // 格式化商品数据
-    const products = result.data.map(product => ({
-      ...product,
-      price: product.price / 100, // 转换为元
-      displayPrice: (product.price / 100).toFixed(2)
-    }));
+    const products = result.data.map((product) => normalizeProductOutput(product));
     
     const executionTime = Date.now() - startTime;
     console.log('[PRODUCT_MANAGEMENT] getProducts success:', {
@@ -211,11 +248,7 @@ async function getProductDetail(data, context) {
     }
     
     // 处理价格显示（从分转换为元）
-    const product = {
-      ...result.data,
-      price: result.data.price / 100, // 转换为元
-      displayPrice: (result.data.price / 100).toFixed(2)
-    };
+    const product = normalizeProductOutput(result.data);
     
     const executionTime = Date.now() - startTime;
     console.log('[PRODUCT_MANAGEMENT] getProductDetail success:', {
@@ -244,10 +277,11 @@ async function getProductDetail(data, context) {
 async function createProduct(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
+  const input = { ...(data || {}) }
 
   console.log('[PRODUCT_MANAGEMENT] createProduct:', {
     openid: OPENID,
-    productName: data?.name
+    productName: input?.name
   });
 
   // 服务端权限检查 - 通过数据库验证管理员身份
@@ -258,35 +292,43 @@ async function createProduct(data, context) {
   }
 
   // [殡葬平台转型] 服务端强制校验，只允许 white 类型（含未传 type 的兜底）
-  if (data?.type !== 'white') {
-    if (data?.type !== undefined) {
+  if (input?.type !== 'white') {
+    if (input?.type !== undefined) {
       console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
-        originalType: data.type,
+        originalType: input.type,
         forcedType: 'white',
         function: 'createProduct'
       });
     }
-    data.type = 'white';
+    input.type = 'white';
   }
 
   // 数据验证
-  if (!data?.name || !data?.price) {
+  if (!input?.name || !input?.price) {
     console.warn('[PRODUCT_MANAGEMENT] createProduct failed: Missing required fields');
     return paramError('name/price', 'Product name and price are required');
   }
 
-  if (data.price <= 0) {
-    console.warn('[PRODUCT_MANAGEMENT] createProduct failed: Invalid price', { price: data.price });
+  if (input.price <= 0) {
+    console.warn('[PRODUCT_MANAGEMENT] createProduct failed: Invalid price', { price: input.price });
     return paramError('price', 'Product price must be greater than 0');
   }
 
+  const providedCostPrice = getProvidedCostPrice(input)
+  if (providedCostPrice !== undefined) {
+    const parsedCostPrice = Number(providedCostPrice)
+    if (Number.isNaN(parsedCostPrice) || parsedCostPrice < 0) {
+      return paramError('costPrice', 'Product cost price must be greater than or equal to 0')
+    }
+  }
+
   // 敏感词检测
-  const nameCheck = checkSensitiveWords(data.name, 'name');
+  const nameCheck = checkSensitiveWords(input.name, 'name');
   if (!nameCheck.valid) {
     return paramError('name', `商品名称包含敏感词：${nameCheck.matchedWords.join(', ')}`);
   }
-  if (data.description) {
-    const descCheck = checkSensitiveWords(data.description, 'description');
+  if (input.description) {
+    const descCheck = checkSensitiveWords(input.description, 'description');
     if (!descCheck.valid) {
       return paramError('description', `商品描述包含敏感词：${descCheck.matchedWords.join(', ')}`);
     }
@@ -295,9 +337,9 @@ async function createProduct(data, context) {
   try {
     // 如果有分类ID,查询分类名称
     let categoryName = '';
-    if (data.category) {
+    if (input.category) {
       try {
-        const categoryResult = await db.collection('categories').doc(data.category).get();
+        const categoryResult = await db.collection('categories').doc(input.category).get();
         if (categoryResult.data) {
           categoryName = categoryResult.data.name;
         }
@@ -315,14 +357,20 @@ async function createProduct(data, context) {
 
     // 构建商品数据
     const product = {
-      ...data,
+      ...input,
       categoryName, // 保存分类名称
-      price: Math.round(data.price * 100), // 转换为分
+      price: Math.round(input.price * 100), // 转换为分
       createTime: new Date(),
       updateTime: new Date(),
-      status: data.status || 1,
+      status: input.status || 1,
       creatorOpenid: OPENID
     };
+
+    delete product.originalPrice
+
+    if (providedCostPrice !== undefined) {
+      product.costPrice = Math.round(Number(providedCostPrice) * 100)
+    }
 
     // 保存到数据库
     const result = await db.collection('products').add({
@@ -332,20 +380,19 @@ async function createProduct(data, context) {
     const executionTime = Date.now() - startTime;
     console.log('[PRODUCT_MANAGEMENT] createProduct success:', {
       productId: result._id,
-      productName: data.name,
+      productName: input.name,
       categoryName,
       executionTime: `${executionTime}ms`
     });
 
     return success({
       _id: result._id,
-      ...product,
-      price: product.price / 100 // 返回时转换为元
+      ...normalizeProductOutput(product)
     }, 'Create product success');
   } catch (err) {
     const executionTime = Date.now() - startTime;
     console.error('[PRODUCT_MANAGEMENT] createProduct failed:', {
-      productName: data?.name,
+      productName: input?.name,
       executionTime: `${executionTime}ms`,
       error: err.message,
       stack: err.stack
@@ -361,7 +408,14 @@ async function createProduct(data, context) {
 async function updateProduct(data, context) {
   const { OPENID } = cloud.getWXContext();
   const startTime = Date.now();
-  const { id, isAdmin: _clientIsAdmin, ...updateData } = data || {};
+  const payload = data || {}
+  const {
+    id,
+    isAdmin: _clientIsAdmin,
+    originalPrice: legacyOriginalPrice,
+    costPrice: incomingCostPrice,
+    ...updateData
+  } = payload;
 
   console.log('[PRODUCT_MANAGEMENT] updateProduct:', {
     openid: OPENID,
@@ -381,16 +435,28 @@ async function updateProduct(data, context) {
   }
 
   // [殡葬平台转型] 服务端强制校验，只允许 white 类型
-  if (data?.type && data.type !== 'white') {
+  if (payload?.type && payload.type !== 'white') {
     console.log('[殡葬平台转型] 强制覆写红事类型为白事', {
-      originalType: data.type,
+      originalType: payload.type,
       forcedType: 'white',
       function: 'updateProduct'
     });
-    data.type = 'white';
     if (updateData.type !== undefined) {
       updateData.type = 'white';
     }
+  }
+
+  const providedCostPrice = getProvidedCostPrice({
+    costPrice: incomingCostPrice,
+    originalPrice: legacyOriginalPrice
+  })
+
+  if (providedCostPrice !== undefined) {
+    const parsedCostPrice = Number(providedCostPrice)
+    if (Number.isNaN(parsedCostPrice) || parsedCostPrice < 0) {
+      return paramError('costPrice', 'Product cost price must be greater than or equal to 0')
+    }
+    updateData.costPrice = providedCostPrice
   }
 
   // 敏感词检测
@@ -437,6 +503,10 @@ async function updateProduct(data, context) {
     // 如果包含价格，转换为分
     if (updateData.price !== undefined) {
       updateFields.price = Math.round(updateData.price * 100);
+    }
+
+    if (updateData.costPrice !== undefined) {
+      updateFields.costPrice = Math.round(Number(updateData.costPrice) * 100)
     }
 
     // 更新商品
@@ -689,7 +759,7 @@ async function exportProducts(data, context) {
 
     // CSV 表头（中文 + 英文字段名映射）
     const csvHeaders = [
-      '商品ID', '商品名称', '价格(元)', '原价(元)', '库存',
+      '商品ID', '商品名称', '价格(元)', '进价(元)', '原价(元)', '库存',
       '分类ID', '分类名称', '描述', '状态(1上架/0下架)',
       '图片URL', '销量', '创建时间'
     ];
@@ -710,11 +780,14 @@ async function exportProducts(data, context) {
         .get();
 
       batchResult.data.forEach(p => {
+        const costPriceFen = getStoredCostPrice(p)
+        const costPriceYuan = costPriceFen !== undefined ? (costPriceFen / 100).toFixed(2) : ''
         const row = [
           csvEscape(p._id),
           csvEscape(p.name || ''),
           csvEscape(p.price !== undefined ? (p.price / 100).toFixed(2) : ''),
-          csvEscape(p.originalPrice !== undefined ? (p.originalPrice / 100).toFixed(2) : ''),
+          csvEscape(costPriceYuan),
+          csvEscape(costPriceYuan),
           csvEscape(p.stock !== undefined ? p.stock : ''),
           csvEscape(p.category || ''),
           csvEscape(p.categoryName || ''),
@@ -789,6 +862,7 @@ async function importProducts(data, context) {
     const fieldMap = {
       '商品名称': 'name',
       '价格(元)': 'price',
+      '进价(元)': 'costPrice',
       '原价(元)': 'originalPrice',
       '库存': 'stock',
       '类型': 'type',
@@ -800,6 +874,7 @@ async function importProducts(data, context) {
       // 英文字段名也支持
       'name': 'name',
       'price': 'price',
+      'costPrice': 'costPrice',
       'originalPrice': 'originalPrice',
       'stock': 'stock',
       'type': 'type',
@@ -883,14 +958,15 @@ async function importProducts(data, context) {
           creatorOpenid: OPENID
         };
 
-        if (mapped.originalPrice) {
-          const originalPrice = parseFloat(mapped.originalPrice);
-          if (isNaN(originalPrice) || originalPrice < 0) {
-            errors.push({ row: rowNumber, error: `原价无效: ${mapped.originalPrice}` });
+        const providedCostPrice = getProvidedCostPrice(mapped)
+        if (providedCostPrice !== undefined) {
+          const parsedCostPrice = parseFloat(providedCostPrice)
+          if (isNaN(parsedCostPrice) || parsedCostPrice < 0) {
+            errors.push({ row: rowNumber, error: `进价无效: ${providedCostPrice}` });
             failCount++;
             continue;
           }
-          product.originalPrice = Math.round(originalPrice * 100);
+          product.costPrice = Math.round(parsedCostPrice * 100);
         }
 
         pendingProducts.push({ row: rowNumber, product });

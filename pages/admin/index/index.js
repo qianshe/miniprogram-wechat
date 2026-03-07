@@ -31,7 +31,7 @@ Page({
       {
         id: 'category',
         name: '分类管理',
-        icon: '📋',
+        icon: '🗂️',
         desc: '管理商品分类',
         path: '/pages/admin/category/list/list'
       },

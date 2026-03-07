@@ -116,7 +116,7 @@
           <!-- 根据状态显示操作按钮 -->
           <view class="order-actions">
             <button wx:if="{{item.orderStatus === 0 && item.paymentStatus === 0}}"
-                    class="btn btn-cancel"
+                    class="btn btn-cancel-light"
                     catchtap="handleCancel"
                     data-id="{{item._id}}">取消订单</button>
           </view>

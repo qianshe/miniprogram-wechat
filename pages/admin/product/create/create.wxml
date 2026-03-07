@@ -7,7 +7,7 @@
     <t-cell-group theme="card">
       <t-input label="商品名称" placeholder="请输入商品名称" value="{{formData.name}}" bind:change="onNameChange" />
       <t-input label="商品价格" placeholder="请输入价格" type="number" value="{{formData.price}}" bind:change="onPriceChange" suffix="元" />
-      <t-input label="原价" placeholder="请输入原价" type="number" value="{{formData.originalPrice}}" bind:change="onOriginalPriceChange" suffix="元" />
+      <t-input label="进价" placeholder="请输入进价" type="number" value="{{formData.costPrice}}" bind:change="onCostPriceChange" suffix="元" />
       <t-input label="库存" placeholder="请输入库存数量" type="number" value="{{formData.stock}}" bind:change="onStockChange" />
       
       <t-cell title="商品分类" arrow hover note="{{selectedCategoryName || '请选择分类'}}" bind:click="onCategoryPicker" />

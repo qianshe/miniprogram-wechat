@@ -1,7 +1,7 @@
 const { api } = require('../../../utils/api.js');
 const validation = require('../../../utils/validation.js');
+const { loadSelectableAddresses, pickDefaultAddress } = require('../../../utils/addressSelection.js');
 
-const ADDRESS_STORAGE_KEY = 'addressList';
 
 Page({
   data: {
@@ -9,6 +9,7 @@ Page({
     totalAmount: '0.00',
     address: null,
     remarks: '',
+    serviceTime: '',
     loading: false,
     errors: {},
     systemType: 'white',
@@ -51,29 +52,20 @@ Page({
     this.loadAddressList();
   },
 
-  // 加载本地存储的地址列表
-  loadAddressList() {
-    const addressList = wx.getStorageSync(ADDRESS_STORAGE_KEY) || [];
-    
-    // 转换地址格式（地址管理页面格式 -> 订单页面格式）
-    const formattedList = addressList.map(addr => ({
-      id: addr.id,
-      userName: addr.name,
-      telNumber: addr.phone,
-      provinceName: addr.province,
-      cityName: addr.city,
-      countyName: addr.district,
-      detailInfo: addr.detail,
-      fullAddress: `${addr.province}${addr.city}${addr.district}${addr.detail}`,
-      isDefault: addr.isDefault
-    }));
-    
-    this.setData({ addressList: formattedList });
-    
-    // 如果当前没有选中地址，自动选择默认地址或第一个地址
-    if (!this.data.address && formattedList.length > 0) {
-      const defaultAddr = formattedList.find(addr => addr.isDefault) || formattedList[0];
-      this.setData({ address: defaultAddr });
+  // 加载地址列表（云端优先 + 本地兜底）
+  async loadAddressList() {
+    try {
+      const formattedList = await loadSelectableAddresses();
+      this.setData({ addressList: formattedList });
+      
+      // 如果当前没有选中地址，自动选择默认地址
+      if (!this.data.address && formattedList.length > 0) {
+        const defaultAddr = pickDefaultAddress(formattedList);
+        this.setData({ address: defaultAddr });
+      }
+    } catch (err) {
+      console.error('[confirm] 加载地址失败:', err);
+      this.setData({ addressList: [] });
     }
   },
 
@@ -140,6 +132,12 @@ Page({
     })
   },
 
+  onServiceTimeChange(e) {
+    this.setData({
+      serviceTime: e.detail.value || ''
+    })
+  },
+
   async submitOrder() {
     // 清除之前的错误
     this.setData({ errors: {} })
@@ -199,7 +197,8 @@ Page({
       })),
       totalAmount: this.data.totalAmount,
       address: this.data.address,
-      remark: this.data.remarks || ''
+      remark: this.data.remarks || '',
+      serviceTime: this.data.serviceTime || null
     }
 
     try {

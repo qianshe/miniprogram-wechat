@@ -91,12 +91,12 @@
         </view>
         <view class="grid-col">
           <view class="input-group">
-            <view class="input-label">市场原价</view>
+            <view class="input-label">进价</view>
             <t-input 
               type="number" 
               placeholder="0.00" 
-              value="{{formData.originalPrice}}" 
-              bind:change="onOriginalPriceChange" 
+              value="{{formData.costPrice}}" 
+              bind:change="onCostPriceChange" 
               borderless="{{true}}"
               class="filled-input"
               suffix="元"

@@ -355,9 +355,10 @@
   color: #fff;
 }
 
-.btn-cancel {
-  background: #f5f5f5;
-  color: #666;
+.btn-cancel-light {
+  background: #fff;
+  color: #d32f2f;
+  border: 1rpx solid rgba(211, 47, 47, 0.35);
 }
 
 .red-theme .btn-pay {

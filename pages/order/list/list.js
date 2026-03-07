@@ -231,7 +231,7 @@ Page({
           paymentStatusText: getPaymentStatusDisplayText(order.orderStatus, order.paymentStatus, false),
           showPaymentStatusTag: shouldShowPaymentStatusTag(order.orderStatus),
           createdTime: formatDate(order.createTime),
-          serviceTime: formatDate(order.serviceTime),
+          serviceTime: formatDate(order.serviceTime) || '未指定',
           totalAmount: Number(order.totalAmount).toFixed(2)
         };
       });
