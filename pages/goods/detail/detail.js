@@ -38,9 +38,7 @@ Page({
         ...goods,
         price: parsedPrice,
         displayPrice: parsedPrice.toFixed(2),
-        displayTime: goods.createTime ? new Date(goods.createTime).toLocaleString() : '',
-        image: goods.imageUrl || 'https://tdesign.gtimg.com/mobile/demos/example1.png',
-        images: goods.imageUrl ? [goods.imageUrl] : ['https://tdesign.gtimg.com/mobile/demos/example1.png']
+        displayTime: goods.createTime ? new Date(goods.createTime).toLocaleString() : ''
       };
 
       this.setData({
