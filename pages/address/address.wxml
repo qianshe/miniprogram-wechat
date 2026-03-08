@@ -62,6 +62,13 @@
         </picker>
       </view>
       <view class="form-item">
+        <text class="form-label">地图选点</text>
+        <button size="mini" bindtap="chooseLocation">地图选点（可选）</button>
+        <view class="region-picker {{formData.locationName || (formData.latitude && formData.longitude) ? '' : 'placeholder'}}">
+          {{formData.locationName || (formData.latitude && formData.longitude ? ('已选坐标：' + formData.latitude + ',' + formData.longitude) : '未选择地图位置，支持手动填写地址')}}
+        </view>
+      </view>
+      <view class="form-item">
         <text class="form-label">详细地址</text>
         <textarea class="form-textarea" placeholder="请输入详细地址（街道、门牌号等）" value="{{formData.detail}}" bindinput="onInputDetail" />
       </view>

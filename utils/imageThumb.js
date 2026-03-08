@@ -12,7 +12,36 @@ function clampNumber(value, min, max, fallback) {
   return Math.max(min, Math.min(max, Math.floor(parsed)))
 }
 
-function buildThumbUrl(imageUrl, options = {}) {
+function resolveImageUrl(imageSource) {
+  if (typeof imageSource === 'string') {
+    return imageSource
+  }
+
+  if (!imageSource || typeof imageSource !== 'object') {
+    return ''
+  }
+
+  if (typeof imageSource.coverImage === 'string' && imageSource.coverImage) {
+    return imageSource.coverImage
+  }
+
+  if (typeof imageSource.imageUrl === 'string' && imageSource.imageUrl) {
+    return imageSource.imageUrl
+  }
+
+  if (typeof imageSource.thumb === 'string' && imageSource.thumb) {
+    return imageSource.thumb
+  }
+
+  if (Array.isArray(imageSource.images) && typeof imageSource.images[0] === 'string') {
+    return imageSource.images[0]
+  }
+
+  return ''
+}
+
+function buildThumbUrl(imageSource, options = {}) {
+  const imageUrl = resolveImageUrl(imageSource)
   if (!imageUrl || typeof imageUrl !== 'string') return ''
 
   // 本地占位图、base64、已处理图片直接返回

@@ -18,6 +18,22 @@ cloud.init({
 const db = cloud.database();
 const _ = db.command;
 
+function normalizeCoordinate(value) {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeLocationName(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function resolveCartImage(source = {}) {
+  return source.coverImage || source.productImage || source.image || source.thumb || source.imageUrl || (Array.isArray(source.images) ? source.images[0] : '') || '';
+}
+
 // ============ 地址管理 ============
 
 async function getAddressList(data, context, logger) {
@@ -35,7 +51,22 @@ async function getAddressList(data, context, logger) {
 
 async function addAddress(data, context, logger) {
   const { OPENID } = cloud.getWXContext();
-  const { name, phone, province, city, district, detail, isDefault } = data;
+  const {
+    name,
+    phone,
+    province,
+    city,
+    district,
+    detail,
+    isDefault,
+    locationName,
+    latitude,
+    longitude
+  } = data;
+
+  const normalizedLocationName = normalizeLocationName(locationName);
+  const normalizedLatitude = normalizeCoordinate(latitude);
+  const normalizedLongitude = normalizeCoordinate(longitude);
 
   logger.info('Adding address', { openid: OPENID, name });
 
@@ -69,6 +100,9 @@ async function addAddress(data, context, logger) {
     district: district || '',
     detail: detail.trim(),
     isDefault: shouldBeDefault,
+    locationName: normalizedLocationName,
+    latitude: normalizedLatitude,
+    longitude: normalizedLongitude,
     createTime: new Date(),
     updateTime: new Date()
   };
@@ -82,7 +116,19 @@ async function addAddress(data, context, logger) {
 
 async function updateAddress(data, context, logger) {
   const { OPENID } = cloud.getWXContext();
-  const { addressId, name, phone, province, city, district, detail, isDefault } = data;
+  const {
+    addressId,
+    name,
+    phone,
+    province,
+    city,
+    district,
+    detail,
+    isDefault,
+    locationName,
+    latitude,
+    longitude
+  } = data;
 
   logger.info('Updating address', { openid: OPENID, addressId });
 
@@ -117,6 +163,9 @@ async function updateAddress(data, context, logger) {
   if (district !== undefined) updateData.district = district;
   if (detail) updateData.detail = detail.trim();
   if (isDefault !== undefined) updateData.isDefault = isDefault;
+  if (locationName !== undefined) updateData.locationName = normalizeLocationName(locationName);
+  if (latitude !== undefined) updateData.latitude = normalizeCoordinate(latitude);
+  if (longitude !== undefined) updateData.longitude = normalizeCoordinate(longitude);
 
   await db.collection('addresses').doc(addressId).update({ data: updateData });
 
@@ -236,7 +285,7 @@ async function syncCart(data, context, logger) {
       productId: item.id || item.productId,
       name: item.name,
       price: item.price,
-      image: item.image || '',
+      image: resolveCartImage(item),
       quantity: item.quantity || 1,
       selected: item.selected || false,
       createTime: new Date(),
@@ -256,7 +305,7 @@ async function syncCart(data, context, logger) {
 
 async function addToCart(data, context, logger) {
   const { OPENID } = cloud.getWXContext();
-  const { productId, name, price, image, quantity = 1 } = data;
+  const { productId, name, price, image, coverImage, productImage, thumb, imageUrl, images, quantity = 1 } = data;
 
   logger.info('Adding to cart', { openid: OPENID, productId });
 
@@ -280,12 +329,13 @@ async function addToCart(data, context, logger) {
   }
 
   // 添加新商品
+  const snapshotImage = resolveCartImage({ image, coverImage, productImage, thumb, imageUrl, images });
   const cartItem = {
     userOpenid: OPENID,
     productId,
     name,
     price,
-    image: image || '',
+    image: snapshotImage,
     quantity,
     selected: false,
     createTime: new Date(),

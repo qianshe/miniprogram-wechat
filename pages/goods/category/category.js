@@ -108,13 +108,13 @@ Page({
 
       const newProducts = result.records.map(product => {
         const parsedPrice = Number(product.price || 0);
-        const image = product.imageUrl || '/images/default-product.png';
+        const coverImage = product.coverImage || product.thumb || product.imageUrl || product.image || '/images/default-product.png';
 
         return {
-          id: product._id,
+          id: product._id || product.id,
           label: product.name,
-          image,
-          thumbSrc: buildThumbUrl(image, { size: 200, quality: 75 }),
+          image: coverImage,
+          thumbSrc: buildThumbUrl(coverImage, { size: 200, quality: 75 }),
           price: parsedPrice,
           displayPrice: parsedPrice.toFixed(2)
         };

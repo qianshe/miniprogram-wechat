@@ -357,12 +357,12 @@ Page({
 
   // 查看位置
   viewLocation() {
-    const { latitude, longitude, address } = this.data.orderInfo;
+    const { latitude, longitude, address, locationName } = this.data.orderInfo;
     if (latitude && longitude) {
       wx.openLocation({
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
-        name: address,
+        name: locationName || address || '订单地址',
         scale: 18
       });
     }

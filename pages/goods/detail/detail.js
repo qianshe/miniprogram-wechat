@@ -2,6 +2,8 @@ const { api } = require('../../../utils/api.js');
 const auth = require('../../../utils/auth.js');
 const cartApi = require('../../../api/cart.js');
 
+const DEFAULT_PRODUCT_IMAGE = 'https://tdesign.gtimg.com/mobile/demos/example1.png';
+
 Page({
   data: {
     id: '',
@@ -34,11 +36,25 @@ Page({
       wx.showLoading({ title: '加载中' });
       const goods = await api.getProductDetail(id);
       const parsedPrice = Number(goods.price || 0);
+      const imageCandidates = [
+        goods.coverImage,
+        ...(Array.isArray(goods.galleryImages) ? goods.galleryImages : []),
+        ...(Array.isArray(goods.images) ? goods.images : []),
+        goods.thumb,
+        goods.imageUrl,
+        goods.image
+      ].filter(Boolean);
+      const normalizedImages = [...new Set(imageCandidates)];
+      if (normalizedImages.length === 0) {
+        normalizedImages.push(DEFAULT_PRODUCT_IMAGE);
+      }
       const goodsData = {
         ...goods,
         price: parsedPrice,
         displayPrice: parsedPrice.toFixed(2),
-        displayTime: goods.createTime ? new Date(goods.createTime).toLocaleString() : ''
+        displayTime: goods.createTime ? new Date(goods.createTime).toLocaleString() : '',
+        image: normalizedImages[0] || DEFAULT_PRODUCT_IMAGE,
+        images: normalizedImages
       };
 
       this.setData({

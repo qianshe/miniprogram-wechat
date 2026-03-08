@@ -4,6 +4,14 @@ const auth = require('../../utils/auth.js');
 
 const STORAGE_KEY = 'addressList';
 
+function normalizeCoordinate(value) {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
 Page({
   data: {
     addressList: [],
@@ -17,7 +25,10 @@ Page({
       district: '',
       detail: '',
       isDefault: false,
-      region: []
+      region: [],
+      locationName: '',
+      latitude: null,
+      longitude: null
     },
     loading: false,
     isLoggedIn: false
@@ -34,7 +45,7 @@ Page({
   checkLoginAndLoad() {
     const isLoggedIn = auth.checkAuth();
     this.setData({ isLoggedIn });
-    
+
     if (isLoggedIn) {
       this.loadAddressListFromCloud();
     } else {
@@ -74,7 +85,10 @@ Page({
         district: '',
         detail: '',
         isDefault: false,
-        region: []
+        region: [],
+        locationName: '',
+        latitude: null,
+        longitude: null
       }
     });
   },
@@ -94,7 +108,10 @@ Page({
         district: address.district,
         detail: address.detail,
         isDefault: address.isDefault,
-        region: [address.province, address.city, address.district]
+        region: [address.province, address.city, address.district],
+        locationName: address.locationName || '',
+        latitude: normalizeCoordinate(address.latitude),
+        longitude: normalizeCoordinate(address.longitude)
       }
     });
   },
@@ -127,6 +144,75 @@ Page({
 
   onSwitchDefault(e) {
     this.setData({ 'formData.isDefault': e.detail.value });
+  },
+
+  chooseLocation() {
+    wx.chooseLocation({
+      success: (res) => {
+        const locationName = (res.name || res.address || '').trim();
+        const latitude = normalizeCoordinate(res.latitude);
+        const longitude = normalizeCoordinate(res.longitude);
+
+        this.setData({
+          'formData.locationName': locationName,
+          'formData.latitude': latitude,
+          'formData.longitude': longitude
+        });
+
+        wx.showToast({
+          title: locationName ? '已选择地图位置' : '已获取坐标',
+          icon: 'none'
+        });
+      },
+      fail: (err) => {
+        const errMsg = (err && err.errMsg) || '';
+
+        if (errMsg.includes('cancel')) {
+          return;
+        }
+
+        if (this.isLocationAuthDenied(errMsg)) {
+          this.handleLocationPermissionDenied();
+          return;
+        }
+
+        wx.showToast({ title: '地图选点失败，可手动填写地址', icon: 'none' });
+      }
+    });
+  },
+
+  isLocationAuthDenied(errMsg = '') {
+    const lowered = String(errMsg).toLowerCase();
+    return lowered.includes('auth deny') || lowered.includes('auth denied') || lowered.includes('authorize');
+  },
+
+  handleLocationPermissionDenied() {
+    wx.showModal({
+      title: '需要位置权限',
+      content: '地图选点需要位置权限。你也可以跳过地图选点，继续手动填写地址。',
+      confirmText: '去设置',
+      cancelText: '手动填写',
+      success: (res) => {
+        if (!res.confirm) {
+          wx.showToast({ title: '可继续手动填写地址', icon: 'none' });
+          return;
+        }
+
+        wx.openSetting({
+          success: (settingRes) => {
+            const authSetting = (settingRes && settingRes.authSetting) || {};
+            const hasLocationPermission = !!authSetting['scope.userLocation'];
+            wx.showToast({
+              title: hasLocationPermission ? '权限已开启，请重新选点' : '未开启权限，可手动填写地址',
+              icon: 'none'
+            });
+          },
+          fail: () => {
+            wx.showToast({ title: '打开设置失败，请手动填写地址', icon: 'none' });
+          }
+        });
+      }
+    });
   },
 
   async saveAddress() {
@@ -175,7 +261,10 @@ Page({
       city: formData.city,
       district: formData.district,
       detail: formData.detail.trim(),
-      isDefault: formData.isDefault
+      isDefault: formData.isDefault,
+      locationName: (formData.locationName || '').trim(),
+      latitude: normalizeCoordinate(formData.latitude),
+      longitude: normalizeCoordinate(formData.longitude)
     };
 
     if (editIndex >= 0 && formData._id) {
@@ -195,7 +284,10 @@ Page({
       city: formData.city,
       district: formData.district,
       detail: formData.detail.trim(),
-      isDefault: formData.isDefault
+      isDefault: formData.isDefault,
+      locationName: (formData.locationName || '').trim(),
+      latitude: normalizeCoordinate(formData.latitude),
+      longitude: normalizeCoordinate(formData.longitude)
     };
 
     let newList = [...addressList];
@@ -232,7 +324,7 @@ Page({
         wx.showToast({ title: '设置失败', icon: 'none' });
       }
     } else {
-      let newList = this.data.addressList.map((item, i) => ({
+      const newList = this.data.addressList.map((item, i) => ({
         ...item,
         isDefault: i === index
       }));
@@ -261,14 +353,14 @@ Page({
               wx.showToast({ title: '删除失败', icon: 'none' });
             }
           } else {
-            let newList = [...this.data.addressList];
+            const newList = [...this.data.addressList];
             const wasDefault = newList[index].isDefault;
             newList.splice(index, 1);
-            
+
             if (wasDefault && newList.length > 0) {
               newList[0].isDefault = true;
             }
-            
+
             wx.setStorageSync(STORAGE_KEY, newList);
             this.setData({ addressList: newList });
             wx.showToast({ title: '删除成功', icon: 'success' });

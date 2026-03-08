@@ -26,7 +26,7 @@ Page({
     selectedCategoryId: '',
     selectedCategoryName: '',
     categoryVisible: false,
-    orderBy: 'createTime', // createTime, sales, price
+    orderBy: 'createTime', // createTime, sales, stock, price
     orderDirection: 'desc' // asc, desc
   },
 
@@ -166,11 +166,12 @@ Page({
         const hasMore = params.page * params.pageSize < total;
         const newPage = this.data.page + 1;
 
-        // 处理字段映射 (兼容 _id/id 和 imageUrl/thumb)
+        // 处理字段映射 (兼容 _id/id 和封面图/旧图字段)
         const processedRecords = records.map(item => ({
           ...item,
           id: item._id || item.id,  // 将 _id 映射为 id
-          thumb: item.thumb || item.imageUrl || ''
+          stock: Number(item.stock || 0),
+          thumb: item.coverImage || item.thumb || item.imageUrl || (Array.isArray(item.images) ? item.images[0] : '') || ''
         }));
 
         this.setData({
@@ -269,10 +270,10 @@ Page({
         orderDirection: this.data.orderDirection === 'asc' ? 'desc' : 'asc'
       })
     } else {
-      // 如果点击不同排序字段，设置新的排序字段，默认为降序
+      // 如果点击不同排序字段，库存首次点击默认升序，其他维持默认降序
       this.setData({
         orderBy,
-        orderDirection: 'desc'
+        orderDirection: orderBy === 'stock' ? 'asc' : 'desc'
       })
     }
 

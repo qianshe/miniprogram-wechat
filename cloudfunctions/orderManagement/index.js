@@ -55,6 +55,14 @@ function getCurrentEnvForGuard() {
   return process.env.TCB_ENV || process.env.SCF_NAMESPACE || process.env.WX_CLOUD_ENV || '';
 }
 
+function normalizeCoordinate(value) {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function isProductionLikeEnv(envId) {
   if (!envId || typeof envId !== 'string') {
     return false;
@@ -172,12 +180,24 @@ async function createOrder(data, context, logger) {
   let contactName = data.contactName || '';
   let contactPhone = data.contactPhone || '';
   let addressStr = data.addressString || '';
+  let latitude = normalizeCoordinate(data.latitude);
+  let longitude = normalizeCoordinate(data.longitude);
+  let locationName = typeof data.locationName === 'string' ? data.locationName.trim() : '';
   
   // 如果地址是对象格式（来自地址选择弹窗），则提取信息
   if (typeof addressObj === 'object' && addressObj !== null) {
     // 提取联系人信息
     contactName = contactName || addressObj.userName || addressObj.name || '';
     contactPhone = contactPhone || addressObj.telNumber || addressObj.phone || '';
+    const addressLatitude = normalizeCoordinate(addressObj.latitude);
+    const addressLongitude = normalizeCoordinate(addressObj.longitude);
+    if (addressLatitude !== null) {
+      latitude = addressLatitude;
+    }
+    if (addressLongitude !== null) {
+      longitude = addressLongitude;
+    }
+    locationName = locationName || (typeof addressObj.locationName === 'string' ? addressObj.locationName.trim() : '');
     
     // 格式化地址字符串
     if (addressObj.fullAddress) {
@@ -211,7 +231,7 @@ async function createOrder(data, context, logger) {
       price: Math.round((item.price || 0) * 100), // 转换为分
       quantity: item.quantity,
       subtotal: Math.round((item.price || 0) * item.quantity * 100),
-      productImage: item.productImage || ''
+      productImage: item.coverImage || item.productImage || item.image || item.thumb || item.imageUrl || (Array.isArray(item.images) ? item.images[0] : '') || ''
     })),
     contactName: contactName,
     contactPhone: contactPhone,
@@ -222,6 +242,12 @@ async function createOrder(data, context, logger) {
     createTime: new Date(),
     updateTime: new Date()
   };
+
+  if (latitude !== null && longitude !== null) {
+    orderData.latitude = latitude;
+    orderData.longitude = longitude;
+    orderData.locationName = locationName || addressStr || '订单地址';
+  }
   
   logger.debug('Order data prepared', {
     orderNo,
@@ -1935,7 +1961,7 @@ async function appendOrderItems(data, context, logger) {
       productMap.set(p._id, {
         price: p.price, // 数据库中已是分为单位
         name: p.name,
-        imageUrl: p.imageUrl || p.image || ''
+        coverImage: p.coverImage || p.thumb || p.imageUrl || p.image || (Array.isArray(p.images) ? p.images[0] : '') || ''
       });
     });
 
@@ -1957,7 +1983,7 @@ async function appendOrderItems(data, context, logger) {
         price: price,
         quantity: item.quantity,
         subtotal: price * item.quantity,
-        productImage: dbProduct.imageUrl || item.productImage || '',
+        productImage: dbProduct.coverImage || item.coverImage || item.productImage || item.image || item.thumb || item.imageUrl || (Array.isArray(item.images) ? item.images[0] : '') || '',
         appendedAt: new Date()
       };
     });

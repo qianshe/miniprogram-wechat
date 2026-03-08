@@ -2,6 +2,12 @@ const { adminApi } = require('../../../../utils/api.js');
 const validation = require('../../../../utils/validation.js');
 const { checkAdminAccess } = require('../../common/adminGuard.js');
 
+const MAX_GALLERY_IMAGES = 9;
+
+function uniqueImageUrls(list = []) {
+    return [...new Set((Array.isArray(list) ? list : []).filter(Boolean))];
+}
+
 Page({
     data: {
         isEdit: false,
@@ -14,9 +20,14 @@ Page({
             category: '',  // 改为category，存储分类_id
             description: '',
             status: 1,
-            thumb: ''
+            thumb: '',
+            imageUrl: '',
+            coverImage: '',
+            galleryImages: [],
+            images: []
         },
         fileList: [],
+        coverIndex: -1,
         categories: [],
         categoryVisible: false,
         selectedCategoryName: ''
@@ -54,6 +65,20 @@ Page({
             wx.showLoading({ title: '加载中...' });
             const product = await adminApi.getProductDetail(id);
 
+            const legacyCover = product.thumb || product.imageUrl || '';
+            const canonicalCover = product.coverImage || '';
+            const resolvedCover = canonicalCover || legacyCover;
+            const canonicalGallery = Array.isArray(product.galleryImages) ? product.galleryImages : [];
+            const canonicalImages = Array.isArray(product.images) ? product.images : [];
+            const fallbackGallery = canonicalImages.filter(url => url && url !== resolvedCover);
+            const mergedImages = uniqueImageUrls(
+                resolvedCover
+                    ? [resolvedCover, ...(canonicalGallery.length ? canonicalGallery : fallbackGallery)]
+                    : (canonicalGallery.length ? canonicalGallery : canonicalImages)
+            ).slice(0, MAX_GALLERY_IMAGES);
+            const coverIndex = mergedImages.length > 0 ? 0 : -1;
+            const fileList = mergedImages.map(url => ({ url }));
+
             this.setData({
                 formData: {
                     name: product.name,
@@ -63,9 +88,14 @@ Page({
                     category: product.category,  // 使用category字段
                     description: product.description,
                     status: product.status,
-                    thumb: product.thumb
+                    thumb: resolvedCover,
+                    imageUrl: resolvedCover,
+                    coverImage: resolvedCover,
+                    galleryImages: mergedImages.slice(1),
+                    images: mergedImages
                 },
-                fileList: product.thumb ? [{ url: product.thumb }] : []
+                fileList,
+                coverIndex
             });
 
             // 设置选中的分类名称
@@ -123,27 +153,145 @@ Page({
         this.setData({ categoryVisible: false });
     },
 
-    onAddImage(e) {
-        const { files } = e.detail;
+    composeImagePayload(fileList = [], coverIndex = -1) {
+        const normalizedFiles = uniqueImageUrls((fileList || []).map(item => item && item.url))
+            .slice(0, MAX_GALLERY_IMAGES)
+            .map(url => ({ url }));
+
+        const normalizedCoverIndex = normalizedFiles.length === 0
+            ? -1
+            : Math.min(Math.max(coverIndex, 0), normalizedFiles.length - 1);
+
+        const coverImage = normalizedCoverIndex >= 0
+            ? normalizedFiles[normalizedCoverIndex].url
+            : '';
+        const galleryImages = normalizedFiles
+            .filter((_, index) => index !== normalizedCoverIndex)
+            .map(item => item.url);
+        const images = coverImage ? [coverImage, ...galleryImages] : [...galleryImages];
+
+        return {
+            fileList: normalizedFiles,
+            coverIndex: normalizedCoverIndex,
+            coverImage,
+            galleryImages,
+            images,
+            thumb: coverImage,
+            imageUrl: coverImage
+        };
+    },
+
+    syncImageFields(fileList = this.data.fileList, coverIndex = this.data.coverIndex) {
+        const payload = this.composeImagePayload(fileList, coverIndex);
         this.setData({
-            fileList: files
+            fileList: payload.fileList,
+            coverIndex: payload.coverIndex,
+            'formData.coverImage': payload.coverImage,
+            'formData.galleryImages': payload.galleryImages,
+            'formData.images': payload.images,
+            'formData.thumb': payload.thumb,
+            'formData.imageUrl': payload.imageUrl
         });
-        // 这里应该处理图片上传，获取服务器URL
-        // 模拟上传成功
-        if (files.length > 0) {
-            this.setData({ 'formData.thumb': files[0].url });
+    },
+
+    async onSelectImage() {
+        const remainCount = MAX_GALLERY_IMAGES - this.data.fileList.length;
+        if (remainCount <= 0) {
+            wx.showToast({ title: '最多上传9张图片', icon: 'none' });
+            return;
+        }
+
+        try {
+            const res = await wx.chooseImage({
+                count: remainCount,
+                sizeType: ['compressed'],
+                sourceType: ['album', 'camera']
+            });
+
+            if (res.tempFilePaths && res.tempFilePaths.length > 0) {
+                await this.uploadImages(res.tempFilePaths);
+            }
+        } catch (error) {
+            console.log('用户取消选择或发生错误', error);
         }
     },
 
-    onRemoveImage(e) {
-        this.setData({
-            fileList: [],
-            'formData.thumb': ''
+    async uploadImages(tempFilePaths = []) {
+        if (!Array.isArray(tempFilePaths) || tempFilePaths.length === 0) {
+            return;
+        }
+
+        try {
+            wx.showLoading({ title: '上传中...' });
+            const uploadedFiles = [];
+
+            for (const filePath of tempFilePaths) {
+                const fileID = await this.uploadSingleImage(filePath);
+                uploadedFiles.push({ url: fileID });
+            }
+
+            const nextFileList = [...this.data.fileList, ...uploadedFiles].slice(0, MAX_GALLERY_IMAGES);
+            this.syncImageFields(nextFileList, this.data.coverIndex);
+
+            wx.hideLoading();
+            wx.showToast({ title: '上传成功', icon: 'success' });
+        } catch (error) {
+            wx.hideLoading();
+            console.error('图片上传失败:', error);
+            wx.showToast({ title: '上传失败', icon: 'none' });
+        }
+    },
+
+    async uploadSingleImage(filePath) {
+        const fileExt = (filePath.split('.').pop() || 'jpg').toLowerCase();
+        const cloudPath = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const uploadResult = await wx.cloud.uploadFile({
+            cloudPath,
+            filePath
+        });
+        return uploadResult.fileID;
+    },
+
+    onSetCover(e) {
+        const index = Number(e.currentTarget.dataset.index);
+        if (Number.isNaN(index) || index < 0 || index >= this.data.fileList.length) {
+            return;
+        }
+        this.syncImageFields(this.data.fileList, index);
+    },
+
+    onPreviewImage(e) {
+        const index = Number(e.currentTarget.dataset.index);
+        const urls = this.data.fileList.map(item => item.url).filter(Boolean);
+        if (urls.length === 0) {
+            return;
+        }
+
+        wx.previewImage({
+            current: urls[index] || urls[0],
+            urls
         });
     },
 
+    onRemoveImage(e) {
+        const index = Number(e.currentTarget.dataset.index);
+        if (Number.isNaN(index) || index < 0 || index >= this.data.fileList.length) {
+            return;
+        }
+
+        const nextFileList = this.data.fileList.filter((_, fileIndex) => fileIndex !== index);
+        let nextCoverIndex = this.data.coverIndex;
+        if (index === nextCoverIndex) {
+            nextCoverIndex = nextFileList.length > 0 ? 0 : -1;
+        } else if (index < nextCoverIndex) {
+            nextCoverIndex -= 1;
+        }
+
+        this.syncImageFields(nextFileList, nextCoverIndex);
+    },
+
     async onSubmit() {
-        const { formData, isEdit, id } = this.data;
+        const { formData, isEdit, id, fileList, coverIndex } = this.data;
 
         if (!formData.name) {
             wx.showToast({ title: '请输入商品名称', icon: 'none' });
@@ -177,10 +325,20 @@ Page({
         try {
             wx.showLoading({ title: '保存中...' });
 
+            const imagePayload = this.composeImagePayload(fileList, coverIndex);
+            const payload = {
+                ...formData,
+                coverImage: imagePayload.coverImage,
+                galleryImages: imagePayload.galleryImages,
+                images: imagePayload.images,
+                thumb: imagePayload.thumb,
+                imageUrl: imagePayload.imageUrl
+            };
+
             if (isEdit) {
-                await adminApi.updateProduct(id, formData);
+                await adminApi.updateProduct(id, payload);
             } else {
-                await adminApi.createProduct(formData);
+                await adminApi.createProduct(payload);
             }
 
             wx.hideLoading();

@@ -9,23 +9,41 @@
   <view class="upload-section">
     <view class="upload-group">
       <!-- 已有图片展示 -->
-      <view class="upload-preview" wx:if="{{formData.thumb}}" bindtap="onPreviewImage" data-url="{{formData.thumb}}">
-        <image src="{{formData.thumb}}" mode="aspectFill" class="preview-image" />
-        <view class="delete-btn" catchtap="onRemoveImage">
-          <t-icon name="close" size="32rpx" color="#fff" />
+      <view
+        wx:for="{{fileList}}"
+        wx:key="url"
+        style="display: flex; flex-direction: column; gap: 10rpx;"
+      >
+        <view class="upload-preview" bindtap="onPreviewImage" data-index="{{index}}">
+          <image src="{{item.url}}" mode="aspectFill" class="preview-image" />
+          <view class="delete-btn" catchtap="onRemoveImage" data-index="{{index}}">
+            <t-icon name="close" size="32rpx" color="#fff" />
+          </view>
+          <view
+            wx:if="{{index === coverIndex}}"
+            style="position: absolute; left: 10rpx; bottom: 10rpx; background: rgba(0,82,217,.85); color: #fff; font-size: 22rpx; padding: 4rpx 10rpx; border-radius: 999rpx;"
+          >封面图</view>
         </view>
+        <view
+          wx:if="{{index !== coverIndex}}"
+          data-index="{{index}}"
+          catchtap="onSetCover"
+          style="font-size: 24rpx; color: #0052d9; text-align: center;"
+        >设为封面</view>
       </view>
 
-      <!-- 上传按钮 (无图时显示) -->
-      <view class="upload-add" bindtap="onSelectImage" wx:else>
+      <!-- 上传按钮 (未满 9 张时显示) -->
+      <view class="upload-add" bindtap="onSelectImage" wx:if="{{fileList.length < 9}}">
         <t-icon name="add" size="64rpx" color="#999" />
-        <text class="upload-text">上传主图</text>
+        <text class="upload-text">上传图片</text>
+        <text class="upload-text">{{fileList.length}}/9</text>
       </view>
+
+      <view wx:if="{{fileList.length >= 9}}" style="font-size: 24rpx; color: #999; align-self: center;">已达上限 9 张</view>
     </view>
-    <view class="upload-tips">建议尺寸 800x800 像素</view>
+    <view class="upload-tips">首图默认为封面图，可指定/替换封面，建议尺寸 800x800 像素</view>
   </view>
 
-  <!-- 表单内容区域 -->
   <view class="form-container">
     
     <!-- 基本信息卡片 -->

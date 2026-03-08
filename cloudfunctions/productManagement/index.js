@@ -793,7 +793,7 @@ async function exportProducts(data, context) {
           csvEscape(p.categoryName || ''),
           csvEscape(p.description || ''),
           csvEscape(p.status !== undefined ? p.status : 1),
-          csvEscape(p.imageUrl || p.thumb || ''),
+          csvEscape(p.coverImage || p.thumb || p.imageUrl || ''),
           csvEscape(p.sales || 0),
           csvEscape(p.createTime ? new Date(p.createTime).toISOString() : '')
         ];
@@ -871,6 +871,7 @@ async function importProducts(data, context) {
       '描述': 'description',
       '状态(1上架/0下架)': 'status',
       '图片URL': 'imageUrl',
+      '封面图': 'coverImage',
       // 英文字段名也支持
       'name': 'name',
       'price': 'price',
@@ -882,7 +883,8 @@ async function importProducts(data, context) {
       'categoryName': 'categoryName',
       'description': 'description',
       'status': 'status',
-      'imageUrl': 'imageUrl'
+      'imageUrl': 'imageUrl',
+      'coverImage': 'coverImage'
     };
 
     let successCount = 0;
@@ -953,6 +955,7 @@ async function importProducts(data, context) {
           category: mapped.category || '',
           categoryName: mapped.categoryName || '',
           imageUrl: mapped.imageUrl || '',
+          coverImage: mapped.coverImage || mapped.imageUrl || '',
           createTime: new Date(),
           updateTime: new Date(),
           creatorOpenid: OPENID
