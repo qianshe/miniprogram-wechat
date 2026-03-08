@@ -263,21 +263,19 @@ Page({
   buildFilterParams(filter) {
     switch (filter) {
       case 'unpaid':
-        // 待付款：未支付 + 未完成/取消的订单
+        // 待付款：未支付 + 已创建/服务已完成
         return {
           paymentStatus: PAYMENT_STATUS.UNPAID,
           orderStatusList: [
             ORDER_FLOW_STATUS.CREATED,
-            ORDER_FLOW_STATUS.PROCESSING,
             ORDER_FLOW_STATUS.SERVICE_DONE
           ]
         };
       case 'processing':
-        // 服务中：服务中或服务完成（不论支付状态）
+        // 服务中：仅服务中（不论支付状态）
         return {
           orderStatusList: [
-            ORDER_FLOW_STATUS.PROCESSING,
-            ORDER_FLOW_STATUS.SERVICE_DONE
+            ORDER_FLOW_STATUS.PROCESSING
           ]
         };
       case 'completed':
