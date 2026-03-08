@@ -48,6 +48,7 @@ function buildThumbUrl(imageSource, options = {}) {
   if (
     imageUrl.startsWith('/') ||
     imageUrl.startsWith('data:') ||
+    imageUrl.startsWith('cloud://') ||
     imageUrl.includes('imageMogr2/')
   ) {
     return imageUrl
