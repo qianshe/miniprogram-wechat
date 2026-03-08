@@ -27,6 +27,7 @@ Page({
       isDefault: false,
       region: [],
       locationName: '',
+      locationAddress: '',
       latitude: null,
       longitude: null
     },
@@ -87,6 +88,7 @@ Page({
         isDefault: false,
         region: [],
         locationName: '',
+        locationAddress: '',
         latitude: null,
         longitude: null
       }
@@ -110,6 +112,7 @@ Page({
         isDefault: address.isDefault,
         region: [address.province, address.city, address.district],
         locationName: address.locationName || '',
+        locationAddress: address.locationAddress || address.address || '',
         latitude: normalizeCoordinate(address.latitude),
         longitude: normalizeCoordinate(address.longitude)
       }
@@ -150,14 +153,22 @@ Page({
     wx.chooseLocation({
       success: (res) => {
         const locationName = (res.name || res.address || '').trim();
+        const locationAddress = (res.address || '').trim();
         const latitude = normalizeCoordinate(res.latitude);
         const longitude = normalizeCoordinate(res.longitude);
-
-        this.setData({
+        const currentDetail = ((this.data.formData && this.data.formData.detail) || '').trim();
+        const updates = {
           'formData.locationName': locationName,
+          'formData.locationAddress': locationAddress,
           'formData.latitude': latitude,
           'formData.longitude': longitude
-        });
+        };
+
+        if (!currentDetail && locationAddress) {
+          updates['formData.detail'] = locationAddress;
+        }
+
+        this.setData(updates);
 
         wx.showToast({
           title: locationName ? '已选择地图位置' : '已获取坐标',
@@ -263,6 +274,7 @@ Page({
       detail: formData.detail.trim(),
       isDefault: formData.isDefault,
       locationName: (formData.locationName || '').trim(),
+      locationAddress: (formData.locationAddress || '').trim(),
       latitude: normalizeCoordinate(formData.latitude),
       longitude: normalizeCoordinate(formData.longitude)
     };
@@ -286,6 +298,7 @@ Page({
       detail: formData.detail.trim(),
       isDefault: formData.isDefault,
       locationName: (formData.locationName || '').trim(),
+      locationAddress: (formData.locationAddress || '').trim(),
       latitude: normalizeCoordinate(formData.latitude),
       longitude: normalizeCoordinate(formData.longitude)
     };

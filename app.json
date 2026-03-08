@@ -88,6 +88,12 @@
   },
   "usingComponents": {},
   "requiredPrivateInfos": [
-    "chooseAddress"
-  ]
+    "chooseAddress",
+    "chooseLocation"
+  ],
+  "permission": {
+    "scope.userLocation": {
+      "desc": "你的位置信息将用于地图选点，帮助你快速填写收货地址"
+    }
+  }
 }

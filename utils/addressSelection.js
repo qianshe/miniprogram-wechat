@@ -13,22 +13,30 @@ const ADDRESS_STORAGE_KEY = 'addressList';
  */
 function normalizeAddressForOrder(addr) {
   if (!addr) return null;
+
+  const provinceName = addr.provinceName || addr.province || '';
+  const cityName = addr.cityName || addr.city || '';
+  const countyName = addr.countyName || addr.district || '';
+  const detailInfo = addr.detailInfo || addr.detail || '';
+  const structuredFullAddress = `${provinceName}${cityName}${countyName}${detailInfo}`.trim();
+  const mapAddress = (addr.locationAddress || addr.address || '').trim();
+  const fallbackFullAddress = mapAddress || (addr.fullAddress || '').trim() || (addr.locationName || '').trim();
   
   return {
     id: addr.id || addr._id,
     userName: addr.userName || addr.name || '',
     telNumber: addr.telNumber || addr.phone || '',
-    provinceName: addr.provinceName || addr.province || '',
-    cityName: addr.cityName || addr.city || '',
-    countyName: addr.countyName || addr.district || '',
-    detailInfo: addr.detailInfo || addr.detail || '',
-    fullAddress: addr.fullAddress || 
-      `${addr.province||addr.provinceName||''}${addr.city||addr.cityName||''}${addr.district||addr.countyName||''}${addr.detail||addr.detailInfo||''}`,
+    provinceName,
+    cityName,
+    countyName,
+    detailInfo,
+    fullAddress: structuredFullAddress || fallbackFullAddress,
     isDefault: addr.isDefault || false,
     // T10 定位字段透传
     latitude: addr.latitude,
     longitude: addr.longitude,
-    locationName: addr.locationName
+    locationName: addr.locationName,
+    locationAddress: addr.locationAddress || addr.address || ''
   };
 }
 
