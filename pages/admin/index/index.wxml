@@ -29,7 +29,7 @@
   <view class="order-status-grid">
     <view class="status-item" bindtap="onStatusTap" data-order-status="0" data-payment-status="0">
       <view class="status-count status-pending">{{mainStatus.pendingPayment}}</view>
-      <view class="status-label">待付款</view>
+      <view class="status-label">待沟通</view>
       <view class="status-hint">意向单待联系</view>
     </view>
     <view class="status-item" bindtap="onStatusTap" data-order-status="0" data-payment-status="1">

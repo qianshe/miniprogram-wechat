@@ -14,7 +14,7 @@ const ORDER_STATUS = {
   PROCESSING: 2,       // 处理中
   COMPLETED: 3,        // 已完成（已结清闭环）
   CANCELLED: 4,        // 已取消
-  SERVED_UNPAID: 5     // 已服务待付款（先服务后付款场景）
+  SERVED_UNPAID: 5     // 已服务未收款（先服务后付款场景）
 };
 
 /**
@@ -189,7 +189,7 @@ const PAYMENT_STATUS = {
  */
 const ADMIN_ORDER_TABS = [
   { index: '0', name: '全部', orderStatus: null, paymentStatus: null },
-  { index: '1', name: '待付款', orderStatus: 0, paymentStatus: 0 },   // CREATED + UNPAID
+  { index: '1', name: '待沟通', orderStatus: 0, paymentStatus: 0 },   // CREATED + UNPAID
   { index: '2', name: '待服务', orderStatus: 0, paymentStatus: 1 },   // CREATED + PAID
   { index: '3', name: '服务中', orderStatus: 1, paymentStatus: null }, // PROCESSING
   { index: '4', name: '待尾款', orderStatus: 2, paymentStatus: 0 },   // SERVICE_DONE + UNPAID
@@ -259,7 +259,7 @@ const shouldShowPaymentStatusTag = (orderStatus) => {
 /**
  * 获取支付状态标签显示文案
  * 用户端与管理端采用不同口径：
- * - 用户端：待付款 / 已付款
+ * - 用户端：待付 / 已付款
  * - 管理端：待收款确认 / 已收款
  * @param {number} orderStatus - 订单流程状态码
  * @param {number} paymentStatus - 支付状态码

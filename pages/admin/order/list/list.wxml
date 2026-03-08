@@ -79,7 +79,7 @@
     <view
       class="tab-item {{activeTab === '1' ? 'active' : ''}}"
       data-value="1"
-      bindtap="onTabClick">待付款</view>
+      bindtap="onTabClick">待沟通</view>
     <view
       class="tab-item {{activeTab === '2' ? 'active' : ''}}"
       data-value="2"
