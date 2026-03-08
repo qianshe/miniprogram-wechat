@@ -24,7 +24,7 @@ Page({
     statusTabs: [
       { value: '0', label: '全部', filter: 'all' },
       { value: '1', label: '待付款', filter: 'unpaid' },       // paymentStatus=0 且 orderStatus<3
-      { value: '2', label: '进行中', filter: 'processing' },   // orderStatus in [1, 2]
+      { value: '2', label: '服务中', filter: 'processing' },   // orderStatus in [1, 2]
       { value: '3', label: '已完成', filter: 'completed' },    // orderStatus=3
       { value: '4', label: '已取消', filter: 'cancelled' }     // orderStatus=4
     ],
@@ -273,7 +273,7 @@ Page({
           ]
         };
       case 'processing':
-        // 进行中：服务中或服务完成（不论支付状态）
+        // 服务中：服务中或服务完成（不论支付状态）
         return {
           orderStatusList: [
             ORDER_FLOW_STATUS.PROCESSING,
