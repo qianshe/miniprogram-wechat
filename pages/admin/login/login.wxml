@@ -28,6 +28,11 @@
       <text>{{errorMessage}}</text>
     </view>
 
+    <view class="remember-row">
+      <text class="remember-text">记住账号</text>
+      <switch checked="{{rememberAccount}}" bindchange="onRememberChange" color="#a0724e" />
+    </view>
+
     <t-button
       theme="primary"
       block

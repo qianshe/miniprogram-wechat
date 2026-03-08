@@ -66,15 +66,29 @@ Page({
   },
 
   toCreateOrder() {
-    wx.navigateTo({
-      url: '/pages/admin/order/create/create'
-    });
+    if (!this.ensureAdminEntry('/pages/admin/order/create/create', '/pages/admin/login/login')) {
+      return;
+    }
   },
 
   toManagePage() {
-    wx.navigateTo({
-      url: '/pages/admin/index/index'
-    });
+    if (!this.ensureAdminEntry('/pages/admin/index/index', '/pages/admin/login/login')) {
+      return;
+    }
+  },
+
+  ensureAdminEntry(targetUrl, loginUrl = '/pages/admin/login/login') {
+    const hasValidSession = typeof auth.hasValidAdminSession === 'function'
+      ? auth.hasValidAdminSession()
+      : (auth.checkAuth() && wx.getStorageSync('isAdmin') === true);
+
+    if (hasValidSession) {
+      wx.navigateTo({ url: targetUrl });
+      return true;
+    }
+
+    wx.navigateTo({ url: loginUrl });
+    return false;
   },
 
   toIndexHome() {

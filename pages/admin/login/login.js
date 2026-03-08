@@ -1,4 +1,5 @@
 const { callCloudFunction } = require('../../../utils/api.js')
+const auth = require('../../../utils/auth.js')
 
 const app = getApp()
 
@@ -6,14 +7,24 @@ Page({
   data: {
     adminAccount: '',
     password: '',
+    rememberAccount: false,
     loading: false,
     errorMessage: ''
   },
 
   onLoad(options) {
-    const isAdmin = wx.getStorageSync('isAdmin') || false
-    if (isAdmin) {
+    const rememberedAccount = wx.getStorageSync('adminAccount') || ''
+    if (rememberedAccount) {
+      this.setData({
+        adminAccount: rememberedAccount,
+        rememberAccount: true,
+        password: ''
+      })
+    }
+
+    if (auth.hasValidAdminSession()) {
       wx.reLaunch({ url: '/pages/admin/index/index' })
+      return
     }
   },
 
@@ -25,8 +36,12 @@ Page({
     this.setData({ password: e.detail.value || '' })
   },
 
+  onRememberChange(e) {
+    this.setData({ rememberAccount: !!e.detail.value })
+  },
+
   async onLogin() {
-    const { adminAccount, password } = this.data
+    const { adminAccount, password, rememberAccount } = this.data
 
     if (!this.validateForm()) return
 
@@ -51,6 +66,13 @@ Page({
       wx.setStorageSync('userInfo', userInfoWithRole)
       wx.setStorageSync('isAdmin', true)
       wx.setStorageSync('adminInfo', result.userInfo)
+
+      const normalizedAccount = (adminAccount || '').trim()
+      if (rememberAccount && normalizedAccount) {
+        wx.setStorageSync('adminAccount', normalizedAccount)
+      } else {
+        wx.removeStorageSync('adminAccount')
+      }
 
       app.globalData.userInfo = userInfoWithRole
       app.globalData.isAdmin = true

@@ -54,6 +54,36 @@ module.exports = {
     }
   },
 
+  /**
+   * 检查管理员会话是否有效（管理员身份 + 会话有效 + 安全戳有效）
+   */
+  hasValidAdminSession() {
+    try {
+      if (!this.checkAuth()) return false;
+
+      const userInfo = this.getUserInfo();
+      const isAdminByUserInfo = !!userInfo && (userInfo.isAdmin === true || userInfo.role === 1);
+      const isAdminByStorage = wx.getStorageSync('isAdmin') === true;
+
+      if (!isAdminByUserInfo && !isAdminByStorage) {
+        return false;
+      }
+
+      const security = wx.getStorageSync(SECURITY_KEY) || {};
+      const hasSecurityStamp = typeof security.securityStamp === 'string' && security.securityStamp.length > 0;
+
+      if (!hasSecurityStamp || !this.validateSecurityStamp()) {
+        this.clearAuth();
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Admin session check failed:', error);
+      return false;
+    }
+  },
+
 
   /**
    * 保存用户信息（云函数简化版）

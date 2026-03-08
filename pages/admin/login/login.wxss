@@ -70,6 +70,18 @@
   text-align: center;
 }
 
+.remember-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.remember-text {
+  font-size: 26rpx;
+  color: var(--text-sub);
+}
+
 .login-btn-wrapper {
   margin-top: 40rpx;
   --td-button-primary-bg-color: var(--admin-primary);
