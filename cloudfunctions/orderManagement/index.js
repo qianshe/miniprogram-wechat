@@ -1768,9 +1768,7 @@ async function getStatistics(data, context, logger) {
       }
 
       if (normalizedOrderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
-        if (normalizedPaymentStatus === PAYMENT_STATUS.PAID) {
-          mainStatus.completed += count;
-        } else {
+        if (normalizedPaymentStatus === PAYMENT_STATUS.UNPAID) {
           mainStatus.serviceDone += count;
         }
         return;
