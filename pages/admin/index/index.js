@@ -264,11 +264,15 @@ Page({
     const { status, filterType, filterValue, orderStatus, paymentStatus } = e.currentTarget.dataset;
     let url = '/pages/admin/order/list/list';
 
+    // 首页主状态卡片参数：与 ADMIN_ORDER_TABS 的 orderStatus/paymentStatus 对齐
     const params = [];
-    if (orderStatus !== undefined) {
+    const hasOrderStatus = orderStatus !== undefined && orderStatus !== null && orderStatus !== '';
+    const hasPaymentStatus = paymentStatus !== undefined && paymentStatus !== null && paymentStatus !== '';
+
+    if (hasOrderStatus) {
       params.push(`orderStatus=${orderStatus}`);
     }
-    if (paymentStatus !== undefined) {
+    if (hasPaymentStatus) {
       params.push(`paymentStatus=${paymentStatus}`);
     }
     if (params.length) {
