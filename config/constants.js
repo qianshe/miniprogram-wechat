@@ -259,7 +259,7 @@ const shouldShowPaymentStatusTag = (orderStatus) => {
 /**
  * 获取支付状态标签显示文案
  * 用户端与管理端采用不同口径：
- * - 用户端：待付 / 已付款
+ * - 用户端：待付款 / 已付款
  * - 管理端：待收款确认 / 已收款
  * @param {number} orderStatus - 订单流程状态码
  * @param {number} paymentStatus - 支付状态码

@@ -89,6 +89,100 @@ Page({
     enableBlur: true
   },
 
+  /**
+   * 重新计算分类与商品展示字段
+   * @param {Object} category 分类项
+   * @returns {Object}
+   */
+  rebuildCategoryPricing(category) {
+    const products = (category.products || []).map(product => {
+      const price = normalizePrice(product.price) || 0;
+      const quantity = Math.max(1, Number(product.quantity) || 1);
+      const subtotal = price * quantity;
+
+      return {
+        ...product,
+        price,
+        quantity,
+        displayPrice: price.toFixed(2),
+        subtotal,
+        displaySubtotal: subtotal.toFixed(2)
+      };
+    });
+
+    const categorySubtotal = products.reduce((sum, product) => {
+      return sum + (product.price * product.quantity);
+    }, 0);
+
+    return {
+      ...category,
+      products,
+      categorySubtotal,
+      displayCategorySubtotal: categorySubtotal.toFixed(2)
+    };
+  },
+
+  /**
+   * 统一刷新 items 与价格摘要
+   * @param {Array} items 分类数组
+   */
+  syncItemsAndPrices(items) {
+    const normalizedItems = (items || []).map(category => this.rebuildCategoryPricing(category));
+    const priceInfo = this.calculatePrices(normalizedItems, this.data.packageInfo);
+
+    this.setData({
+      items: normalizedItems,
+      ...priceInfo
+    });
+  },
+
+  /**
+   * 判断商品是否在当前套餐中重复
+   * @param {string} productId 商品ID
+   * @param {Object} exclude 排除位置
+   * @returns {boolean}
+   */
+  isDuplicateProductId(productId, exclude = {}) {
+    if (!productId) return false;
+
+    const {
+      categoryIndex: excludeCategoryIndex = -1,
+      productIndex: excludeProductIndex = -1
+    } = exclude;
+
+    const isDuplicate = (this.data.items || []).some((category, categoryIndex) => {
+      return (category.products || []).some((product, productIndex) => {
+        if (categoryIndex === excludeCategoryIndex && productIndex === excludeProductIndex) {
+          return false;
+        }
+        return product.productId === productId;
+      });
+    });
+
+    return isDuplicate;
+  },
+
+  /**
+   * 打开替换商品弹窗（支持替换/补位）
+   */
+  openProductReplacer({ categoryIndex, productIndex, categoryId, categoryName }) {
+    const currentItem = this.data.items[categoryIndex];
+    const currentProduct = productIndex >= 0 ? currentItem.products[productIndex] : null;
+
+    this.setData({
+      showReplacer: true,
+      currentItem,
+      currentItemIndex: categoryIndex,
+      currentProductIndex: productIndex,
+      currentCategoryName: categoryName,
+      selectedProductId: currentProduct ? currentProduct.productId : '',
+      availableProducts: [],
+      loadingProducts: true
+    });
+
+    this.fetchProductsByCategory(categoryId, currentProduct);
+  },
+
   onLoad(options) {
     // 检测设备性能，低端设备禁用毛玻璃效果
     this.checkDevicePerformance();
@@ -218,8 +312,7 @@ Page({
       return sum + categoryTotal;
     }, 0);
 
-    const priceDiff = itemsTotal - defaultTotal;
-    const totalPrice = baseDiscountPrice + priceDiff;
+    const totalPrice = itemsTotal + (baseDiscountPrice - defaultTotal);
     const savedAmount = originalPrice - totalPrice;
 
     return {
@@ -229,7 +322,7 @@ Page({
       displayTotalPrice: totalPrice.toFixed(2),  // 已经是"元"
       displayOriginalPrice: originalPrice.toFixed(2),  // 已经是"元"
       displaySavedAmount: savedAmount.toFixed(2),  // 已经是"元"
-      hasSaved: savedAmount > 0
+      hasSaved: false
     };
   },
 
@@ -251,23 +344,7 @@ Page({
       return;
     }
 
-    // Recalculate product subtotal（单位：元）
-    product.subtotal = product.price * product.quantity;
-    product.displaySubtotal = product.subtotal.toFixed(2);  // 已经是"元"
-
-    // Recalculate category subtotal（单位：元）
-    category.categorySubtotal = category.products.reduce((sum, p) => {
-      return sum + (p.price * p.quantity);
-    }, 0);
-    category.displayCategorySubtotal = category.categorySubtotal.toFixed(2);  // 已经是"元"
-
-    // Recalculate total prices
-    const priceInfo = this.calculatePrices(items, this.data.packageInfo);
-
-    this.setData({
-      items,
-      ...priceInfo
-    });
+    this.syncItemsAndPrices(items);
   },
 
   /**
@@ -276,22 +353,48 @@ Page({
    */
   onSelectProduct(e) {
     const { categoryIndex, productIndex, categoryId, categoryName } = e.currentTarget.dataset;
-    const currentItem = this.data.items[categoryIndex];
-    const currentProduct = currentItem.products[productIndex];
-
-    this.setData({
-      showReplacer: true,
-      currentItem,
-      currentItemIndex: categoryIndex,
-      currentProductIndex: productIndex,
-      currentCategoryName: categoryName,
-      selectedProductId: currentProduct.productId,
-      availableProducts: [],
-      loadingProducts: true
+    this.openProductReplacer({
+      categoryIndex,
+      productIndex,
+      categoryId,
+      categoryName
     });
+  },
 
-    // Fetch products by category
-    this.fetchProductsByCategory(categoryId, currentProduct);
+  /**
+   * 分类删空后的补位入口
+   */
+  onSelectProductForEmpty(e) {
+    const { categoryIndex, categoryId, categoryName } = e.currentTarget.dataset;
+    this.openProductReplacer({
+      categoryIndex,
+      productIndex: -1,
+      categoryId,
+      categoryName
+    });
+  },
+
+  /**
+   * 删除分类中的商品
+   */
+  onDeleteProduct(e) {
+    const { categoryIndex, productIndex } = e.currentTarget.dataset;
+    const updatedItems = [...this.data.items];
+    const category = updatedItems[categoryIndex];
+
+    if (!category || !Array.isArray(category.products)) {
+      return;
+    }
+
+    category.products = [...category.products];
+    category.products.splice(productIndex, 1);
+
+    this.syncItemsAndPrices(updatedItems);
+
+    wx.showToast({
+      title: '已删除商品',
+      icon: 'none'
+    });
   },
 
   /**
@@ -339,6 +442,7 @@ Page({
       // Calculate price difference for each product
       // 注意：后端返回的 product.price 是"元"，currentProduct.price 也是"元"（已在loadPackageDetail中转换）
       const currentPriceYuan = currentProduct ? currentProduct.price : 0;
+      const { currentItemIndex, currentProductIndex } = this.data;
       const processedProducts = products.map(product => {
         // product.price 是"元"（云函数已转换）
         const productPriceYuan = product.price || 0;
@@ -353,11 +457,18 @@ Page({
           priceDiffText = '0';
         }
 
+        const isDuplicate = this.isDuplicateProductId(product._id, {
+          categoryIndex: currentItemIndex,
+          productIndex: currentProductIndex
+        });
+
         return {
           ...product,
           displayPrice: productPriceYuan.toFixed(2),
           priceDiff: priceDiff,  // 保持"元"单位
-          priceDiffText
+          priceDiffText,
+          isDisabled: isDuplicate,
+          disabledReason: isDuplicate ? '该商品已在套餐中，不能重复选择' : ''
         };
       });
 
@@ -384,6 +495,15 @@ Page({
    */
   onSelectReplacement(e) {
     const { product } = e.currentTarget.dataset;
+
+    if (product.isDisabled) {
+      wx.showToast({
+        title: product.disabledReason || '该商品已在套餐中，不能重复选择',
+        icon: 'none'
+      });
+      return;
+    }
+
     this.setData({
       selectedProductId: product._id
     });
@@ -394,10 +514,12 @@ Page({
    */
   onConfirmReplace() {
     const { selectedProductId, currentItemIndex, currentProductIndex, availableProducts, items, currentItem } = this.data;
-    const currentProduct = currentItem.products[currentProductIndex];
+    const currentProduct = currentItem && currentProductIndex >= 0
+      ? currentItem.products[currentProductIndex]
+      : null;
 
     // Check if selection changed
-    if (!selectedProductId || selectedProductId === currentProduct.productId) {
+    if (!selectedProductId || (currentProduct && selectedProductId === currentProduct.productId)) {
       this.onCloseReplacer();
       return;
     }
@@ -412,44 +534,58 @@ Page({
       return;
     }
 
+    if (newProduct.isDisabled || this.isDuplicateProductId(newProduct._id, {
+      categoryIndex: currentItemIndex,
+      productIndex: currentProductIndex
+    })) {
+      wx.showToast({
+        title: '该商品已在套餐中，不能重复选择',
+        icon: 'none'
+      });
+      return;
+    }
+
     // Update the item with new product
     const updatedItems = [...items];
     const category = updatedItems[currentItemIndex];
-    const oldProduct = category.products[currentProductIndex];
+    const unitPrice = normalizePrice(newProduct.price) || 0;
 
-    // Update the product in the products array
-    // 注意：newProduct.price 已经是"元"（云函数已转换）
-    category.products[currentProductIndex] = {
-      ...oldProduct,
-      productId: newProduct._id,
-      productName: newProduct.name,
-      price: newProduct.price,  // 已经是"元"
-      imageUrl: newProduct.imageUrl,
-      displayPrice: newProduct.price.toFixed(2),  // 已经是"元"
-      subtotal: newProduct.price * oldProduct.quantity,
-      displaySubtotal: (newProduct.price * oldProduct.quantity).toFixed(2),  // 已经是"元"
-      isCustomized: true
-    };
+    if (currentProductIndex >= 0) {
+      const oldProduct = category.products[currentProductIndex];
+      const replacementProduct = {
+        ...oldProduct,
+        productId: newProduct._id,
+        productName: newProduct.name,
+        price: unitPrice,
+        imageUrl: newProduct.imageUrl,
+        displayPrice: unitPrice.toFixed(2),
+        subtotal: unitPrice * oldProduct.quantity,
+        displaySubtotal: (unitPrice * oldProduct.quantity).toFixed(2),
+        isCustomized: true
+      };
+      category.products.splice(currentProductIndex, 1, replacementProduct);
+    } else {
+      category.products = [...(category.products || [])];
+      category.products.push({
+        productId: newProduct._id,
+        productName: newProduct.name,
+        price: unitPrice,
+        imageUrl: newProduct.imageUrl,
+        quantity: 1,
+        displayPrice: unitPrice.toFixed(2),
+        subtotal: unitPrice,
+        displaySubtotal: unitPrice.toFixed(2),
+        isCustomized: true
+      });
+    }
 
-    // Recalculate category subtotal（单位：元）
-    category.categorySubtotal = category.products.reduce((sum, p) => {
-      return sum + (p.price * p.quantity);
-    }, 0);
-    category.displayCategorySubtotal = category.categorySubtotal.toFixed(2);  // 已经是"元"
-
-    // Recalculate prices
-    const priceInfo = this.calculatePrices(updatedItems, this.data.packageInfo);
-
-    this.setData({
-      items: updatedItems,
-      ...priceInfo
-    });
+    this.syncItemsAndPrices(updatedItems);
 
     // Close popup and show feedback
     this.onCloseReplacer();
 
     wx.showToast({
-      title: '已替换商品',
+      title: currentProductIndex >= 0 ? '已替换商品' : '已添加商品',
       icon: 'success'
     });
   },

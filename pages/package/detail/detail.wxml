@@ -79,8 +79,18 @@
                   </view>
                   <text class="product-price">{{product.displayPrice}}/件</text>
                 </view>
-                <view class="change-btn">
-                  <text class="change-text">更换</text>
+                <view class="product-actions">
+                  <view class="change-btn">
+                    <text class="change-text">更换</text>
+                  </view>
+                  <view
+                    class="delete-btn"
+                    catchtap="onDeleteProduct"
+                    data-category-index="{{categoryIndex}}"
+                    data-product-index="{{productIndex}}"
+                  >
+                    <text class="delete-text">删除</text>
+                  </view>
                 </view>
               </view>
 
@@ -116,6 +126,19 @@
                 <text class="subtotal-value">{{product.displaySubtotal}}</text>
               </view>
             </view>
+
+            <view class="empty-category-slot" wx:if="{{category.products.length === 0}}">
+              <text class="empty-slot-text">该分类暂无商品，可重新选择</text>
+              <view
+                class="empty-slot-btn"
+                bindtap="onSelectProductForEmpty"
+                data-category-index="{{categoryIndex}}"
+                data-category-id="{{category.categoryId}}"
+                data-category-name="{{category.categoryName}}"
+              >
+                <text class="empty-slot-btn-text">重新选择商品</text>
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -127,7 +150,7 @@
         <text class="summary-label">套餐原价</text>
         <text class="summary-value original">{{displayOriginalPrice}}</text>
       </view>
-      <view class="summary-row" wx:if="{{hasSaved}}">
+      <view class="summary-row" wx:if="{{false}}">
         <text class="summary-label">优惠金额</text>
         <text class="summary-value saved">-{{displaySavedAmount}}</text>
       </view>
@@ -194,7 +217,7 @@
         <scroll-view class="products-scroll" scroll-y="true">
           <view class="products-list">
             <view
-              class="product-option {{item._id === selectedProductId ? 'selected' : ''}}"
+              class="product-option {{item._id === selectedProductId ? 'selected' : ''}} {{item.isDisabled ? 'disabled' : ''}}"
               wx:for="{{availableProducts}}"
               wx:key="_id"
               bindtap="onSelectReplacement"
@@ -214,6 +237,9 @@
                 </view>
                 <text class="option-price">{{item.displayPrice}}</text>
               </view>
+              <view class="option-disabled-tag" wx:if="{{item.isDisabled}}">
+                <text class="option-disabled-text">已选中</text>
+              </view>
               <view class="option-check" wx:if="{{item._id === selectedProductId}}">
                 <text class="check-icon">v</text>
               </view>
@@ -230,7 +256,7 @@
       <!-- Confirm Button -->
       <view class="popup-footer" wx:if="{{!loadingProducts && availableProducts.length > 0}}">
         <view
-          class="replace-btn {{selectedProductId && currentItem && currentProductIndex >= 0 && selectedProductId !== currentItem.products[currentProductIndex].productId ? '' : 'disabled'}}"
+          class="replace-btn {{selectedProductId && (currentProductIndex < 0 || (currentItem && currentProductIndex >= 0 && selectedProductId !== currentItem.products[currentProductIndex].productId)) ? '' : 'disabled'}}"
           bindtap="onConfirmReplace"
         >
           <text class="replace-btn-text">确认替换</text>
