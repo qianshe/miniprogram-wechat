@@ -8,6 +8,9 @@ const packageApi = require('../../../api/package.js');
 const productApi = require('../../../api/product.js');
 const { normalizePrice } = require('../../../utils/util.js');
 
+const SWIPE_DELETE_WIDTH = 150;
+const SWIPE_OPEN_THRESHOLD = SWIPE_DELETE_WIDTH / 2;
+
 // 默认图片路径
 const DEFAULT_PACKAGE_IMAGE = 'https://tdesign.gtimg.com/mobile/demos/example1.png';
 const DEFAULT_PRODUCT_IMAGE = 'https://tdesign.gtimg.com/mobile/demos/example1.png';
@@ -84,6 +87,13 @@ Page({
     currentCategoryName: '',
     availableProducts: [],
     selectedProductId: '',
+
+    // Swipe delete state
+    swipeStartX: 0,
+    swipeStartY: 0,
+    swipeStartTranslateX: 0,
+    swipeActiveRowKey: '',
+    swipeOpenRowKey: '',
 
     // 性能优化：低端设备禁用毛玻璃效果
     enableBlur: true
@@ -166,6 +176,8 @@ Page({
    * 打开替换商品弹窗（支持替换/补位）
    */
   openProductReplacer({ categoryIndex, productIndex, categoryId, categoryName }) {
+    this.closeOpenedSwipeRow();
+
     const currentItem = this.data.items[categoryIndex];
     const currentProduct = productIndex >= 0 ? currentItem.products[productIndex] : null;
 
@@ -375,25 +387,186 @@ Page({
   },
 
   /**
+   * 生成商品行唯一 key
+   */
+  buildSwipeRowKey(categoryIndex, productIndex) {
+    return `${categoryIndex}-${productIndex}`;
+  },
+
+  /**
+   * 关闭当前已展开的左滑行
+   */
+  closeOpenedSwipeRow(excludeRowKey = '') {
+    const { swipeOpenRowKey, items } = this.data;
+    if (!swipeOpenRowKey || swipeOpenRowKey === excludeRowKey) {
+      return;
+    }
+
+    const [openCategoryIndex, openProductIndex] = swipeOpenRowKey.split('-').map(Number);
+    const openProduct = items[openCategoryIndex]?.products?.[openProductIndex];
+
+    if (!openProduct) {
+      this.setData({ swipeOpenRowKey: '' });
+      return;
+    }
+
+    this.setData({
+      [`items[${openCategoryIndex}].products[${openProductIndex}].swipeTranslateX`]: 0,
+      [`items[${openCategoryIndex}].products[${openProductIndex}].swipeIsTouchMove`]: false,
+      swipeOpenRowKey: ''
+    });
+  },
+
+  /**
+   * 重置指定行左滑状态
+   */
+  resetSwipeRow(categoryIndex, productIndex) {
+    const safeCategoryIndex = Number(categoryIndex);
+    const safeProductIndex = Number(productIndex);
+    const rowKey = this.buildSwipeRowKey(safeCategoryIndex, safeProductIndex);
+    const updates = {
+      [`items[${safeCategoryIndex}].products[${safeProductIndex}].swipeTranslateX`]: 0,
+      [`items[${safeCategoryIndex}].products[${safeProductIndex}].swipeIsTouchMove`]: false
+    };
+
+    if (this.data.swipeOpenRowKey === rowKey) {
+      updates.swipeOpenRowKey = '';
+    }
+    if (this.data.swipeActiveRowKey === rowKey) {
+      updates.swipeActiveRowKey = '';
+    }
+
+    this.setData(updates);
+  },
+
+  /**
+   * 左滑手势开始
+   */
+  onProductTouchStart(e) {
+    const { categoryIndex, productIndex } = e.currentTarget.dataset;
+    const safeCategoryIndex = Number(categoryIndex);
+    const safeProductIndex = Number(productIndex);
+    const product = this.data.items[safeCategoryIndex]?.products?.[safeProductIndex];
+
+    if (!product || !e.touches || !e.touches.length) {
+      return;
+    }
+
+    const rowKey = this.buildSwipeRowKey(safeCategoryIndex, safeProductIndex);
+    this.closeOpenedSwipeRow(rowKey);
+
+    this.setData({
+      swipeStartX: e.touches[0].clientX,
+      swipeStartY: e.touches[0].clientY,
+      swipeStartTranslateX: Number(product.swipeTranslateX) || 0,
+      swipeActiveRowKey: rowKey
+    });
+  },
+
+  /**
+   * 左滑手势中
+   */
+  onProductTouchMove(e) {
+    const { categoryIndex, productIndex } = e.currentTarget.dataset;
+    const safeCategoryIndex = Number(categoryIndex);
+    const safeProductIndex = Number(productIndex);
+    const rowKey = this.buildSwipeRowKey(safeCategoryIndex, safeProductIndex);
+
+    if (this.data.swipeActiveRowKey !== rowKey || !e.touches || !e.touches.length) {
+      return;
+    }
+
+    const deltaX = e.touches[0].clientX - this.data.swipeStartX;
+    const deltaY = e.touches[0].clientY - this.data.swipeStartY;
+
+    if (Math.abs(deltaY) > Math.abs(deltaX) || Math.abs(deltaX) < 6) {
+      return;
+    }
+
+    const startTranslateX = Number(this.data.swipeStartTranslateX) || 0;
+    const translateX = Math.max(-SWIPE_DELETE_WIDTH, Math.min(0, startTranslateX + deltaX));
+
+    this.setData({
+      [`items[${safeCategoryIndex}].products[${safeProductIndex}].swipeTranslateX`]: translateX,
+      [`items[${safeCategoryIndex}].products[${safeProductIndex}].swipeIsTouchMove`]: true
+    });
+  },
+
+  /**
+   * 左滑手势结束
+   */
+  onProductTouchEnd(e) {
+    const { categoryIndex, productIndex } = e.currentTarget.dataset;
+    const safeCategoryIndex = Number(categoryIndex);
+    const safeProductIndex = Number(productIndex);
+    const rowKey = this.buildSwipeRowKey(safeCategoryIndex, safeProductIndex);
+
+    if (this.data.swipeActiveRowKey && this.data.swipeActiveRowKey !== rowKey) {
+      return;
+    }
+
+    const product = this.data.items[safeCategoryIndex]?.products?.[safeProductIndex];
+    if (!product) {
+      return;
+    }
+
+    const translateX = Number(product.swipeTranslateX) || 0;
+    const shouldOpen = translateX <= -SWIPE_OPEN_THRESHOLD;
+    const updates = {
+      [`items[${safeCategoryIndex}].products[${safeProductIndex}].swipeTranslateX`]: shouldOpen ? -SWIPE_DELETE_WIDTH : 0,
+      [`items[${safeCategoryIndex}].products[${safeProductIndex}].swipeIsTouchMove`]: false,
+      swipeActiveRowKey: ''
+    };
+
+    if (shouldOpen) {
+      updates.swipeOpenRowKey = rowKey;
+    } else if (this.data.swipeOpenRowKey === rowKey) {
+      updates.swipeOpenRowKey = '';
+    }
+
+    this.setData(updates);
+  },
+
+  /**
    * 删除分类中的商品
    */
   onDeleteProduct(e) {
     const { categoryIndex, productIndex } = e.currentTarget.dataset;
-    const updatedItems = [...this.data.items];
-    const category = updatedItems[categoryIndex];
+    const safeCategoryIndex = Number(categoryIndex);
+    const safeProductIndex = Number(productIndex);
 
-    if (!category || !Array.isArray(category.products)) {
-      return;
-    }
+    wx.showModal({
+      title: '确认删除',
+      content: '确认删除该商品吗？',
+      confirmColor: '#cf674d',
+      success: (res) => {
+        if (!res.confirm) {
+          this.resetSwipeRow(safeCategoryIndex, safeProductIndex);
+          return;
+        }
 
-    category.products = [...category.products];
-    category.products.splice(productIndex, 1);
+        const updatedItems = [...this.data.items];
+        const category = updatedItems[safeCategoryIndex];
 
-    this.syncItemsAndPrices(updatedItems);
+        if (!category || !Array.isArray(category.products)) {
+          return;
+        }
 
-    wx.showToast({
-      title: '已删除商品',
-      icon: 'none'
+        category.products = [...category.products];
+        category.products.splice(safeProductIndex, 1);
+
+        this.setData({
+          swipeOpenRowKey: '',
+          swipeActiveRowKey: '',
+          swipeStartTranslateX: 0
+        });
+        this.syncItemsAndPrices(updatedItems);
+
+        wx.showToast({
+          title: '已删除商品',
+          icon: 'none'
+        });
+      }
     });
   },
 

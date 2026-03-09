@@ -88,6 +88,23 @@ function createFallbackGeocodeResult({ latitude, longitude, locationName, locati
   };
 }
 
+function createForwardGeocodeFallbackResult({ province, city, district, detail, locationName, locationAddress, addressText } = {}) {
+  const normalizedAddressText = normalizeLocationName(addressText);
+  const normalizedLocationAddress = normalizeLocationName(locationAddress) || normalizedAddressText;
+  return {
+    province: normalizeLocationName(province),
+    city: normalizeLocationName(city),
+    district: normalizeLocationName(district),
+    detail: normalizeLocationName(detail),
+    locationName: normalizeLocationName(locationName),
+    locationAddress: normalizedLocationAddress,
+    latitude: null,
+    longitude: null,
+    hasCoordinates: false,
+    source: 'fallback'
+  };
+}
+
 function mapTencentReverseGeocodeResponse(payload = {}, fallback = {}) {
   const result = payload.result || {};
   const addressComponent = result.address_component || {};
@@ -119,6 +136,41 @@ function mapTencentReverseGeocodeResponse(payload = {}, fallback = {}) {
     latitude: normalizeCoordinate(fallback.latitude),
     longitude: normalizeCoordinate(fallback.longitude),
     hasStructuredRegion: Boolean(province && city && district),
+    source: 'tencent'
+  };
+}
+
+function mapTencentForwardGeocodeResponse(payload = {}, fallback = {}) {
+  const result = payload.result || {};
+  const location = result.location || {};
+  const adInfo = result.ad_info || {};
+
+  const latitude = normalizeCoordinate(location.lat !== undefined ? location.lat : location.latitude);
+  const longitude = normalizeCoordinate(location.lng !== undefined ? location.lng : location.longitude);
+
+  const province = normalizeLocationName(fallback.province) || normalizeLocationName(adInfo.province);
+  const city = normalizeLocationName(fallback.city) || normalizeLocationName(adInfo.city);
+  const district = normalizeLocationName(fallback.district) || normalizeLocationName(adInfo.district);
+  const detail = normalizeLocationName(fallback.detail)
+    || normalizeLocationName(result.address)
+    || normalizeLocationName(fallback.locationAddress);
+  const locationName = normalizeLocationName(fallback.locationName)
+    || normalizeLocationName(result.title)
+    || normalizeLocationName(result.address);
+  const locationAddress = normalizeLocationName(fallback.locationAddress)
+    || normalizeLocationName(result.address)
+    || normalizeLocationName(result.title);
+
+  return {
+    province,
+    city,
+    district,
+    detail,
+    locationName,
+    locationAddress,
+    latitude,
+    longitude,
+    hasCoordinates: latitude !== null && longitude !== null,
     source: 'tencent'
   };
 }
@@ -441,6 +493,102 @@ async function reverseGeocodeLocation(data, context, logger) {
   }
 }
 
+async function geocodeAddress(data, context, logger) {
+  const province = normalizeLocationName(data && data.province);
+  const city = normalizeLocationName(data && data.city);
+  const district = normalizeLocationName(data && data.district);
+  const detail = normalizeLocationName(data && data.detail);
+  const locationName = normalizeLocationName(data && data.locationName);
+  const locationAddress = normalizeLocationName(data && data.locationAddress);
+  const addressText = normalizeLocationName(data && data.addressText)
+    || normalizeLocationName(`${province}${city}${district}${detail}`)
+    || locationAddress
+    || locationName;
+
+  if (!addressText) {
+    return paramError('地址信息不能为空');
+  }
+
+  const fallbackResult = createForwardGeocodeFallbackResult({
+    province,
+    city,
+    district,
+    detail,
+    locationName,
+    locationAddress,
+    addressText
+  });
+
+  const key = resolveTencentMapKey();
+  if (!key) {
+    logger.warn('Tencent map key missing for geocode address');
+    return success(
+      {
+        ...fallbackResult,
+        geocodeStatus: 'missing_key'
+      },
+      '地址地理编码未配置，请先补充地图坐标'
+    );
+  }
+
+  const requestUrl = new URL('https://apis.map.qq.com/ws/geocoder/v1/');
+  requestUrl.searchParams.set('address', addressText);
+  requestUrl.searchParams.set('key', key);
+
+  try {
+    const payload = await requestTencentJson(requestUrl.toString(), 8000);
+    const statusCode = Number(payload && payload.status);
+
+    if (statusCode !== 0) {
+      logger.warn('Geocode address returned non-zero status', {
+        statusCode,
+        message: payload && payload.message,
+        addressText
+      });
+      return success(
+        {
+          ...fallbackResult,
+          geocodeStatus: 'service_error',
+          geocodeCode: statusCode,
+          geocodeMessage: normalizeLocationName(payload && payload.message)
+        },
+        '地址地理编码失败，请检查地址后重试'
+      );
+    }
+
+    const mapped = mapTencentForwardGeocodeResponse(payload, fallbackResult);
+    if (!mapped.hasCoordinates) {
+      return success(
+        {
+          ...mapped,
+          geocodeStatus: 'partial'
+        },
+        '地址地理编码未返回坐标，请补充地图选点'
+      );
+    }
+
+    return success(
+      {
+        ...mapped,
+        geocodeStatus: 'ok'
+      },
+      '地址地理编码成功'
+    );
+  } catch (requestError) {
+    logger.error('Geocode address request failed', requestError, {
+      addressText
+    });
+    return success(
+      {
+        ...fallbackResult,
+        geocodeStatus: 'request_failed',
+        geocodeMessage: normalizeLocationName(requestError && requestError.message)
+      },
+      '地址地理编码请求失败，请稍后重试'
+    );
+  }
+}
+
 // ============ 购物车管理 ============
 
 async function getCartList(data, context, logger) {
@@ -641,6 +789,8 @@ const handler = async (event, context, logger) => {
       return await setDefaultAddress(data, context, logger);
     case 'reverseGeocodeLocation':
       return await reverseGeocodeLocation(data, context, logger);
+    case 'geocodeAddress':
+      return await geocodeAddress(data, context, logger);
 
     // 购物车管理
     case 'getCartList':

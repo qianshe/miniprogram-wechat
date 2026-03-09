@@ -165,48 +165,82 @@
   padding: 16rpx 24rpx;
 }
 
-/* Product Item - 单个商品卡片 */
-.product-item {
-  padding: 16rpx 0;
+/* Product Swipe Wrapper - 左滑容器 */
+.product-swipe-wrapper {
+  position: relative;
+  overflow: hidden;
   border-bottom: 1rpx solid var(--package-border, #efe7dc);
 }
 
-.product-item:last-child {
+.product-swipe-wrapper:last-child {
   border-bottom: none;
+}
+
+.product-delete-action {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 150rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #ffffff;
+  background: #cf674d;
+  z-index: 1;
+}
+
+/* Product Item - 单个商品卡片 */
+.product-item {
+  position: relative;
+  z-index: 2;
+  background: var(--card-bg, #fcfbf8);
+  padding: 12rpx 0;
+  transition: transform 0.28s ease;
 }
 
 .product-item.customized {
   background: linear-gradient(135deg, rgba(184, 134, 92, 0.05) 0%, rgba(201, 168, 108, 0.03) 100%);
   border-radius: 12rpx;
-  padding: 16rpx;
-  margin: 8rpx 0;
+  padding: 12rpx;
+  margin: 6rpx 0;
+}
+
+.product-item.touch-move {
+  transition: none;
 }
 
 /* Product Info */
 .product-info {
   display: flex;
-  align-items: center;
-  padding-bottom: 16rpx;
-  margin-bottom: 12rpx;
+  align-items: flex-start;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 .product-image {
-  width: 100rpx;
-  height: 100rpx;
+  width: 80rpx;
+  height: 80rpx;
   border-radius: var(--package-item-radius, 16rpx);
   background: #f3efe8;
-  margin-right: 16rpx;
+  margin-right: 12rpx;
 }
 
 .product-details {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 0;
 }
 
 /* Product Name Row - 商品名称行 */
 .product-name-row {
   display: flex;
   align-items: center;
-  margin-bottom: 6rpx;
+  margin-bottom: 4rpx;
 }
 
 .product-name {
@@ -220,6 +254,25 @@
 .product-price {
   font-size: 22rpx;
   color: var(--text-sub);
+}
+
+.product-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.product-price-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.product-subtotal {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--primary-color);
 }
 
 /* Customized Badge - 已定制标签 */
@@ -238,33 +291,21 @@
 }
 
 .change-btn {
-  padding: 12rpx 24rpx;
+  padding: 8rpx 18rpx;
   background: var(--package-accent-light, #f5efe3);
-  border-radius: 24rpx;
+  border-radius: 20rpx;
 }
 
 .product-actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10rpx;
+  align-items: center;
+  margin-left: 8rpx;
+  align-self: flex-start;
 }
 
 .change-text {
-  font-size: 24rpx;
-  color: var(--primary-color);
-  font-weight: 500;
-}
-
-.delete-btn {
-  padding: 10rpx 24rpx;
-  background: rgba(207, 103, 77, 0.12);
-  border-radius: 24rpx;
-}
-
-.delete-text {
   font-size: 22rpx;
-  color: #cf674d;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
@@ -316,6 +357,24 @@
   display: flex;
   align-items: center;
   gap: 16rpx;
+}
+
+.quantity-control.inline {
+  gap: 10rpx;
+}
+
+.quantity-control.inline .qty-btn {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.quantity-control.inline .qty-icon {
+  font-size: 24rpx;
+}
+
+.quantity-control.inline .qty-value {
+  font-size: 24rpx;
+  min-width: 32rpx;
 }
 
 .qty-btn {
@@ -433,7 +492,6 @@
 }
 
 .summary-value.original {
-  text-decoration: line-through;
   color: var(--text-sub);
 }
 

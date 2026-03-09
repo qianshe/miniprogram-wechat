@@ -73,11 +73,23 @@ const reverseGeocodeLocation = (data = {}, options = {}) => {
   })
 }
 
+/**
+ * 地址地理编码（结构化地址 -> 坐标）
+ */
+const geocodeAddress = (data = {}, options = {}) => {
+  return call(FUNCTION_NAME, 'geocodeAddress', data, {
+    showLoading: false,
+    showError: false,
+    ...options
+  })
+}
+
 module.exports = {
   getList,
   add,
   update,
   remove,
   setDefault,
-  reverseGeocodeLocation
+  reverseGeocodeLocation,
+  geocodeAddress
 }

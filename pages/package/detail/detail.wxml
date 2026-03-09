@@ -49,81 +49,86 @@
 
           <!-- Products List - 遍历该分类下的所有商品 -->
           <view class="products-container">
-            <view 
-              class="product-item {{product.isCustomized ? 'customized' : ''}}"
+            <view
+              class="product-swipe-wrapper"
               wx:for="{{category.products}}"
               wx:for-index="productIndex"
               wx:for-item="product"
               wx:key="productId"
             >
-              <!-- Product Info -->
-              <view 
-                class="product-info" 
-                bindtap="onSelectProduct" 
-                data-category-index="{{categoryIndex}}" 
-                data-product-index="{{productIndex}}" 
-                data-category-id="{{category.categoryId}}" 
-                data-category-name="{{category.categoryName}}"
+              <view
+                class="product-delete-action"
+                catchtap="onDeleteProduct"
+                data-category-index="{{categoryIndex}}"
+                data-product-index="{{productIndex}}"
               >
-                <image 
-                  class="product-image" 
-                  src="{{product.imageUrl}}" 
-                  mode="aspectFill"
-                />
-                <view class="product-details">
-                  <view class="product-name-row">
-                    <text class="product-name">{{product.productName}}</text>
-                    <view class="customized-badge" wx:if="{{product.isCustomized}}">
-                      <text class="customized-badge-text">已定制</text>
+                删除
+              </view>
+
+              <view
+                class="product-item {{product.isCustomized ? 'customized' : ''}} {{product.swipeIsTouchMove ? 'touch-move' : ''}}"
+                style="transform: translateX({{product.swipeTranslateX || 0}}rpx)"
+                data-category-index="{{categoryIndex}}"
+                data-product-index="{{productIndex}}"
+                bindtouchstart="onProductTouchStart"
+                bindtouchmove="onProductTouchMove"
+                bindtouchend="onProductTouchEnd"
+              >
+                <!-- Product Info -->
+                <view
+                  class="product-info"
+                  bindtap="onSelectProduct"
+                  data-category-index="{{categoryIndex}}"
+                  data-product-index="{{productIndex}}"
+                  data-category-id="{{category.categoryId}}"
+                  data-category-name="{{category.categoryName}}"
+                >
+                  <image
+                    class="product-image"
+                    src="{{product.imageUrl}}"
+                    mode="aspectFill"
+                  />
+                  <view class="product-details">
+                    <view class="product-name-row">
+                      <text class="product-name">{{product.productName}}</text>
+                      <view class="customized-badge" wx:if="{{product.isCustomized}}">
+                        <text class="customized-badge-text">已定制</text>
+                      </view>
+                    </view>
+                    <view class="product-meta-row">
+                      <view class="product-price-stack">
+                        <text class="product-price">{{product.displayPrice}}/件</text>
+                        <text class="product-subtotal">小计 ¥{{product.displaySubtotal}}</text>
+                      </view>
+                      <view class="quantity-control inline">
+                        <view
+                          class="qty-btn {{product.quantity <= 1 ? 'disabled' : ''}}"
+                          bindtap="onQuantityChange"
+                          data-category-index="{{categoryIndex}}"
+                          data-product-index="{{productIndex}}"
+                          data-action="decrease"
+                        >
+                          <text class="qty-icon">-</text>
+                        </view>
+                        <text class="qty-value">{{product.quantity}}</text>
+                        <view
+                          class="qty-btn"
+                          bindtap="onQuantityChange"
+                          data-category-index="{{categoryIndex}}"
+                          data-product-index="{{productIndex}}"
+                          data-action="increase"
+                        >
+                          <text class="qty-icon">+</text>
+                        </view>
+                      </view>
                     </view>
                   </view>
-                  <text class="product-price">{{product.displayPrice}}/件</text>
-                </view>
-                <view class="product-actions">
-                  <view class="change-btn">
-                    <text class="change-text">更换</text>
-                  </view>
-                  <view
-                    class="delete-btn"
-                    catchtap="onDeleteProduct"
-                    data-category-index="{{categoryIndex}}"
-                    data-product-index="{{productIndex}}"
-                  >
-                    <text class="delete-text">删除</text>
+                  <view class="product-actions">
+                    <view class="change-btn">
+                      <text class="change-text">更换</text>
+                    </view>
                   </view>
                 </view>
-              </view>
-
-              <!-- Quantity Control -->
-              <view class="quantity-row">
-                <text class="quantity-label">数量</text>
-                <view class="quantity-control">
-                  <view 
-                    class="qty-btn {{product.quantity <= 1 ? 'disabled' : ''}}"
-                    bindtap="onQuantityChange"
-                    data-category-index="{{categoryIndex}}"
-                    data-product-index="{{productIndex}}"
-                    data-action="decrease"
-                  >
-                    <text class="qty-icon">-</text>
-                  </view>
-                  <text class="qty-value">{{product.quantity}}</text>
-                  <view 
-                    class="qty-btn"
-                    bindtap="onQuantityChange"
-                    data-category-index="{{categoryIndex}}"
-                    data-product-index="{{productIndex}}"
-                    data-action="increase"
-                  >
-                    <text class="qty-icon">+</text>
-                  </view>
-                </view>
-              </view>
-
-              <!-- Product Subtotal -->
-              <view class="product-subtotal-row">
-                <text class="subtotal-label">商品小计</text>
-                <text class="subtotal-value">{{product.displaySubtotal}}</text>
               </view>
             </view>
 
