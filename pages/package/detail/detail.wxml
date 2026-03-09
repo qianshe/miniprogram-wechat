@@ -88,7 +88,7 @@
                     src="{{product.imageUrl}}"
                     mode="aspectFill"
                   />
-                  <view class="product-details">
+                  <view class="product-details compact">
                     <view class="product-name-row">
                       <text class="product-name">{{product.productName}}</text>
                       <view class="customized-badge" wx:if="{{product.isCustomized}}">
@@ -96,7 +96,7 @@
                       </view>
                     </view>
                     <view class="product-meta-row">
-                      <view class="product-price-stack">
+                      <view class="product-price-stack inline">
                         <text class="product-price">{{product.displayPrice}}/件</text>
                         <text class="product-subtotal">小计 ¥{{product.displaySubtotal}}</text>
                       </view>
@@ -123,8 +123,8 @@
                       </view>
                     </view>
                   </view>
-                  <view class="product-actions">
-                    <view class="change-btn">
+                  <view class="product-actions compact">
+                    <view class="change-btn compact">
                       <text class="change-text">更换</text>
                     </view>
                   </view>
