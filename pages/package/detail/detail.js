@@ -124,9 +124,12 @@ Page({
       return sum + (product.price * product.quantity);
     }, 0);
 
+    const isCustomized = products.some(product => product.isCustomized);
+
     return {
       ...category,
       products,
+      isCustomized,
       categorySubtotal,
       displayCategorySubtotal: categorySubtotal.toFixed(2)
     };
@@ -138,7 +141,7 @@ Page({
    */
   syncItemsAndPrices(items) {
     const normalizedItems = (items || []).map(category => this.rebuildCategoryPricing(category));
-    const priceInfo = this.calculatePrices(normalizedItems, this.data.packageInfo);
+    const priceInfo = this.calculatePrices(normalizedItems);
 
     this.setData({
       items: normalizedItems,
@@ -237,7 +240,6 @@ Page({
 
       // 标准化套餐价格（可能是"分"或"元"）
       packageInfo.price = normalizePrice(packageInfo.price);
-      packageInfo.discountPrice = normalizePrice(packageInfo.discountPrice);
 
       // Initialize items with products - 新的多商品结构
       // 使用 normalizePrice 统一处理价格单位
@@ -270,7 +272,7 @@ Page({
       });
 
       // Calculate prices
-      const priceInfo = this.calculatePrices(items, packageInfo);
+      const priceInfo = this.calculatePrices(items);
 
       this.setData({
         packageInfo,
@@ -298,7 +300,7 @@ Page({
    * Calculate total prices - 支持多商品结构
    * 注意：所有价格单位都是"元"（通过 normalizePrice 统一转换）
    */
-  calculatePrices(items, packageInfo) {
+  calculatePrices(items) {
     // Calculate total from all products in all categories（单位：元）
     const itemsTotal = items.reduce((sum, item) => {
       const categoryTotal = item.products.reduce((catSum, product) => {
@@ -307,34 +309,16 @@ Page({
       return sum + categoryTotal;
     }, 0);
 
-    // packageInfo.price 和 discountPrice 已经在 loadPackageDetail 中通过 normalizePrice 转换为"元"
-    // 如果没有设置套餐原价，使用商品总价作为原价（使用 ?? 处理 null 值）
-    const originalPrice = packageInfo.price ?? itemsTotal;
-    // 如果没有设置优惠价，使用商品总价（即无优惠）（使用 ?? 处理 null 值，避免 NaN）
-    const baseDiscountPrice = packageInfo.discountPrice ?? itemsTotal;
-
-    // Calculate the difference from default items - 使用标准化后的模板
-    // 注意：模板中的价格需要通过 normalizePrice 转换
-    const normalizedDefault = normalizeTemplate(packageInfo.template);
-    const defaultTotal = normalizedDefault.reduce((sum, item) => {
-      const categoryTotal = item.products.reduce((catSum, product) => {
-        const priceInYuan = normalizePrice(product.price) || 0;
-        return catSum + (priceInYuan * product.quantity);
-      }, 0);
-      return sum + categoryTotal;
-    }, 0);
-
-    const totalPrice = itemsTotal + (baseDiscountPrice - defaultTotal);
-    const savedAmount = originalPrice - totalPrice;
+    const totalPrice = itemsTotal;
+    const originalPrice = itemsTotal;
+    const savedAmount = 0;
 
     return {
       totalPrice,
       originalPrice,
       savedAmount,
       displayTotalPrice: totalPrice.toFixed(2),  // 已经是"元"
-      displayOriginalPrice: originalPrice.toFixed(2),  // 已经是"元"
-      displaySavedAmount: savedAmount.toFixed(2),  // 已经是"元"
-      hasSaved: false
+      displayOriginalPrice: originalPrice.toFixed(2)  // 已经是"元"
     };
   },
 
@@ -357,6 +341,13 @@ Page({
     }
 
     this.syncItemsAndPrices(items);
+  },
+
+  /**
+   * Absorb quantity tap to avoid bubbling to replacer
+   */
+  onQuantityTap() {
+    // Do nothing - prevent event propagation to product row
   },
 
   /**
@@ -734,7 +725,9 @@ Page({
         displayPrice: unitPrice.toFixed(2),
         subtotal: unitPrice * oldProduct.quantity,
         displaySubtotal: (unitPrice * oldProduct.quantity).toFixed(2),
-        isCustomized: true
+        isCustomized: true,
+        swipeTranslateX: 0,
+        swipeIsTouchMove: false
       };
       category.products.splice(currentProductIndex, 1, replacementProduct);
     } else {
@@ -748,10 +741,17 @@ Page({
         displayPrice: unitPrice.toFixed(2),
         subtotal: unitPrice,
         displaySubtotal: unitPrice.toFixed(2),
-        isCustomized: true
+        isCustomized: true,
+        swipeTranslateX: 0,
+        swipeIsTouchMove: false
       });
     }
 
+    this.setData({
+      swipeOpenRowKey: '',
+      swipeActiveRowKey: '',
+      swipeStartTranslateX: 0
+    });
     this.syncItemsAndPrices(updatedItems);
 
     // Close popup and show feedback
@@ -769,7 +769,7 @@ Page({
   onConfirm() {
     if (this.data.submitting) return;
 
-    const { packageInfo, items, totalPrice, originalPrice, savedAmount } = this.data;
+    const { packageInfo, items, totalPrice, originalPrice } = this.data;
 
     // Prepare order data with customization info - 新的多商品结构
     const orderData = {
@@ -798,7 +798,7 @@ Page({
       })),
       totalPrice: totalPrice,
       originalPrice: originalPrice,
-      savedAmount: savedAmount > 0 ? savedAmount : 0
+      savedAmount: 0
     };
 
     // Store in global data

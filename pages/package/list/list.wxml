@@ -31,9 +31,6 @@
             src="{{item.imageUrl}}" 
             mode="aspectFill"
           />
-          <view class="package-badge" wx:if="{{item.hasDiscount}}">
-            <text class="badge-text">优惠</text>
-          </view>
         </view>
 
         <!-- Card Body -->
@@ -50,8 +47,7 @@
           <!-- Price Section -->
           <view class="price-section">
             <c-price
-              price="{{item.discountPrice || item.price}}"
-              originalPrice="{{item.hasDiscount ? item.price : 0}}"
+              price="{{item.price}}"
               size="medium"
             />
           </view>

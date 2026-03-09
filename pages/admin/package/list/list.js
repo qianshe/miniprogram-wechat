@@ -84,8 +84,7 @@ Page({
         ...item,
         id: item._id || item.id,
         // 格式化价格显示（云函数返回的已是"元"）
-        priceDisplay: (item.price || 0).toFixed(2),
-        discountPriceDisplay: item.discountPrice ? item.discountPrice.toFixed(2) : null
+        priceDisplay: (item.price || 0).toFixed(2)
       }))
 
       this.setData({

@@ -32,7 +32,7 @@
       <view class="items-list">
         <!-- 遍历每个分类 -->
         <view
-          class="item-card"
+          class="item-card {{category.isCustomized ? 'customized' : ''}}"
           wx:for="{{items}}"
           wx:for-index="categoryIndex"
           wx:for-item="category"
@@ -66,7 +66,7 @@
               </view>
 
               <view
-                class="product-item {{product.isCustomized ? 'customized' : ''}} {{product.swipeIsTouchMove ? 'touch-move' : ''}}"
+                class="product-item {{product.swipeIsTouchMove ? 'touch-move' : ''}}"
                 style="transform: translateX({{product.swipeTranslateX || 0}}rpx)"
                 data-category-index="{{categoryIndex}}"
                 data-product-index="{{productIndex}}"
@@ -91,44 +91,55 @@
                   <view class="product-details compact">
                     <view class="product-name-row">
                       <text class="product-name">{{product.productName}}</text>
-                      <view class="customized-badge" wx:if="{{product.isCustomized}}">
-                        <text class="customized-badge-text">已定制</text>
-                      </view>
                     </view>
                     <view class="product-meta-row">
                       <view class="product-price-stack inline">
                         <text class="product-price">{{product.displayPrice}}/件</text>
                         <text class="product-subtotal">小计 ¥{{product.displaySubtotal}}</text>
                       </view>
-                      <view class="quantity-control inline">
-                        <view
-                          class="qty-btn {{product.quantity <= 1 ? 'disabled' : ''}}"
-                          bindtap="onQuantityChange"
-                          data-category-index="{{categoryIndex}}"
-                          data-product-index="{{productIndex}}"
-                          data-action="decrease"
-                        >
-                          <text class="qty-icon">-</text>
+                      <view class="product-meta-actions">
+                        <view class="quantity-control inline" catchtap="onQuantityTap">
+                          <view
+                            class="qty-btn {{product.quantity <= 1 ? 'disabled' : ''}}"
+                            bindtap="onQuantityChange"
+                            data-category-index="{{categoryIndex}}"
+                            data-product-index="{{productIndex}}"
+                            data-action="decrease"
+                          >
+                            <text class="qty-icon">-</text>
+                          </view>
+                          <text class="qty-value">{{product.quantity}}</text>
+                          <view
+                            class="qty-btn"
+                            bindtap="onQuantityChange"
+                            data-category-index="{{categoryIndex}}"
+                            data-product-index="{{productIndex}}"
+                            data-action="increase"
+                          >
+                            <text class="qty-icon">+</text>
+                          </view>
                         </view>
-                        <text class="qty-value">{{product.quantity}}</text>
-                        <view
-                          class="qty-btn"
-                          bindtap="onQuantityChange"
-                          data-category-index="{{categoryIndex}}"
-                          data-product-index="{{productIndex}}"
-                          data-action="increase"
-                        >
-                          <text class="qty-icon">+</text>
+                        <view class="product-actions compact">
+                          <view class="change-btn compact">
+                            <text class="change-text">更换</text>
+                          </view>
                         </view>
                       </view>
                     </view>
                   </view>
-                  <view class="product-actions compact">
-                    <view class="change-btn compact">
-                      <text class="change-text">更换</text>
-                    </view>
-                  </view>
                 </view>
+              </view>
+            </view>
+
+            <view class="category-add-slot" wx:if="{{category.products.length > 0}}">
+              <view
+                class="category-add-btn"
+                bindtap="onSelectProductForEmpty"
+                data-category-index="{{categoryIndex}}"
+                data-category-id="{{category.categoryId}}"
+                data-category-name="{{category.categoryName}}"
+              >
+                <text class="category-add-text">添加商品</text>
               </view>
             </view>
 
@@ -152,15 +163,11 @@
     <!-- Price Summary -->
     <view class="price-summary">
       <view class="summary-row">
-        <text class="summary-label">套餐原价</text>
+        <text class="summary-label">参考总价</text>
         <text class="summary-value original">{{displayOriginalPrice}}</text>
       </view>
-      <view class="summary-row" wx:if="{{false}}">
-        <text class="summary-label">优惠金额</text>
-        <text class="summary-value saved">-{{displaySavedAmount}}</text>
-      </view>
       <view class="summary-row total">
-        <text class="summary-label">应付金额</text>
+        <text class="summary-label">参考合计</text>
         <text class="summary-value total-price">{{displayTotalPrice}}</text>
       </view>
     </view>
@@ -172,7 +179,7 @@
   <!-- Bottom Action Bar -->
   <view class="bottom-bar {{enableBlur ? '' : 'no-blur'}}" wx:if="{{!loading}}">
     <view class="price-display">
-      <text class="price-label">合计</text>
+      <text class="price-label">参考合计</text>
       <view class="price-amount">
         <text class="currency">¥</text>
         <text class="amount">{{displayTotalPrice}}</text>

@@ -201,12 +201,6 @@
   transition: transform 0.28s ease;
 }
 
-.product-item.customized {
-  background: linear-gradient(135deg, rgba(184, 134, 92, 0.05) 0%, rgba(201, 168, 108, 0.03) 100%);
-  border-radius: 12rpx;
-  padding: 8rpx;
-  margin: 4rpx 0;
-}
 
 .product-item.touch-move {
   transition: none;
@@ -218,6 +212,7 @@
   align-items: center;
   padding-bottom: 0;
   margin-bottom: 0;
+  min-width: 0;
 }
 
 .product-image {
@@ -241,6 +236,7 @@
   display: flex;
   align-items: center;
   margin-bottom: 2rpx;
+  min-width: 0;
 }
 
 .product-name {
@@ -249,11 +245,16 @@
   color: var(--text-main);
   line-height: 1.3;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-price {
   font-size: 20rpx;
   color: var(--text-sub);
+  white-space: nowrap;
 }
 
 .product-meta-row {
@@ -261,6 +262,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 8rpx;
+  min-width: 0;
+}
+
+.product-meta-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8rpx;
+  flex-shrink: 0;
 }
 
 .product-price-stack {
@@ -274,12 +284,15 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8rpx;
+  flex: 1;
+  min-width: 0;
 }
 
 .product-subtotal {
   font-size: 20rpx;
   font-weight: 600;
   color: var(--primary-color);
+  white-space: nowrap;
 }
 
 /* Customized Badge - 已定制标签 */
@@ -306,13 +319,10 @@
 .product-actions {
   display: flex;
   align-items: center;
-  margin-left: 6rpx;
-  align-self: center;
+  flex-shrink: 0;
 }
 
-.product-actions.compact {
-  align-self: center;
-}
+/* align-self removed: alignment handled by .product-meta-actions */
 
 .change-btn.compact {
   padding: 6rpx 14rpx;
@@ -354,6 +364,27 @@
   font-weight: 500;
 }
 
+.category-add-slot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12rpx 0 6rpx;
+}
+
+.category-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10rpx 24rpx;
+  background: var(--package-accent-light, #f5efe3);
+  border-radius: 22rpx;
+}
+
+.category-add-text {
+  font-size: 22rpx;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
 /* Quantity Row */
 .quantity-row {
   display: flex;
@@ -376,6 +407,7 @@
 
 .quantity-control.inline {
   gap: 6rpx;
+  flex-shrink: 0;
 }
 
 .quantity-control.inline .qty-btn {

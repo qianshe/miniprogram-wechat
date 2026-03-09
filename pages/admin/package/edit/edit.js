@@ -11,8 +11,6 @@ Page({
       name: '',
       description: '',
       type: 'white', // 固定为白事类型
-      price: '',
-      discountPrice: '',
       imageUrl: '',
       status: 1,
       sort: 0,
@@ -31,9 +29,6 @@ Page({
     showProductModal: false,
     selectedProductId: '',
     categoryProducts: [],
-    // 价格显示
-    priceDisplay: '',
-    discountPriceDisplay: '',
     // 保存状态
     saving: false,
     // 套餐总价（动态计算）
@@ -210,16 +205,12 @@ Page({
           name: pkg.name || '',
           description: pkg.description || '',
           type: 'white', // 固定为白事类型
-          price: pkg.price ? pkg.price.toString() : '',
-          discountPrice: pkg.discountPrice ? pkg.discountPrice.toString() : '',
           imageUrl: imageUrl,
           status: pkg.status !== undefined ? pkg.status : 1,
           sort: pkg.sort || 0,
           template: template
         },
-        fileList: imageUrl ? [{ url: imageUrl }] : [],
-        priceDisplay: pkg.price ? pkg.price.toString() : '',
-        discountPriceDisplay: pkg.discountPrice ? pkg.discountPrice.toString() : ''
+        fileList: imageUrl ? [{ url: imageUrl }] : []
       })
 
       // 计算总价
@@ -310,27 +301,13 @@ Page({
       const totalFen = calculatedTotalPrice || this.calculateTotalPrice()
       const priceFen = totalFen
 
-      // 折扣价校验
-      let discountPriceFen = null
-      const discountPriceStr = String(formData.discountPrice || '').trim()
-      if (discountPriceStr) {
-        const parsedDiscountPrice = parseFloat(discountPriceStr)
-        if (isNaN(parsedDiscountPrice)) {
-          wx.hideLoading()
-          this.setData({ saving: false })
-          wx.showToast({ title: '请输入有效的折扣价', icon: 'none' })
-          return
-        }
-        discountPriceFen = Math.round(parsedDiscountPrice * 100)
-      }
-
       // 转换价格为分，使用新的模板格式
       const submitData = {
         name: formData.name,
         description: formData.description,
         type: formData.type,
         price: priceFen,
-        discountPrice: discountPriceFen,
+        discountPrice: null,
         imageUrl: formData.imageUrl,
         status: formData.status,
         sort: formData.sort,
@@ -379,23 +356,6 @@ Page({
     const field = e.currentTarget.dataset.field
     const value = e.detail.value
     this.setData({ [`formData.${field}`]: value })
-  },
-
-  // 价格输入变更处理（覆盖原有方法，支持 data-field）
-  onPriceChange(e) {
-    const field = e.currentTarget.dataset.field
-    const value = e.detail.value
-    if (field === 'price') {
-      this.setData({
-        'formData.price': value,
-        priceDisplay: value
-      })
-    } else if (field === 'discountPrice') {
-      this.setData({
-        'formData.discountPrice': value,
-        discountPriceDisplay: value
-      })
-    }
   },
 
   // 选择图片（WXML 绑定名称）

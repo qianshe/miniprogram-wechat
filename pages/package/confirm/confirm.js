@@ -19,8 +19,6 @@ Page({
     // Display prices
     displayOriginalPrice: '0.00',
     displayTotalPrice: '0.00',
-    displaySavedAmount: '0.00',
-    hasSaved: false,
     // Customization info
     hasCustomizedItems: false,
     customizedCount: 0,
@@ -167,23 +165,21 @@ Page({
     const customizedCount = customizedItems.length;
 
     // Calculate display prices (prices are already in yuan, no need to divide by 100)
-    const displayOriginalPrice = orderData.originalPrice.toFixed(2);
-    const displayTotalPrice = orderData.totalPrice.toFixed(2);
-    const displaySavedAmount = orderData.savedAmount.toFixed(2);
-    const hasSaved = orderData.savedAmount > 0;
+    const referenceOriginalPrice = Number(orderData.originalPrice || 0);
+    const referenceTotalPrice = Number(orderData.totalPrice || 0);
+    const displayOriginalPrice = referenceOriginalPrice.toFixed(2);
+    const displayTotalPrice = referenceTotalPrice.toFixed(2);
 
     this.setData({
       loading: false,
       packageInfo: orderData.packageInfo,
       packageId: orderData.packageId,
       items: flattenedItems,
-      originalPrice: orderData.originalPrice,
-      totalPrice: orderData.totalPrice,
-      savedAmount: orderData.savedAmount,
+      originalPrice: referenceOriginalPrice,
+      totalPrice: referenceTotalPrice,
+      savedAmount: 0,
       displayOriginalPrice,
       displayTotalPrice,
-      displaySavedAmount,
-      hasSaved,
       hasCustomizedItems,
       customizedCount
     });

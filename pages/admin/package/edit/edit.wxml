@@ -42,20 +42,6 @@
       <view class="price-display">{{calculatedTotalPrice / 100}}</view>
     </view>
 
-    <!-- 优惠价 -->
-    <view class="form-item">
-      <view class="form-label">优惠价(元)</view>
-      <t-input
-        value="{{discountPriceDisplay}}"
-        placeholder="请输入优惠价(可选)"
-        type="digit"
-        bind:change="onPriceChange"
-        data-field="discountPrice"
-        t-class="input-override"
-        t-class-input="input-control"
-      />
-    </view>
-
     <!-- 封面图片 -->
     <view class="form-item">
       <view class="form-label">封面图片</view>

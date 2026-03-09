@@ -110,15 +110,11 @@
       </view>
       <view class="price-breakdown">
         <view class="price-row">
-          <text class="price-label">套餐原价</text>
+          <text class="price-label">参考总价</text>
           <text class="price-value original">{{displayOriginalPrice}}</text>
         </view>
-        <view class="price-row" wx:if="{{hasSaved}}">
-          <text class="price-label">套餐优惠</text>
-          <text class="price-value saved">-{{displaySavedAmount}}</text>
-        </view>
         <view class="price-row total">
-          <text class="price-label">应付金额</text>
+          <text class="price-label">参考合计</text>
           <view class="price-value-wrap">
             <text class="currency">¥</text>
             <text class="price-value total-price">{{displayTotalPrice}}</text>
@@ -135,7 +131,7 @@
     <!-- Bottom Bar -->
     <view class="bottom-bar">
       <view class="bottom-left">
-        <text class="total-label">合计:</text>
+        <text class="total-label">参考合计:</text>
         <view class="total-amount">
           <text class="total-currency">¥</text>
           <text class="total-value">{{displayTotalPrice}}</text>

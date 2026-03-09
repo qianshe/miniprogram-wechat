@@ -62,9 +62,8 @@
           
           <view class="package-meta">
             <view class="package-price">
-              <text class="currency">¥</text>{{item.discountPriceDisplay || item.priceDisplay}}
+              <text class="currency">¥</text>{{item.priceDisplay}}
             </view>
-            <text class="original-price" wx:if="{{item.discountPriceDisplay && item.discountPriceDisplay !== item.priceDisplay}}">¥{{item.priceDisplay}}</text>
           </view>
           
           <view class="package-template-info" wx:if="{{item.template && item.template.length > 0}}">

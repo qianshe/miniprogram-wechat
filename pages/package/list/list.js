@@ -69,14 +69,9 @@ Page({
       // 使用 normalizePrice 统一处理价格单位
       const formattedPackages = list.map(pkg => {
         const priceInYuan = normalizePrice(pkg.price) || 0;
-        const discountPriceInYuan = normalizePrice(pkg.discountPrice);
         return {
           ...pkg,
           price: priceInYuan,
-          discountPrice: discountPriceInYuan,
-          displayPrice: (discountPriceInYuan || priceInYuan).toFixed(2),
-          displayOriginalPrice: priceInYuan.toFixed(2),
-          hasDiscount: discountPriceInYuan && discountPriceInYuan < priceInYuan,
           itemCount: pkg.template ? pkg.template.length : 0
         };
       });
