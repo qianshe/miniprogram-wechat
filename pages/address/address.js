@@ -160,7 +160,24 @@ Page({
           longitude: normalizeCoordinate(res.longitude)
         };
 
-        await this.applyLocationSelection(mapSelection);
+        let geocodeResult = {};
+        if (mapSelection.latitude !== null && mapSelection.longitude !== null) {
+          try {
+            geocodeResult = await addressApi.reverseGeocodeLocation({
+              latitude: mapSelection.latitude,
+              longitude: mapSelection.longitude,
+              locationName: mapSelection.locationName,
+              locationAddress: mapSelection.locationAddress
+            }, {
+              showLoading: false,
+              showError: false
+            });
+          } catch (error) {
+            console.warn('逆地理编码失败，回退手动地区选择:', error);
+          }
+        }
+
+        await this.applyLocationSelection(mapSelection, geocodeResult);
       },
       fail: (err) => {
         const errMsg = (err && err.errMsg) || '';
@@ -179,7 +196,7 @@ Page({
     });
   },
 
-  async applyLocationSelection(mapSelection = {}) {
+  async applyLocationSelection(mapSelection = {}, geocodeResult = {}) {
     const currentAddress = this.data.formData || {};
     const safeMapSelection = {
       ...mapSelection,
@@ -187,10 +204,12 @@ Page({
       longitude: normalizeCoordinate(mapSelection.longitude)
     };
 
-    let geocodeResult = {};
-    if (safeMapSelection.latitude !== null && safeMapSelection.longitude !== null) {
+    let resolvedGeocodeResult = geocodeResult || {};
+    const hasPrefetchedGeocode = resolvedGeocodeResult && Object.keys(resolvedGeocodeResult).length > 0;
+
+    if (!hasPrefetchedGeocode && safeMapSelection.latitude !== null && safeMapSelection.longitude !== null) {
       try {
-        geocodeResult = await addressApi.reverseGeocodeLocation({
+        resolvedGeocodeResult = await addressApi.reverseGeocodeLocation({
           latitude: safeMapSelection.latitude,
           longitude: safeMapSelection.longitude,
           locationName: safeMapSelection.locationName,
@@ -206,21 +225,26 @@ Page({
 
     const normalizedAddress = normalizeAddressFromLocation({
       mapSelection: safeMapSelection,
-      geocodeResult,
+      geocodeResult: resolvedGeocodeResult,
       currentAddress
     });
 
-    this.setData({
-      'formData.province': normalizedAddress.province,
-      'formData.city': normalizedAddress.city,
-      'formData.district': normalizedAddress.district,
-      'formData.region': normalizedAddress.region,
+    const nextFormData = {
       'formData.detail': normalizedAddress.detail,
       'formData.locationName': normalizedAddress.locationName,
       'formData.locationAddress': normalizedAddress.locationAddress,
       'formData.latitude': normalizedAddress.latitude,
       'formData.longitude': normalizedAddress.longitude
-    });
+    };
+
+    if (normalizedAddress.hasStructuredRegion) {
+      nextFormData['formData.province'] = normalizedAddress.province;
+      nextFormData['formData.city'] = normalizedAddress.city;
+      nextFormData['formData.district'] = normalizedAddress.district;
+      nextFormData['formData.region'] = normalizedAddress.region;
+    }
+
+    this.setData(nextFormData);
 
     wx.showToast({
       title: normalizedAddress.hasStructuredRegion
