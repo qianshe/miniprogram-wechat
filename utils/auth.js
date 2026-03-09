@@ -348,9 +348,12 @@ module.exports = {
         'refresh_token',
         'auth_expires',
         USER_INFO_KEY,
+        'isAdmin',
+        'adminInfo',
         LAST_ACTIVE_KEY,
         'auth_time',
-        'admin_session'
+        'admin_session',
+        SECURITY_KEY
       ];
 
       keysToRemove.forEach(key => {

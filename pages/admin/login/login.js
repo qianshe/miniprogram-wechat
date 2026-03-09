@@ -62,9 +62,8 @@ Page({
         isAdmin: true
       }
 
-      // 同步写入 userInfo，与用户端登录保持一致
-      wx.setStorageSync('userInfo', userInfoWithRole)
-      wx.setStorageSync('isAdmin', true)
+      // 统一走认证工具写入，确保安全戳/会话状态与守卫标准一致
+      auth.setAuth(userInfoWithRole)
       wx.setStorageSync('adminInfo', result.userInfo)
 
       const normalizedAccount = (adminAccount || '').trim()
@@ -73,9 +72,6 @@ Page({
       } else {
         wx.removeStorageSync('adminAccount')
       }
-
-      app.globalData.userInfo = userInfoWithRole
-      app.globalData.isAdmin = true
 
       wx.showToast({ title: '登录成功', icon: 'success' })
 

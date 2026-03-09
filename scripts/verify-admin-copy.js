@@ -15,22 +15,25 @@ const baselineLabel = '待付款';
 const targetLabel = '待沟通';
 const contents = files.map((f) => ({ file: f, text: read(f) }));
 
-const baselineHits = contents.filter(({ text }) => text.includes(baselineLabel)).map(({ file }) => file);
-const targetHits = contents.filter(({ text }) => text.includes(targetLabel)).map(({ file }) => file);
+// Check WXML files for any occurrence
+const wxmlFiles = contents.filter(({ file }) => file.endsWith('.wxml'));
+const baselineWxmlHits = wxmlFiles.filter(({ text }) => text.includes(baselineLabel)).length;
+const targetWxmlHits = wxmlFiles.filter(({ text }) => text.includes(targetLabel)).length;
 
+// Check constants.js for ADMIN_ORDER_TABS only (not user-side labels)
 const constants = contents.find((x) => x.file === 'config/constants.js').text;
 const hasBaselineTab = /name:\s*'待付款'/.test(constants);
 const hasTargetTab = /name:\s*'待沟通'/.test(constants);
 
-const baselineDetected = baselineHits.length === files.length && hasBaselineTab && !hasTargetTab;
-const targetDetected = targetHits.length >= 2 && hasTargetTab && baselineHits.length === 0;
+const baselineDetected = baselineWxmlHits === wxmlFiles.length && hasBaselineTab && !hasTargetTab;
+const targetDetected = targetWxmlHits === wxmlFiles.length && hasTargetTab && !hasBaselineTab;
 
 const ok = baselineDetected || targetDetected;
 const state = baselineDetected ? 'BASELINE' : targetDetected ? 'TARGET' : 'MIXED';
 
 console.log(`[verify-admin-copy] STATE=${state}`);
-console.log(`- baselineLabel(${baselineLabel}) hits: ${baselineHits.length}/${files.length}`);
-console.log(`- targetLabel(${targetLabel}) hits: ${targetHits.length}/${files.length}`);
+console.log(`- WXML baselineLabel(${baselineLabel}) hits: ${baselineWxmlHits}/${wxmlFiles.length}`);
+console.log(`- WXML targetLabel(${targetLabel}) hits: ${targetWxmlHits}/${wxmlFiles.length}`);
 console.log(`- constants baseline tab: ${hasBaselineTab}, target tab: ${hasTargetTab}`);
 
 if (!ok) {

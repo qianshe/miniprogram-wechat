@@ -3,11 +3,10 @@
  * 在管理端页面 onLoad 中调用，校验管理员身份
  */
 
-const checkAdminAccess = () => {
-  const isAdmin = wx.getStorageSync('isAdmin')
-  const userInfo = wx.getStorageSync('userInfo')
+const auth = require('../../../utils/auth.js')
 
-  if (isAdmin && userInfo && (userInfo.isAdmin === true || userInfo.role === 1)) {
+const checkAdminAccess = () => {
+  if (auth.hasValidAdminSession()) {
     return true
   }
 

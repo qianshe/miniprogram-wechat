@@ -1,5 +1,5 @@
 const { adminApi, callCloudFunction } = require('../../../../utils/api.js');
-const auth = require('../../../../utils/auth.js');
+const { checkAdminAccess } = require('../../common/adminGuard.js');
 const {
   getOrderStatusText,
   ORDER_STATUS,
@@ -38,7 +38,9 @@ Page({
 
   onLoad(options) {
     // 检查管理员权限
-    this.checkAdminPermission();
+    if (!this.checkAdminPermission()) {
+      return;
+    }
     
     // 处理从统计页面跳转过来的筛选参数
     if (options.orderStatus !== undefined || options.paymentStatus !== undefined) {
@@ -55,32 +57,7 @@ Page({
   },
 
   checkAdminPermission() {
-    if (!auth.checkAuth()) {
-      wx.showToast({
-        title: '请先登录',
-        icon: 'none'
-      });
-      setTimeout(() => {
-        wx.navigateTo({
-          url: '/pages/admin/login/login'
-        });
-      }, 1500);
-      return;
-    }
-
-    const userInfo = wx.getStorageSync('userInfo');
-    // 修复：role 是数字类型，1表示管理员；或者直接检查 isAdmin 字段
-    if (!userInfo || (userInfo.role !== 1 && !userInfo.isAdmin)) {
-      wx.showToast({
-        title: '无管理员权限',
-        icon: 'none'
-      });
-      setTimeout(() => {
-        wx.reLaunch({
-          url: '/pages/index_home/index_home'
-        });
-      }, 1500);
-    }
+    return checkAdminAccess();
   },
 
   // 标签页点击
