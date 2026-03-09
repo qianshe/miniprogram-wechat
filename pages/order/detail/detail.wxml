@@ -83,8 +83,18 @@
       <view class="info-item">
         <text class="label">服务地址</text>
         <view class="value-with-action">
-          <text class="value address">{{orderInfo.address}}</text>
+          <text class="value address">{{orderInfo.addressText}}</text>
+          <t-button
+            wx:if="{{isAdmin && orderInfo.address.latitude && orderInfo.address.longitude}}"
+            size="small"
+            theme="primary"
+            bindtap="handleAdminNavigate"
+          >导航</t-button>
           <t-button size="small" theme="default" bindtap="viewLocation" wx:if="{{orderInfo.latitude && orderInfo.longitude}}">查看</t-button>
+          <text
+            wx:if="{{isAdmin && (!orderInfo.address.latitude || !orderInfo.address.longitude)}}"
+            class="value"
+          >地址信息不完整，无法导航</text>
         </view>
       </view>
     </view>

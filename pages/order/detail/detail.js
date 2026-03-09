@@ -11,6 +11,7 @@ const {
   mapLegacyStatusToNew
 } = require('../../../config/constants.js');
 const { formatDate } = require('../../../utils/util.js');
+const navigationUtils = require('../../../utils/navigation.js');
 
 Page({
   data: {
@@ -73,10 +74,12 @@ Page({
       let contactName = orderData.contactName || '';
       let contactPhone = orderData.contactPhone || '';
       let addressStr = '';
+      const addressObj = (typeof orderData.address === 'object' && orderData.address !== null)
+        ? { ...orderData.address }
+        : {};
       
       // 如果contactName为空，尝试从address对象中提取
-      const addressObj = orderData.address;
-      if (typeof addressObj === 'object' && addressObj !== null) {
+      if (Object.keys(addressObj).length > 0) {
         // 从address对象中提取联系信息
         if (!contactName) {
           contactName = addressObj.userName || addressObj.name || '';
@@ -94,10 +97,30 @@ Page({
           const detail = addressObj.detailInfo || addressObj.detail || '';
           addressStr = `${province}${city}${county}${detail}`;
         }
-      } else if (typeof addressObj === 'string') {
+      } else if (typeof orderData.address === 'string') {
         // 地址已经是字符串格式
-        addressStr = addressObj;
+        addressStr = orderData.address;
       }
+
+      const normalizedLatitude = addressObj.latitude !== undefined ? addressObj.latitude : orderData.latitude;
+      const normalizedLongitude = addressObj.longitude !== undefined ? addressObj.longitude : orderData.longitude;
+      const normalizedLocationName = addressObj.locationName || addressObj.name || orderData.locationName || '';
+      const normalizedLocationAddress = addressObj.locationAddress
+        || addressObj.fullAddress
+        || addressStr
+        || (typeof orderData.address === 'string' ? orderData.address : '');
+
+      if (!addressStr) {
+        addressStr = normalizedLocationAddress;
+      }
+
+      const navigationAddress = {
+        ...addressObj,
+        latitude: normalizedLatitude,
+        longitude: normalizedLongitude,
+        locationName: normalizedLocationName,
+        locationAddress: normalizedLocationAddress
+      };
       
       // 判断是否已付款（兼容旧字段）
       const isPaid = !!orderData.payTime || (orderData.paymentMethod && orderData.paymentMethod !== 'not_paid');
@@ -159,7 +182,12 @@ Page({
         ...orderData,
         contactName: contactName,
         contactPhone: contactPhone,
-        address: addressStr,
+        address: navigationAddress,
+        addressText: addressStr,
+        latitude: normalizedLatitude,
+        longitude: normalizedLongitude,
+        locationName: normalizedLocationName,
+        locationAddress: normalizedLocationAddress,
         isPaid: isPaid,
         // 旧状态系统（兼容）
         statusText: statusInfo.text,
@@ -355,14 +383,95 @@ Page({
     });
   },
 
+  hasNavigationCoordinates(address = {}) {
+    const latitude = Number(address.latitude);
+    const longitude = Number(address.longitude);
+    return Number.isFinite(latitude) && Number.isFinite(longitude);
+  },
+
+  getOrderNavigationAddress() {
+    const orderDetail = this.data.orderInfo || {};
+    const baseAddress = (orderDetail.address && typeof orderDetail.address === 'object')
+      ? orderDetail.address
+      : {};
+
+    return {
+      ...baseAddress,
+      latitude: baseAddress.latitude !== undefined ? baseAddress.latitude : orderDetail.latitude,
+      longitude: baseAddress.longitude !== undefined ? baseAddress.longitude : orderDetail.longitude,
+      locationName: baseAddress.locationName || orderDetail.locationName || '订单地址',
+      locationAddress: baseAddress.locationAddress || orderDetail.addressText || ''
+    };
+  },
+
+  async handleAdminNavigate() {
+    if (!this.data.isAdmin) {
+      return;
+    }
+
+    const orderDetail = this.data.orderInfo || {};
+    const navigationAddress = this.getOrderNavigationAddress();
+
+    if (!this.hasNavigationCoordinates(navigationAddress)) {
+      wx.showToast({
+        title: '地址信息不完整，无法导航',
+        icon: 'none'
+      });
+      return;
+    }
+
+    wx.showLoading({ title: '正在打开地图...' });
+
+    try {
+      let result;
+      if (typeof navigationUtils.navigateToAddress === 'function') {
+        result = await navigationUtils.navigateToAddress({
+          address: orderDetail.address,
+          page: this
+        });
+      } else if (typeof navigationUtils.openAdminNavigation === 'function') {
+        result = await navigationUtils.openAdminNavigation({
+          address: orderDetail.address,
+          page: this
+        });
+      } else {
+        throw new Error('导航能力不可用');
+      }
+
+      if (result && result.success === false && result.fallbackReason === 'missing_coordinates') {
+        wx.showToast({
+          title: '地址信息不完整，无法导航',
+          icon: 'none'
+        });
+      }
+    } catch (error) {
+      const isMissingCoordinates = error && (
+        error.fallbackReason === 'missing_coordinates'
+        || error.code === 'NAV_MISSING_COORDINATES'
+        || error.code === 'NAV_MISSING_ADDRESS'
+      );
+
+      wx.showToast({
+        title: isMissingCoordinates ? '地址信息不完整，无法导航' : '打开导航失败，请稍后重试',
+        icon: 'none'
+      });
+    } finally {
+      wx.hideLoading();
+    }
+  },
+
   // 查看位置
   viewLocation() {
-    const { latitude, longitude, address, locationName } = this.data.orderInfo;
+    const { latitude, longitude, address, locationName, addressText, locationAddress } = this.data.orderInfo || {};
+    const addressName = typeof address === 'string'
+      ? address
+      : (addressText || locationAddress || (address && address.locationAddress) || '');
+
     if (latitude && longitude) {
       wx.openLocation({
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
-        name: locationName || address || '订单地址',
+        name: locationName || addressName || '订单地址',
         scale: 18
       });
     }

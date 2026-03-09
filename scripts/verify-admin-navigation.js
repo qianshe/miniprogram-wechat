@@ -10,6 +10,9 @@ const selectedCase = selectedCaseArg ? selectedCaseArg.split('=')[1] : '';
 
 const navigationUtil = read('utils/navigation.js');
 const addressApi = read('api/address.js');
+const orderDetailJs = read('pages/order/detail/detail.js');
+const orderDetailWxml = read('pages/order/detail/detail.wxml');
+const adminOrderListJs = read('pages/admin/order/list/list.js');
 
 const checks = {
   'open-map-app': {
@@ -25,7 +28,18 @@ const checks = {
       && /mapAppError\s*=/.test(navigationUtil),
     openLocationPathConstantDefined: /NAVIGATION_PATH_OPEN_LOCATION\s*=\s*'wx\.openLocation'/.test(navigationUtil)
   },
+  'order-detail-admin-entry': {
+    adminRoutePassesIsAdmin: /url:\s*`\/pages\/order\/detail\/detail\?orderNo=\$\{orderno\}&isAdmin=true`/.test(adminOrderListJs),
+    detailImportsNavigationHelper: /const navigationUtils = require\('\.\.\/\.\.\/\.\.\/utils\/navigation\.js'\);/.test(orderDetailJs),
+    adminButtonRoleAndCoordinateGate: /wx:if="\{\{isAdmin && orderInfo\.address\.latitude && orderInfo\.address\.longitude\}\}"/.test(orderDetailWxml),
+    adminButtonBindsNavigateHandler: /bindtap="handleAdminNavigate"/.test(orderDetailWxml),
+    handlerCallsNavigateToAddress: /navigationUtils\.navigateToAddress\(\{\s*address:\s*orderDetail\.address,\s*page:\s*this\s*\}\)/.test(orderDetailJs),
+    secondaryViewLocationKept: /bindtap="viewLocation"/.test(orderDetailWxml) && /viewLocation\(\)\s*\{[\s\S]*wx\.openLocation\(/.test(orderDetailJs)
+  },
   'missing-coordinates': {
+    fallbackTextVisibleForAdmin: /地址信息不完整，无法导航/.test(orderDetailWxml),
+    fallbackTextUsesCoordinateNegationGate: /wx:if="\{\{isAdmin && \(!orderInfo\.address\.latitude \|\| !orderInfo\.address\.longitude\)\}\}"/.test(orderDetailWxml),
+    handlerRejectsMissingCoordinatesEarly: /if \(!this\.hasNavigationCoordinates\(navigationAddress\)\)\s*\{[\s\S]*地址信息不完整，无法导航/.test(orderDetailJs),
     missingCoordinateGateExists: /if \(inputLatitude !== null && inputLongitude !== null\)/.test(navigationUtil),
     geocodeResolverExists: /resolveGeocodeAddress\(/.test(navigationUtil)
       && /geocodeAddress\(geocodeQuery/.test(navigationUtil),
@@ -35,8 +49,7 @@ const checks = {
 };
 
 const caseAliases = {
-  'order-detail-admin-entry': 'open-map-app',
-  'admin-navigation': 'open-map-app'
+  'admin-navigation': 'order-detail-admin-entry'
 };
 
 const normalizedCase = caseAliases[selectedCase] || selectedCase;
@@ -48,7 +61,7 @@ if (normalizedCase && !checks[normalizedCase]) {
 
 const casesToRun = normalizedCase
   ? [normalizedCase]
-  : ['open-map-app', 'fallback-open-location', 'missing-coordinates'];
+  : ['open-map-app', 'fallback-open-location', 'order-detail-admin-entry', 'missing-coordinates'];
 
 let allPassed = true;
 
@@ -67,7 +80,7 @@ const state = allPassed ? 'TARGET' : 'ERROR';
 console.log(`[verify-admin-navigation] STATE=${state}`);
 
 if (!allPassed) {
-  console.error('[verify-admin-navigation] FAIL: 管理端导航契约未覆盖主路径、回退路径和缺少坐标处理。');
+  console.error('[verify-admin-navigation] FAIL: 管理端导航契约未覆盖订单详情入口、主路径、回退路径或缺少坐标处理。');
   process.exit(1);
 }
 
