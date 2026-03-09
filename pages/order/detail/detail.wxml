@@ -85,7 +85,7 @@
         <view class="value-with-action">
           <text class="value address">{{orderInfo.addressText}}</text>
           <t-button
-            wx:if="{{isAdmin && orderInfo.address.latitude && orderInfo.address.longitude}}"
+            wx:if="{{isAdmin && hasValidCoordinates}}"
             size="small"
             theme="primary"
             bindtap="handleAdminNavigate"

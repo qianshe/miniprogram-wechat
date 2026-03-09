@@ -27,6 +27,7 @@ Page({
     showConfirmPaymentBtn: false,
     showCancelBtn: false,
     showNoActionTip: false,
+    hasValidCoordinates: false,
     // 用户端按钮显示控制（双字段系统）
     showPayBtn: false,
     showUserCancelBtn: false,
@@ -121,6 +122,7 @@ Page({
         locationName: normalizedLocationName,
         locationAddress: normalizedLocationAddress
       };
+      const hasValidCoordinates = this.hasNavigationCoordinates(navigationAddress);
       
       // 判断是否已付款（兼容旧字段）
       const isPaid = !!orderData.payTime || (orderData.paymentMethod && orderData.paymentMethod !== 'not_paid');
@@ -244,6 +246,7 @@ Page({
       this.setData({
         orderInfo,
         loading: false,
+        hasValidCoordinates,
         ...btnStates
       });
     } catch (err) {
