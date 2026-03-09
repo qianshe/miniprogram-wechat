@@ -62,10 +62,22 @@ const setDefault = (addressId, options = {}) => {
   })
 }
 
+/**
+ * 逆地理编码（云函数代理，前端不暴露地图 key）
+ */
+const reverseGeocodeLocation = (data = {}, options = {}) => {
+  return call(FUNCTION_NAME, 'reverseGeocodeLocation', data, {
+    showLoading: false,
+    showError: false,
+    ...options
+  })
+}
+
 module.exports = {
   getList,
   add,
   update,
   remove,
-  setDefault
+  setDefault,
+  reverseGeocodeLocation
 }

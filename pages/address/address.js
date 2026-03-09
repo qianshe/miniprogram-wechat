@@ -1,6 +1,7 @@
 // pages/address/address.js
 const addressApi = require('../../api/address.js');
 const auth = require('../../utils/auth.js');
+const { normalizeAddressFromLocation } = require('../../utils/addressSelection.js');
 
 const STORAGE_KEY = 'addressList';
 
@@ -151,29 +152,15 @@ Page({
 
   chooseLocation() {
     wx.chooseLocation({
-      success: (res) => {
-        const locationName = (res.name || res.address || '').trim();
-        const locationAddress = (res.address || '').trim();
-        const latitude = normalizeCoordinate(res.latitude);
-        const longitude = normalizeCoordinate(res.longitude);
-        const currentDetail = ((this.data.formData && this.data.formData.detail) || '').trim();
-        const updates = {
-          'formData.locationName': locationName,
-          'formData.locationAddress': locationAddress,
-          'formData.latitude': latitude,
-          'formData.longitude': longitude
+      success: async (res) => {
+        const mapSelection = {
+          locationName: (res.name || res.address || '').trim(),
+          locationAddress: (res.address || '').trim(),
+          latitude: normalizeCoordinate(res.latitude),
+          longitude: normalizeCoordinate(res.longitude)
         };
 
-        if (!currentDetail && locationAddress) {
-          updates['formData.detail'] = locationAddress;
-        }
-
-        this.setData(updates);
-
-        wx.showToast({
-          title: locationName ? '已选择地图位置' : '已获取坐标',
-          icon: 'none'
-        });
+        await this.applyLocationSelection(mapSelection);
       },
       fail: (err) => {
         const errMsg = (err && err.errMsg) || '';
@@ -189,6 +176,57 @@ Page({
 
         wx.showToast({ title: '地图选点失败，可手动填写地址', icon: 'none' });
       }
+    });
+  },
+
+  async applyLocationSelection(mapSelection = {}) {
+    const currentAddress = this.data.formData || {};
+    const safeMapSelection = {
+      ...mapSelection,
+      latitude: normalizeCoordinate(mapSelection.latitude),
+      longitude: normalizeCoordinate(mapSelection.longitude)
+    };
+
+    let geocodeResult = {};
+    if (safeMapSelection.latitude !== null && safeMapSelection.longitude !== null) {
+      try {
+        geocodeResult = await addressApi.reverseGeocodeLocation({
+          latitude: safeMapSelection.latitude,
+          longitude: safeMapSelection.longitude,
+          locationName: safeMapSelection.locationName,
+          locationAddress: safeMapSelection.locationAddress
+        }, {
+          showLoading: false,
+          showError: false
+        });
+      } catch (error) {
+        console.warn('逆地理编码失败，回退手动地区选择:', error);
+      }
+    }
+
+    const normalizedAddress = normalizeAddressFromLocation({
+      mapSelection: safeMapSelection,
+      geocodeResult,
+      currentAddress
+    });
+
+    this.setData({
+      'formData.province': normalizedAddress.province,
+      'formData.city': normalizedAddress.city,
+      'formData.district': normalizedAddress.district,
+      'formData.region': normalizedAddress.region,
+      'formData.detail': normalizedAddress.detail,
+      'formData.locationName': normalizedAddress.locationName,
+      'formData.locationAddress': normalizedAddress.locationAddress,
+      'formData.latitude': normalizedAddress.latitude,
+      'formData.longitude': normalizedAddress.longitude
+    });
+
+    wx.showToast({
+      title: normalizedAddress.hasStructuredRegion
+        ? '已自动补全所在地区'
+        : (normalizedAddress.locationName ? '已选地图位置，请手动选择所在地区' : '已获取坐标，请手动选择所在地区'),
+      icon: 'none'
     });
   },
 
