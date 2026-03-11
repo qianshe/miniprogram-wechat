@@ -7,6 +7,8 @@
 const packageApi = require('../../../api/package.js');
 const productApi = require('../../../api/product.js');
 const { normalizePrice } = require('../../../utils/util.js');
+const auth = require('../../../utils/auth.js');
+const { requireLogin } = require('../../../utils/authGuard.js');
 
 const SWIPE_DELETE_WIDTH = 150;
 const SWIPE_OPEN_THRESHOLD = SWIPE_DELETE_WIDTH / 2;
@@ -272,7 +274,7 @@ Page({
       });
 
       // Calculate prices
-      const priceInfo = this.calculatePrices(items);
+      const priceInfo = this.calculatePrices(items, packageInfo.price);
 
       this.setData({
         packageInfo,
@@ -300,7 +302,7 @@ Page({
    * Calculate total prices - 支持多商品结构
    * 注意：所有价格单位都是"元"（通过 normalizePrice 统一转换）
    */
-  calculatePrices(items) {
+  calculatePrices(items, packageOriginalPrice = this.data.packageInfo?.price) {
     // Calculate total from all products in all categories（单位：元）
     const itemsTotal = items.reduce((sum, item) => {
       const categoryTotal = item.products.reduce((catSum, product) => {
@@ -310,7 +312,7 @@ Page({
     }, 0);
 
     const totalPrice = itemsTotal;
-    const originalPrice = itemsTotal;
+    const originalPrice = normalizePrice(packageOriginalPrice) || 0;
     const savedAmount = 0;
 
     return {
@@ -766,8 +768,15 @@ Page({
   /**
    * Navigate to confirm page - 支持多商品结构
    */
-  onConfirm() {
+  async onConfirm() {
     if (this.data.submitting) return;
+
+    // 登录校验
+    const ok = await requireLogin({
+      reason: '提交意向单前需要登录，用于保存地址并便于商家联系你',
+      onCancel: 'stay'
+    });
+    if (!ok) return;
 
     const { packageInfo, items, totalPrice, originalPrice } = this.data;
 
@@ -779,7 +788,8 @@ Page({
         name: packageInfo.name,
         description: packageInfo.description,
         type: packageInfo.type,
-        imageUrl: packageInfo.imageUrl
+        imageUrl: packageInfo.imageUrl,
+        price: packageInfo.price
       },
       // 新结构：每个分类包含多个商品
       items: items.map(category => ({

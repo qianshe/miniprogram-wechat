@@ -1,5 +1,6 @@
 const { api } = require('../../../utils/api.js');
 const auth = require('../../../utils/auth.js');
+const authGuard = require('../../../utils/authGuard.js');
 const validation = require('../../../utils/validation.js');
 
 Page({
@@ -184,8 +185,13 @@ Page({
       return;
     }
 
-    if (!auth.checkAuth()) {
-      auth.loginWithPrompt();
+    // 统一登录校验
+    const isLoggedIn = await authGuard.requireLogin({
+      reason: '创建订单需要登录',
+      onCancel: 'stay'
+    });
+
+    if (!isLoggedIn) {
       return;
     }
 

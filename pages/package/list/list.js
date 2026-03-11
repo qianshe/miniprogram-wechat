@@ -6,6 +6,7 @@
 const packageApi = require('../../../api/package.js');
 const { normalizePrice } = require('../../../utils/util.js');
 const { SYSTEM_TYPE, CURRENT_SYSTEM_TYPE } = require('../../../config/constants.js');
+const { buildThumbUrl } = require('../../../utils/imageThumb.js');
 
 const PAGE_SIZE = 10;
 
@@ -61,6 +62,8 @@ Page({
         type: CURRENT_SYSTEM_TYPE || SYSTEM_TYPE.WHITE,
         page,
         size: PAGE_SIZE
+      }, {
+        showLoading: false
       });
       
       const { records: list = [], total = 0 } = result || {};
@@ -71,6 +74,10 @@ Page({
         const priceInYuan = normalizePrice(pkg.price) || 0;
         return {
           ...pkg,
+          thumbSrc: buildThumbUrl(pkg.imageUrl || pkg.coverImage || pkg.thumb || pkg.images?.[0] || '', {
+            size: 320,
+            quality: 75
+          }) || pkg.imageUrl || pkg.coverImage || pkg.thumb || pkg.images?.[0] || '',
           price: priceInYuan,
           itemCount: pkg.template ? pkg.template.length : 0
         };

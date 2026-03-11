@@ -218,11 +218,63 @@ Page({
             });
 
             if (res.tempFilePaths && res.tempFilePaths.length > 0) {
-                await this.uploadImages(res.tempFilePaths);
+                const croppedFilePaths = await this.prepareSquareImages(res.tempFilePaths);
+                if (croppedFilePaths.length > 0) {
+                    await this.uploadImages(croppedFilePaths);
+                }
             }
         } catch (error) {
             console.log('用户取消选择或发生错误', error);
         }
+    },
+
+    cropImageToSquare(filePath) {
+        return new Promise((resolve, reject) => {
+            if (typeof wx.cropImage !== 'function') {
+                resolve(filePath);
+                return;
+            }
+
+            wx.cropImage({
+                src: filePath,
+                cropScale: '1:1',
+                success: (res) => {
+                    resolve(res.tempFilePath || filePath);
+                },
+                fail: (error) => {
+                    if (error && (error.errMsg || '').includes('cancel')) {
+                        resolve('');
+                        return;
+                    }
+                    reject(error);
+                }
+            });
+        });
+    },
+
+    async prepareSquareImages(tempFilePaths = []) {
+        if (!Array.isArray(tempFilePaths) || tempFilePaths.length === 0) {
+            return [];
+        }
+
+        if (typeof wx.cropImage !== 'function') {
+            wx.showToast({ title: '请尽量选择方形图片', icon: 'none' });
+            return tempFilePaths;
+        }
+
+        const croppedFilePaths = [];
+        for (const filePath of tempFilePaths) {
+            const croppedFilePath = await this.cropImageToSquare(filePath);
+            if (croppedFilePath) {
+                croppedFilePaths.push(croppedFilePath);
+            }
+        }
+
+        if (croppedFilePaths.length === 0) {
+            wx.showToast({ title: '已取消裁剪', icon: 'none' });
+        }
+
+        return croppedFilePaths;
     },
 
     async uploadImages(tempFilePaths = []) {

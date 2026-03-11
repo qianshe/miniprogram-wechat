@@ -163,7 +163,7 @@
     <!-- Price Summary -->
     <view class="price-summary">
       <view class="summary-row">
-        <text class="summary-label">参考总价</text>
+        <text class="summary-label">套餐原价</text>
         <text class="summary-value original">{{displayOriginalPrice}}</text>
       </view>
       <view class="summary-row total">

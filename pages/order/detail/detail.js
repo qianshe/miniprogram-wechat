@@ -13,6 +13,8 @@ const {
 const { formatDate } = require('../../../utils/util.js');
 const navigationUtils = require('../../../utils/navigation.js');
 
+const PENDING_CART_CLEANUP_KEY = 'pendingCartCleanupOrders';
+
 Page({
   data: {
     orderNo: '',
@@ -57,6 +59,61 @@ Page({
   onShow() {
     if (this.data.orderNo) {
       this.loadOrderDetail();
+    }
+  },
+
+  getPendingCartCleanupOrders() {
+    const orders = wx.getStorageSync(PENDING_CART_CLEANUP_KEY);
+    return Array.isArray(orders) ? orders : [];
+  },
+
+  savePendingCartCleanupOrders(orders = []) {
+    wx.setStorageSync(PENDING_CART_CLEANUP_KEY, orders);
+  },
+
+  shouldCleanupCartForOrder(orderStatus) {
+    return orderStatus >= ORDER_FLOW_STATUS.PROCESSING && orderStatus !== ORDER_FLOW_STATUS.CANCELLED;
+  },
+
+  async syncRemainingCartItems(remainingCartItems = []) {
+    if (!auth.checkAuth()) {
+      return;
+    }
+
+    try {
+      await cartApi.sync(remainingCartItems);
+    } catch (error) {
+      console.error('同步已确认订单后的购物车失败:', error);
+    }
+  },
+
+  async cleanupPendingCartItems(orderNo, itemIds = []) {
+    if (!orderNo || !Array.isArray(itemIds) || itemIds.length === 0) {
+      return;
+    }
+
+    const cartItems = wx.getStorageSync('cartListLocal') || [];
+    const remainingCartItems = cartItems.filter(item => !itemIds.includes(item.id));
+    wx.setStorageSync('cartListLocal', remainingCartItems);
+    await this.syncRemainingCartItems(remainingCartItems);
+  },
+
+  async handlePendingCartCleanup(orderNo, orderStatus) {
+    const pendingOrders = this.getPendingCartCleanupOrders();
+    const targetOrder = pendingOrders.find(item => item && item.orderNo === orderNo);
+
+    if (!targetOrder) {
+      return;
+    }
+
+    if (this.shouldCleanupCartForOrder(orderStatus)) {
+      await this.cleanupPendingCartItems(orderNo, targetOrder.itemIds || []);
+      this.savePendingCartCleanupOrders(pendingOrders.filter(item => item && item.orderNo !== orderNo));
+      return;
+    }
+
+    if (orderStatus === ORDER_FLOW_STATUS.CANCELLED) {
+      this.savePendingCartCleanupOrders(pendingOrders.filter(item => item && item.orderNo !== orderNo));
     }
   },
 
@@ -179,6 +236,8 @@ Page({
       }
       
       const order = orderData;
+
+      await this.handlePendingCartCleanup(orderData.orderNo || this.data.orderNo, orderStatus);
 
       const orderInfo = {
         ...orderData,

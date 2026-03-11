@@ -265,7 +265,6 @@
 .original-price {
   font-size: 24rpx;
   color: #bbb;
-  text-decoration: line-through;
 }
 
 .product-stats {

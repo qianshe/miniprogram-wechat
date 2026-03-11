@@ -1,6 +1,7 @@
 // pages/cart/cart.js
 const cartApi = require('../../api/cart.js');
 const auth = require('../../utils/auth.js');
+const authGuard = require('../../utils/authGuard.js');
 const { debounce } = require('../../utils/util.js');
 const { buildThumbUrl } = require('../../utils/imageThumb.js');
 const { handlePageShow } = require('../../utils/tabbar.js');
@@ -283,9 +284,14 @@ Page({
     });
   },
 
-  checkout() {
-    if (!auth.checkAuth()) {
-      auth.loginWithPrompt();
+  async checkout() {
+    // 统一登录校验
+    const isLoggedIn = await authGuard.requireLogin({
+      reason: '提交订单需要登录',
+      onCancel: 'stay'
+    });
+
+    if (!isLoggedIn) {
       return;
     }
 
@@ -296,12 +302,6 @@ Page({
     }
 
     wx.showLoading({ title: '正在处理订单' });
-
-    const remainingItems = this.data.cartItems.filter(item => !item.selected);
-    this.setData({ cartItems: remainingItems }, () => {
-      this.saveToLocal();
-      this.syncToCloud();
-    });
 
     wx.navigateTo({
       url: '../order/confirm/confirm',

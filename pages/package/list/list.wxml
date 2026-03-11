@@ -28,8 +28,9 @@
         <view class="card-header">
           <image 
             class="package-image" 
-            src="{{item.imageUrl}}" 
+            src="{{item.thumbSrc || item.imageUrl}}" 
             mode="aspectFill"
+            lazy-load="{{true}}"
           />
         </view>
 

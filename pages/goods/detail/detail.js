@@ -1,5 +1,6 @@
 const { api } = require('../../../utils/api.js');
 const auth = require('../../../utils/auth.js');
+const authGuard = require('../../../utils/authGuard.js');
 const cartApi = require('../../../api/cart.js');
 
 const DEFAULT_PRODUCT_IMAGE = 'https://tdesign.gtimg.com/mobile/demos/example1.png';
@@ -16,18 +17,45 @@ Page({
   },
 
   onLoad(options) {
-    const { id, systemType, categoryName } = options;
+    const { id, systemType } = options;
     const themeType = systemType || 'white';
-    const decodedCategoryName = categoryName ? decodeURIComponent(categoryName) : '';
 
     if (id) {
       this.setData({
         id,
-        systemType: themeType,
-        categoryName: decodedCategoryName
+        systemType: themeType
       });
       this.loadGoodsDetail(id);
     }
+  },
+
+  async resolveCategoryName(goods) {
+    const categoryId = goods.category || goods.categoryId || '';
+    let resolvedCategoryName = goods.categoryName || '';
+
+    if (!categoryId) {
+      return resolvedCategoryName;
+    }
+
+    try {
+      const categoryDetail = await api.getCategoryDetail(categoryId);
+      if (categoryDetail && categoryDetail.name) {
+        return categoryDetail.name;
+      }
+
+      const categories = await api.getCategories({ page: 1, size: 100, status: 1 });
+      const matchedCategory = (categories || []).find((item) => {
+        return item && (item._id === categoryId || item.id === categoryId);
+      });
+
+      if (matchedCategory && matchedCategory.name) {
+        return matchedCategory.name;
+      }
+    } catch (error) {
+      console.warn('[goods/detail] Resolve category failed:', error);
+    }
+
+    return resolvedCategoryName;
   },
 
   async loadGoodsDetail(id) {
@@ -35,6 +63,7 @@ Page({
       this.setData({ loading: true });
       wx.showLoading({ title: '加载中' });
       const goods = await api.getProductDetail(id);
+      const categoryName = await this.resolveCategoryName(goods);
       const parsedPrice = Number(goods.price || 0);
       const imageCandidates = [
         goods.coverImage,
@@ -59,6 +88,7 @@ Page({
 
       this.setData({
         goods: goodsData,
+        categoryName: categoryName || '',
         loading: false
       });
       wx.hideLoading();
@@ -108,12 +138,14 @@ Page({
     this.setData({ quantity: safeValue });
   },
 
-  addToCart() {
-    const isLoggedIn = auth.checkAuth();
+  async addToCart() {
+    // 统一登录校验
+    const isLoggedIn = await authGuard.requireLogin({
+      reason: '加入清单需要登录',
+      onCancel: 'stay'
+    });
 
-    // 登录状态校验
     if (!isLoggedIn) {
-      auth.loginWithPrompt();
       return;
     }
 

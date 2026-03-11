@@ -41,7 +41,7 @@
 
       <view wx:if="{{fileList.length >= 9}}" style="font-size: 24rpx; color: #999; align-self: center;">已达上限 9 张</view>
     </view>
-    <view class="upload-tips">首图默认为封面图，可指定/替换封面，建议尺寸 800x800 像素</view>
+    <view class="upload-tips">首图默认为封面图，可指定/替换封面。选择图片后将先裁成 1:1 方图，再上传；建议尺寸 800x800 像素</view>
   </view>
 
   <view class="form-container">
