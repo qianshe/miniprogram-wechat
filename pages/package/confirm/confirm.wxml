@@ -11,24 +11,17 @@
 
   <!-- Main Content -->
   <block wx:else>
-    <!-- Address Section -->
-    <view class="section address-section" bindtap="selectAddress">
-      <view class="section-header">
-        <text class="section-title">收货地址</text>
-      </view>
-      <view wx:if="{{address}}" class="address-info">
-        <view class="address-user">
-          <text class="address-name">{{address.userName}}</text>
-          <text class="address-phone">{{address.telNumber}}</text>
-          <text class="address-tag" wx:if="{{address.isDefault}}">默认</text>
-        </view>
-        <view class="address-detail">{{address.fullAddress}}</view>
-      </view>
-      <view wx:else class="no-address">
-        <text>点击选择收货地址</text>
-      </view>
-      <view class="address-arrow">></view>
-    </view>
+    <c-confirm-address-sheet
+      address="{{address}}"
+      address-list="{{addressList}}"
+      visible="{{showAddressModal}}"
+      selected-address-id="{{selectedAddressId}}"
+      bindopen="selectAddress"
+      bindclose="hideAddressModal"
+      bindselect="onConfirmAddressSelect"
+      bindwechat="useWechatAddress"
+      bindmanage="goToAddressManage"
+    ></c-confirm-address-sheet>
 
     <!-- Package Info Card -->
     <view class="section package-section">
@@ -54,79 +47,40 @@
       </view>
     </view>
 
-    <!-- Items List -->
-    <view class="section items-section">
-      <view class="section-header">
-        <text class="section-title">商品清单</text>
-        <view class="section-meta">
-          <text class="section-count">共{{items.length}}项</text>
-          <text class="customized-hint" wx:if="{{hasCustomizedItems}}">已定制{{customizedCount}}项</text>
+    <c-confirm-item-list
+      custom-class="package-item-list"
+      count-text="共{{items.length}}项"
+      items="{{confirmItemRows}}"
+    ></c-confirm-item-list>
+
+    <!-- Service Time -->
+    <c-confirm-form-card title="服务时间" compact="{{true}}">
+      <picker mode="date" value="{{serviceTime}}" bindchange="onServiceTimeChange">
+        <view class="confirm-field plain-field {{serviceTime ? 'has-value' : ''}}">
+          <text>{{serviceTime || '请选择服务时间'}}</text>
         </view>
-      </view>
-      <view class="items-list">
-        <view class="item-row {{item.isCustomized ? 'customized' : ''}}" wx:for="{{items}}" wx:key="productId">
-          <view class="item-image-wrap">
-            <image 
-              class="item-image" 
-              src="{{item.productImage || '/images/product-default.png'}}"
-              mode="aspectFill"
-            />
-            <view class="customized-badge" wx:if="{{item.isCustomized}}">
-              <text class="customized-badge-text">已定制</text>
-            </view>
-          </view>
-          <view class="item-info">
-            <text class="item-category">{{item.categoryName}}</text>
-            <text class="item-name">{{item.productName}}</text>
-            <text class="item-unit-price">单价: {{item.displayUnitPrice}}</text>
-          </view>
-          <view class="item-qty-price">
-            <text class="item-qty">x{{item.quantity}}</text>
-            <text class="item-price">{{item.displaySubtotal}}</text>
-          </view>
-        </view>
-      </view>
-    </view>
+      </picker>
+    </c-confirm-form-card>
+
+    <!-- Price Summary -->
+    <c-confirm-price-summary rows="{{priceSummaryRows}}"></c-confirm-price-summary>
 
     <!-- Remarks -->
-    <view class="section remarks-section">
-      <view class="section-header">
-        <text class="section-title">订单备注</text>
-        <text class="section-hint">(选填)</text>
-      </view>
-      <textarea 
-        class="remarks-textarea" 
-        placeholder="如有特殊要求，请在此说明..."
+    <c-confirm-form-card title="订单备注" custom-class="remarks-card">
+      <input 
+        class="remarks-input" 
+        type="text"
+        placeholder="请输入订单备注"
         value="{{remarks}}"
         bindinput="onRemarksInput"
         maxlength="200"
       />
-    </view>
+    </c-confirm-form-card>
 
-    <!-- Price Summary -->
-    <view class="section price-section">
-      <view class="section-header">
-        <text class="section-title">价格明细</text>
-      </view>
-      <view class="price-breakdown">
-        <view class="price-row">
-          <text class="price-label">参考总价</text>
-          <text class="price-value original">{{displayOriginalPrice}}</text>
-        </view>
-        <view class="price-row total">
-          <text class="price-label">参考合计</text>
-          <view class="price-value-wrap">
-            <text class="currency">¥</text>
-            <text class="price-value total-price">{{displayTotalPrice}}</text>
-          </view>
-        </view>
-      </view>
-    </view>
+    <view class="disclaimer-text">本小程序仅用于展示与需求登记，最终以电话/微信沟通及线下结算为准。</view>
 
     <!-- Bottom Placeholder -->
     <view class="bottom-placeholder"></view>
-
-    <view class="disclaimer-text">本小程序仅用于展示与需求登记，最终以电话/微信沟通及线下结算为准。</view>
 
     <!-- Bottom Bar -->
     <view class="bottom-bar">
@@ -147,46 +101,4 @@
       </view>
     </view>
   </block>
-</view>
-
-<!-- Address Selection Modal -->
-<view class="address-modal-mask" wx:if="{{showAddressModal}}" bindtap="hideAddressModal"></view>
-<view class="address-modal" wx:if="{{showAddressModal}}" catchtap="preventBubble">
-  <view class="modal-header">
-    <text class="modal-title">选择收货地址</text>
-    <view class="modal-close" bindtap="hideAddressModal">×</view>
-  </view>
-  
-  <view class="modal-body">
-    <!-- Saved address list -->
-    <view wx:if="{{addressList.length > 0}}" class="saved-address-list">
-      <view 
-        class="saved-address-item {{address.id === item.id ? 'selected' : ''}}" 
-        wx:for="{{addressList}}" 
-        wx:key="id"
-        bindtap="onSelectAddress"
-        data-index="{{index}}"
-      >
-        <view class="address-item-info">
-          <view class="address-item-header">
-            <text class="address-item-name">{{item.userName}}</text>
-            <text class="address-item-phone">{{item.telNumber}}</text>
-            <text class="address-item-tag" wx:if="{{item.isDefault}}">默认</text>
-          </view>
-          <view class="address-item-detail">{{item.fullAddress}}</view>
-        </view>
-        <view class="address-item-check" wx:if="{{address.id === item.id}}">✓</view>
-      </view>
-    </view>
-    
-    <!-- No address hint -->
-    <view wx:else class="no-saved-address">
-      <text>暂无保存的收货地址</text>
-    </view>
-  </view>
-  
-  <view class="modal-footer">
-    <view class="modal-btn wechat-btn" bindtap="useWechatAddress">使用微信地址</view>
-    <view class="modal-btn manage-btn" bindtap="goToAddressManage">管理地址</view>
-  </view>
 </view>

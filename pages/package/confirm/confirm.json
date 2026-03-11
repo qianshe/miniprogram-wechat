@@ -1,5 +1,10 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "c-confirm-address-sheet": "/components/c-confirm-address-sheet/c-confirm-address-sheet",
+    "c-confirm-item-list": "/components/c-confirm-item-list/c-confirm-item-list",
+    "c-confirm-form-card": "/components/c-confirm-form-card/c-confirm-form-card",
+    "c-confirm-price-summary": "/components/c-confirm-price-summary/c-confirm-price-summary"
+  },
   "navigationBarTitleText": "确认订单",
   "navigationBarBackgroundColor": "#f6f0e7",
   "navigationBarTextStyle": "black"

@@ -175,6 +175,10 @@ page {
 }
 
 /* Items Section */
+.package-item-list {
+  margin: 0 24rpx 24rpx;
+}
+
 .items-list {
   display: flex;
   flex-direction: column;
@@ -275,6 +279,76 @@ page {
   color: var(--text-main);
 }
 
+/* Confirm Card (Order Confirm Structure) */
+.confirm-card {
+  margin: 0 24rpx 24rpx;
+  padding: 24rpx;
+  background: var(--card-bg);
+  border-radius: var(--package-card-radius);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+  border: 1rpx solid var(--package-border);
+}
+
+.compact-card {
+  padding-bottom: 28rpx;
+}
+
+.remarks-card {
+  padding-bottom: 28rpx;
+}
+
+.confirm-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 16rpx;
+  margin-bottom: 20rpx;
+  border-bottom: 1rpx solid var(--package-border);
+}
+
+.confirm-card-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.confirm-card-hint {
+  font-size: 22rpx;
+  color: var(--text-sub);
+}
+
+.confirm-field {
+  width: 100%;
+  min-height: 72rpx;
+  padding: 20rpx 24rpx;
+  font-size: 26rpx;
+  color: var(--text-sub);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.confirm-field.has-value {
+  color: var(--text-main);
+}
+
+.plain-field {
+  padding: 0 8rpx;
+  min-height: 72rpx;
+  background: transparent;
+  border-radius: 0;
+  font-size: 28rpx;
+}
+
+.remarks-input {
+  width: 100%;
+  min-height: 72rpx;
+  padding: 0 8rpx;
+  font-size: 28rpx;
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
 /* Remarks Section */
 .remarks-textarea {
   width: 100%;
@@ -283,8 +357,30 @@ page {
   border-radius: var(--package-item-radius);
   font-size: 26rpx;
   color: var(--text-main);
-  min-height: 120rpx;
+  min-height: 72rpx;
+  height: 72rpx;
   box-sizing: border-box;
+}
+
+.form-section {
+  padding-bottom: 28rpx;
+}
+
+.picker-field {
+  width: 100%;
+  min-height: 72rpx;
+  padding: 20rpx 24rpx;
+  background: var(--package-accent-light);
+  border-radius: var(--package-item-radius);
+  font-size: 26rpx;
+  color: var(--text-sub);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.picker-field.has-value {
+  color: var(--text-main);
 }
 
 .remarks-textarea::placeholder {
@@ -386,6 +482,7 @@ page {
   background: var(--card-bg);
   border-top: 1rpx solid var(--package-border);
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
 }
 
 .bottom-left {
