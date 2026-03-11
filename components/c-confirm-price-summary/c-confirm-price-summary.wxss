@@ -1,0 +1,83 @@
+.price-section {
+  background: #fff;
+  padding: 24rpx;
+  border-radius: var(--border-radius, 24rpx);
+  box-shadow: var(--shadow-sm, 0 8rpx 24rpx rgba(0, 0, 0, 0.06));
+  margin: 0 24rpx 24rpx;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid var(--package-border, #f1ede8);
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-main, #2c3e50);
+}
+
+.price-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 0;
+}
+
+.price-row:not(:last-child) {
+  border-bottom: 1rpx solid var(--package-border, #f1ede8);
+}
+
+.price-row.total {
+  padding-top: 16rpx;
+  margin-top: 8rpx;
+}
+
+.price-label {
+  font-size: 26rpx;
+  color: var(--text-sub, #6b6b6b);
+}
+
+.price-row.total .price-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-main, #2c3e50);
+}
+
+.price-value {
+  font-size: 26rpx;
+  color: var(--text-main, #2c3e50);
+}
+
+.price-value.original {
+  text-decoration: line-through;
+  color: var(--text-sub, #6b6b6b);
+}
+
+.price-value-wrap {
+  display: flex;
+  align-items: baseline;
+}
+
+.currency {
+  font-size: 24rpx;
+  color: var(--primary-color, #b8865c);
+  font-weight: 600;
+  margin-right: 4rpx;
+}
+
+.price-value.total-price {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--primary-color, #b8865c);
+}

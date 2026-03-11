@@ -1,0 +1,31 @@
+.confirm-card {
+  background: #fff;
+  padding: 28rpx 32rpx;
+  border-radius: var(--border-radius, 24rpx);
+  box-shadow: var(--shadow-sm, 0 8rpx 24rpx rgba(0, 0, 0, 0.06));
+  margin: 0 24rpx 24rpx;
+}
+
+.compact-card {
+  padding-bottom: 32rpx;
+}
+
+.confirm-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 16rpx;
+  margin-bottom: 20rpx;
+  border-bottom: 1rpx solid var(--package-border, #f1ede8);
+}
+
+.confirm-card-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-main, #2c3e50);
+}
+
+.confirm-card-hint {
+  font-size: 22rpx;
+  color: var(--text-sub, #6b6b6b);
+}

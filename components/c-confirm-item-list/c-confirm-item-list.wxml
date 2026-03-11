@@ -1,0 +1,28 @@
+<view class="items-section custom-class">
+  <view class="section-header">
+    <text class="section-title">{{title}}</text>
+    <view class="section-meta" wx:if="{{countText || metaText}}">
+      <text class="section-count" wx:if="{{countText}}">{{countText}}</text>
+      <text class="customized-hint" wx:if="{{metaText}}">{{metaText}}</text>
+    </view>
+  </view>
+  <view class="items-list">
+    <view class="item-row {{item.highlighted ? 'highlighted' : ''}}" wx:for="{{displayItems}}" wx:key="_key">
+      <view class="item-image-wrap">
+        <image class="item-image" src="{{item.image}}" mode="aspectFill"></image>
+        <view class="item-badge" wx:if="{{item.badgeText}}">
+          <text class="item-badge-text">{{item.badgeText}}</text>
+        </view>
+      </view>
+      <view class="item-info">
+        <text class="item-category" wx:if="{{item.categoryText}}">{{item.categoryText}}</text>
+        <text class="item-name">{{item.nameText}}</text>
+        <text class="item-unit-price" wx:if="{{item.unitPriceText}}">{{item.unitPriceText}}</text>
+      </view>
+      <view class="item-qty-price">
+        <text class="item-qty" wx:if="{{item.quantityText}}">{{item.quantityText}}</text>
+        <text class="item-price">{{item.amountText}}</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,19 @@
+<view class="price-section custom-class">
+  <view class="section-header">
+    <text class="section-title">{{title}}</text>
+  </view>
+  <view class="price-breakdown">
+    <view class="price-row {{item.isTotal ? 'total' : ''}}" wx:for="{{displayRows}}" wx:key="_key">
+      <text class="price-label">{{item.label}}</text>
+      <block wx:if="{{item.showCurrency}}">
+        <view class="price-value-wrap">
+          <text class="currency">¥</text>
+          <text class="price-value {{item.crossed ? 'original' : ''}} {{item.isTotal ? 'total-price' : ''}}">{{item.value}}</text>
+        </view>
+      </block>
+      <block wx:else>
+        <text class="price-value {{item.crossed ? 'original' : ''}} {{item.isTotal ? 'total-price' : ''}}">{{item.value}}</text>
+      </block>
+    </view>
+  </view>
+</view>

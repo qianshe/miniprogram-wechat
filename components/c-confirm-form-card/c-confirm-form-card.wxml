@@ -1,0 +1,7 @@
+<view class="confirm-card {{compact ? 'compact-card' : ''}} custom-class">
+  <view class="confirm-card-header">
+    <text class="confirm-card-title">{{title}}</text>
+    <text class="confirm-card-hint" wx:if="{{hint}}">{{hint}}</text>
+  </view>
+  <slot></slot>
+</view>

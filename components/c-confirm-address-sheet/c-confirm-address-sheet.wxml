@@ -1,0 +1,54 @@
+<view class="address-sheet">
+  <view class="address-trigger" bindtap="onOpen">
+    <view class="section-header">
+      <text class="section-title">{{title}}</text>
+    </view>
+
+    <view wx:if="{{address}}" class="address-info">
+      <view class="address-user">
+        <text class="address-name">{{address.userName}}</text>
+        <text class="address-phone">{{address.telNumber}}</text>
+        <text class="address-tag" wx:if="{{address.isDefault}}">{{addressTagText}}</text>
+      </view>
+      <view class="address-detail">{{address.fullAddress}}</view>
+    </view>
+    <view wx:else class="no-address">
+      <text>{{emptyText}}</text>
+    </view>
+
+    <view class="address-arrow">></view>
+  </view>
+
+  <view class="address-modal-mask" wx:if="{{visible}}" bindtap="onClose"></view>
+  <view class="address-modal" wx:if="{{visible}}" catchtap="stopPropagation" catchtouchmove="preventTouchMove">
+    <view class="modal-header">
+      <text class="modal-title">{{modalTitle}}</text>
+      <view class="modal-close" bindtap="onClose">×</view>
+    </view>
+
+    <view class="modal-body">
+      <view wx:if="{{displayAddressList.length > 0}}" class="saved-address-list">
+        <view class="saved-address-item {{item._selected ? 'selected' : ''}}" wx:for="{{displayAddressList}}" wx:key="_key" bindtap="onSelect" data-index="{{index}}">
+          <view class="address-item-info">
+            <view class="address-item-header">
+              <text class="address-item-name">{{item.userName}}</text>
+              <text class="address-item-phone">{{item.telNumber}}</text>
+              <text class="address-item-tag" wx:if="{{item.isDefault}}">{{addressTagText}}</text>
+            </view>
+            <view class="address-item-detail">{{item.fullAddress}}</view>
+          </view>
+          <view class="address-item-check" wx:if="{{item._selected}}">✓</view>
+        </view>
+      </view>
+
+      <view wx:else class="no-saved-address">
+        <text>暂无保存的收货地址</text>
+      </view>
+    </view>
+
+    <view class="modal-footer">
+      <view class="modal-btn wechat-btn" bindtap="onWechat">使用微信地址</view>
+      <view class="modal-btn manage-btn" bindtap="onManage">管理地址</view>
+    </view>
+  </view>
+</view>
