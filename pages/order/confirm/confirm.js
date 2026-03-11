@@ -2,12 +2,114 @@ const { api } = require('../../../utils/api.js');
 const validation = require('../../../utils/validation.js');
 const { loadSelectableAddresses, pickDefaultAddress } = require('../../../utils/addressSelection.js');
 
+const PENDING_CART_CLEANUP_KEY = 'pendingCartCleanupOrders';
+
+function getAddressId(address) {
+  if (!address) {
+    return '';
+  }
+  return address.id || address._id || '';
+}
+
+function formatAmount(value) {
+  return (Number(value) || 0).toFixed(2);
+}
+
+function buildOrderItemViewKey(item, index) {
+  const baseKey = item && (item.id || item.name || item.image || 'order-item');
+  return `${baseKey}-${index}`;
+}
+
+function normalizeOrderItems(items = []) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items.map((item = {}, index) => {
+    const price = Number(item.price) || 0;
+    const quantity = Number(item.quantity) || 0;
+
+    return {
+      ...item,
+      viewKey: buildOrderItemViewKey(item, index),
+      displayPrice: formatAmount(price),
+      displaySubtotal: formatAmount(price * quantity)
+    };
+  });
+}
+
+function calculateOrderTotal(items = []) {
+  const total = (Array.isArray(items) ? items : []).reduce((sum, item = {}) => {
+    const price = Number(item.price) || 0;
+    const quantity = Number(item.quantity) || 0;
+    return sum + (price * quantity);
+  }, 0);
+
+  return formatAmount(total);
+}
+
+function buildOrderConfirmItemRows(items = []) {
+  return (Array.isArray(items) ? items : []).map((item = {}, index) => ({
+    key: item.viewKey || item.id || `order-item-${index}`,
+    image: item.image || '/images/product-default.png',
+    categoryText: '商品',
+    nameText: item.name || '',
+    unitPriceText: `单价: ${item.displayPrice || '0.00'}`,
+    quantityText: `x${item.quantity || 0}`,
+    amountText: `¥${item.displaySubtotal || item.displayPrice || '0.00'}`
+  }));
+}
+
+function buildOrderPriceSummaryRows(totalAmount) {
+  return [
+    {
+      key: 'order-items-total',
+      label: '商品合计',
+      value: totalAmount,
+      showCurrency: false,
+      isTotal: false
+    },
+    {
+      key: 'order-total',
+      label: '合计',
+      value: totalAmount,
+      showCurrency: true,
+      isTotal: true
+    }
+  ];
+}
+
+function getPendingCartCleanupOrders() {
+  const orders = wx.getStorageSync(PENDING_CART_CLEANUP_KEY);
+  return Array.isArray(orders) ? orders : [];
+}
+
+function savePendingCartCleanupOrders(orders = []) {
+  wx.setStorageSync(PENDING_CART_CLEANUP_KEY, orders);
+}
+
+function appendPendingCartCleanupOrder(orderNo, orderItems = []) {
+  if (!orderNo) {
+    return;
+  }
+
+  const itemIds = [...new Set((orderItems || []).map(item => item && item.id).filter(Boolean))];
+  if (itemIds.length === 0) {
+    return;
+  }
+
+  const existingOrders = getPendingCartCleanupOrders().filter(item => item && item.orderNo !== orderNo);
+  existingOrders.push({ orderNo, itemIds });
+  savePendingCartCleanupOrders(existingOrders);
+}
+
 
 Page({
   data: {
     orderItems: [],
     totalAmount: '0.00',
     address: null,
+    selectedAddressId: '',
     remarks: '',
     serviceTime: '',
     loading: false,
@@ -17,7 +119,9 @@ Page({
     // 地址选择相关
     showAddressModal: false,
     addressList: [],
-    defaultAddress: null
+    defaultAddress: null,
+    confirmItemRows: [],
+    priceSummaryRows: []
   },
 
   onLoad(options) {
@@ -31,10 +135,15 @@ Page({
 
     const eventChannel = this.getOpenerEventChannel()
     eventChannel.on('acceptDataFromCart', (data) => {
+      const orderItems = normalizeOrderItems(data && data.selectedItems);
+      const totalAmount = calculateOrderTotal(orderItems);
+
       this.setData({
-        orderItems: data.selectedItems,
-        totalAmount: data.totalAmount,
-        systemType: data.systemType || systemType
+        orderItems,
+        totalAmount,
+        confirmItemRows: buildOrderConfirmItemRows(orderItems),
+        priceSummaryRows: buildOrderPriceSummaryRows(totalAmount),
+        systemType: (data && data.systemType) || systemType
       })
     })
     
@@ -61,7 +170,10 @@ Page({
       // 如果当前没有选中地址，自动选择默认地址
       if (!this.data.address && formattedList.length > 0) {
         const defaultAddr = pickDefaultAddress(formattedList);
-        this.setData({ address: defaultAddr });
+        this.setData({
+          address: defaultAddr,
+          selectedAddressId: getAddressId(defaultAddr)
+        });
       }
     } catch (err) {
       console.error('[confirm] 加载地址失败:', err);
@@ -80,12 +192,15 @@ Page({
   },
 
   // 选择地址项
-  onSelectAddress(e) {
-    const { index } = e.currentTarget.dataset;
-    const selectedAddress = this.data.addressList[index];
+  onConfirmAddressSelect(e) {
+    const selectedAddress = e.detail && e.detail.address;
+    if (!selectedAddress) {
+      return;
+    }
     
     this.setData({
       address: selectedAddress,
+      selectedAddressId: getAddressId(selectedAddress),
       showAddressModal: false
     });
   },
@@ -104,6 +219,7 @@ Page({
             detailInfo: res.detailInfo,
             fullAddress: `${res.provinceName}${res.cityName}${res.countyName}${res.detailInfo}`
           },
+          selectedAddressId: '',
           showAddressModal: false
         })
       },
@@ -208,12 +324,7 @@ Page({
       this.setData({ loading: false });
 
       const { orderNo } = data;
-
-      // 订单创建成功后，清除已下单的商品
-      const orderedItemIds = this.data.orderItems.map(item => item.id);
-      const cartItems = wx.getStorageSync('cartListLocal') || [];
-      const updatedCartItems = cartItems.filter(item => !orderedItemIds.includes(item.id));
-      wx.setStorageSync('cartListLocal', updatedCartItems);
+      appendPendingCartCleanupOrder(orderNo, this.data.orderItems);
 
       wx.showToast({
         title: '订单提交成功',
