@@ -31,8 +31,9 @@ const checks = {
     cloudPartialStatusHandled: /geocodeStatus:\s*'partial'/.test(cloudFn),
     cloudServiceErrorHandled: /geocodeStatus:\s*'service_error'/.test(cloudFn),
     cloudRequestErrorHandled: /geocodeStatus:\s*'request_failed'/.test(cloudFn),
-    pageKeepsManualRegionPicker: /onRegionChange\(/.test(addressJs),
-    pageFallbackToastExists: /手动选择所在地区/.test(addressJs)
+    pageRemovesManualRegionPicker: !/onRegionChange\(/.test(addressJs),
+    pageMapIsRequiredInSave: /请先在地图上选择位置/.test(addressJs),
+    permissionFlowExplainsRequiredSelection: /地图选点是必填项/.test(addressJs)
   },
   'preserve-location-payload': {
     normalizerReturnsLocationFields: /locationName,\s*\n\s*locationAddress,\s*\n\s*latitude,\s*\n\s*longitude/.test(addressSelection),

@@ -164,13 +164,9 @@ const api = {
     }
   },
 
-  // ============ 订单绑定/追加 ============
+  // ============ 订单绑定 ============
   bindOrder: (orderNo, userId) => {
     return call('orderManagement', 'bindOrder', { orderNo, userId })
-  },
-
-  appendOrderItems: (orderNo, items, isAdmin = false) => {
-    return call('orderManagement', 'appendOrderItems', { orderNo, items, isAdmin })
   },
 
   // ============ 登录 ============
@@ -363,6 +359,10 @@ const adminApi = {
 
   updatePaymentStatus: (orderId, paymentStatus, paymentMethod = 'offline', paymentNote = '') => {
     return call('orderManagement', 'updatePaymentStatus', { orderId, paymentStatus, paymentMethod, paymentNote }, { showLoading: true, loadingText: '更新中...' })
+  },
+
+  updateOrderContent: (payload) => {
+    return call('orderManagement', 'updateOrderContent', payload, { showLoading: true, loadingText: '保存中...' })
   },
 
   getStatistics: () => {

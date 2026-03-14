@@ -13,6 +13,20 @@ function normalizeCoordinate(value) {
   return Number.isFinite(num) ? num : null;
 }
 
+function resolveDetailFeatureText(formData = {}) {
+  const detail = (formData.detail || '').trim();
+  if (detail) {
+    return detail;
+  }
+
+  const locationName = (formData.locationName || '').trim();
+  if (locationName) {
+    return locationName;
+  }
+
+  return (formData.locationAddress || '').trim();
+}
+
 Page({
   data: {
     addressList: [],
@@ -21,12 +35,8 @@ Page({
     formData: {
       name: '',
       phone: '',
-      province: '',
-      city: '',
-      district: '',
       detail: '',
       isDefault: false,
-      region: [],
       locationName: '',
       locationAddress: '',
       latitude: null,
@@ -82,12 +92,8 @@ Page({
       formData: {
         name: '',
         phone: '',
-        province: '',
-        city: '',
-        district: '',
         detail: '',
         isDefault: false,
-        region: [],
         locationName: '',
         locationAddress: '',
         latitude: null,
@@ -106,12 +112,8 @@ Page({
         _id: address._id,
         name: address.name,
         phone: address.phone,
-        province: address.province,
-        city: address.city,
-        district: address.district,
         detail: address.detail,
         isDefault: address.isDefault,
-        region: [address.province, address.city, address.district],
         locationName: address.locationName || '',
         locationAddress: address.locationAddress || address.address || '',
         latitude: normalizeCoordinate(address.latitude),
@@ -130,16 +132,6 @@ Page({
 
   onInputPhone(e) {
     this.setData({ 'formData.phone': e.detail.value });
-  },
-
-  onRegionChange(e) {
-    const region = e.detail.value;
-    this.setData({
-      'formData.province': region[0],
-      'formData.city': region[1],
-      'formData.district': region[2],
-      'formData.region': region
-    });
   },
 
   onInputDetail(e) {
@@ -173,7 +165,7 @@ Page({
               showError: false
             });
           } catch (error) {
-            console.warn('逆地理编码失败，回退手动地区选择:', error);
+            console.warn('逆地理编码失败，保留地图原始结果:', error);
           }
         }
 
@@ -191,7 +183,7 @@ Page({
           return;
         }
 
-        wx.showToast({ title: '地图选点失败，可手动填写地址', icon: 'none' });
+        wx.showToast({ title: '地图选点失败，请重试', icon: 'none' });
       }
     });
   },
@@ -219,7 +211,7 @@ Page({
           showError: false
         });
       } catch (error) {
-        console.warn('逆地理编码失败，回退手动地区选择:', error);
+        console.warn('逆地理编码失败，保留地图原始结果:', error);
       }
     }
 
@@ -230,26 +222,17 @@ Page({
     });
 
     const nextFormData = {
-      'formData.detail': normalizedAddress.detail,
+      'formData.detail': (this.data.formData.detail || '').trim() || normalizedAddress.locationName || normalizedAddress.locationAddress || normalizedAddress.detail,
       'formData.locationName': normalizedAddress.locationName,
       'formData.locationAddress': normalizedAddress.locationAddress,
       'formData.latitude': normalizedAddress.latitude,
       'formData.longitude': normalizedAddress.longitude
     };
 
-    if (normalizedAddress.hasStructuredRegion) {
-      nextFormData['formData.province'] = normalizedAddress.province;
-      nextFormData['formData.city'] = normalizedAddress.city;
-      nextFormData['formData.district'] = normalizedAddress.district;
-      nextFormData['formData.region'] = normalizedAddress.region;
-    }
-
     this.setData(nextFormData);
 
     wx.showToast({
-      title: normalizedAddress.hasStructuredRegion
-        ? '已自动补全所在地区'
-        : (normalizedAddress.locationName ? '已选地图位置，请手动选择所在地区' : '已获取坐标，请手动选择所在地区'),
+      title: normalizedAddress.locationName ? '已选地图位置' : '已记录地图坐标',
       icon: 'none'
     });
   },
@@ -262,12 +245,12 @@ Page({
   handleLocationPermissionDenied() {
     wx.showModal({
       title: '需要位置权限',
-      content: '地图选点需要位置权限。你也可以跳过地图选点，继续手动填写地址。',
+      content: '地图选点是必填项，需要位置权限后才能保存地址。',
       confirmText: '去设置',
-      cancelText: '手动填写',
+      cancelText: '我知道了',
       success: (res) => {
         if (!res.confirm) {
-          wx.showToast({ title: '可继续手动填写地址', icon: 'none' });
+          wx.showToast({ title: '请开启权限后重新选点', icon: 'none' });
           return;
         }
 
@@ -276,12 +259,12 @@ Page({
             const authSetting = (settingRes && settingRes.authSetting) || {};
             const hasLocationPermission = !!authSetting['scope.userLocation'];
             wx.showToast({
-              title: hasLocationPermission ? '权限已开启，请重新选点' : '未开启权限，可手动填写地址',
+              title: hasLocationPermission ? '权限已开启，请重新选点' : '未开启权限，无法保存地址',
               icon: 'none'
             });
           },
           fail: () => {
-            wx.showToast({ title: '打开设置失败，请手动填写地址', icon: 'none' });
+            wx.showToast({ title: '打开设置失败，请稍后重试', icon: 'none' });
           }
         });
       }
@@ -290,6 +273,7 @@ Page({
 
   async saveAddress() {
     const { formData, editIndex, addressList, isLoggedIn } = this.data;
+    const detailFeatureText = resolveDetailFeatureText(formData);
 
     if (!formData.name.trim()) {
       wx.showToast({ title: '请输入收货人姓名', icon: 'none' });
@@ -299,13 +283,18 @@ Page({
       wx.showToast({ title: '请输入正确的手机号', icon: 'none' });
       return;
     }
-    if (!formData.province) {
-      wx.showToast({ title: '请选择所在地区', icon: 'none' });
+    if (normalizeCoordinate(formData.latitude) === null || normalizeCoordinate(formData.longitude) === null) {
+      wx.showToast({ title: '请先在地图上选择位置', icon: 'none' });
       return;
     }
-    if (!formData.detail.trim()) {
-      wx.showToast({ title: '请输入详细地址', icon: 'none' });
+    if (!detailFeatureText) {
+      wx.showToast({ title: '请输入地点特征', icon: 'none' });
       return;
+    }
+
+    if (detailFeatureText !== formData.detail) {
+      this.setData({ 'formData.detail': detailFeatureText });
+      formData.detail = detailFeatureText;
     }
 
     this.setData({ loading: true });
@@ -330,10 +319,7 @@ Page({
     const addressData = {
       name: formData.name.trim(),
       phone: formData.phone.trim(),
-      province: formData.province,
-      city: formData.city,
-      district: formData.district,
-      detail: formData.detail.trim(),
+      detail: resolveDetailFeatureText(formData),
       isDefault: formData.isDefault,
       locationName: (formData.locationName || '').trim(),
       locationAddress: (formData.locationAddress || '').trim(),
@@ -354,10 +340,7 @@ Page({
       id: editIndex >= 0 ? addressList[editIndex].id : Date.now(),
       name: formData.name.trim(),
       phone: formData.phone.trim(),
-      province: formData.province,
-      city: formData.city,
-      district: formData.district,
-      detail: formData.detail.trim(),
+      detail: resolveDetailFeatureText(formData),
       isDefault: formData.isDefault,
       locationName: (formData.locationName || '').trim(),
       locationAddress: (formData.locationAddress || '').trim(),

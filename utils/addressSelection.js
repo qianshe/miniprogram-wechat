@@ -62,7 +62,7 @@ function normalizeAddressFromLocation({ mapSelection = {}, geocodeResult = {}, c
   const region = hasStructuredRegion
     ? [province, city, district]
     : (Array.isArray(currentAddress.region) ? currentAddress.region : []);
-  const detail = pickFirstText(currentAddress.detail, geocodeResult.detail, locationAddress);
+  const detail = pickFirstText(currentAddress.detail, geocodeResult.detail);
 
   return {
     province,

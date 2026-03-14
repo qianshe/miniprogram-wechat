@@ -1,5 +1,4 @@
 <view class="address-container">
-  <!-- 地址列表 -->
   <view class="address-list" wx:if="{{addressList.length > 0}}">
     <view class="address-item" wx:for="{{addressList}}" wx:key="id">
       <view class="address-content" bindtap="editAddress" data-index="{{index}}">
@@ -9,7 +8,9 @@
           <text class="default-tag" wx:if="{{item.isDefault}}">默认</text>
         </view>
         <view class="address-detail">
-          {{item.province}}{{item.city}}{{item.district}}{{item.detail}}
+          <text class="address-primary">{{item.locationName || item.locationAddress || '未命名位置'}}</text>
+          <text class="address-secondary" wx:if="{{item.detail}}">地点特征：{{item.detail}}</text>
+          <text class="address-secondary" wx:if="{{item.locationAddress && item.locationAddress !== item.locationName}}">{{item.locationAddress}}</text>
         </view>
       </view>
       <view class="address-actions">
@@ -22,8 +23,6 @@
       </view>
     </view>
   </view>
-
-  <!-- 空状态 -->
   <view class="empty-state" wx:if="{{addressList.length === 0}}">
     <view class="empty-icon">
       <text class="empty-icon-text">址</text>
@@ -31,13 +30,9 @@
     <text class="empty-text">暂无收货地址</text>
     <text class="empty-tip">点击下方按钮添加新地址</text>
   </view>
-
-  <!-- 添加地址按钮 -->
   <view class="add-btn-wrapper">
     <button class="add-btn" bindtap="showAddModal">新增收货地址</button>
   </view>
-
-  <!-- 新增/编辑弹窗 -->
   <view class="modal-mask" wx:if="{{showModal}}" bindtap="hideModal"></view>
   <view class="modal-content" wx:if="{{showModal}}">
     <view class="modal-header">
@@ -54,23 +49,22 @@
         <input class="form-input" type="number" maxlength="11" placeholder="请输入手机号码" value="{{formData.phone}}" bindinput="onInputPhone" />
       </view>
       <view class="form-item">
-        <text class="form-label">所在地区</text>
-        <picker mode="region" bindchange="onRegionChange" value="{{formData.region}}">
-          <view class="region-picker {{formData.province ? '' : 'placeholder'}}">
-            {{formData.province ? formData.province + ' ' + formData.city + ' ' + formData.district : '请选择省/市/区'}}
+        <view class="form-label-row">
+          <text class="form-label">地图选点</text>
+          <text class="required-badge">必选</text>
+        </view>
+        <view class="map-picker-block">
+          <button class="map-picker-btn" bindtap="chooseLocation">{{formData.latitude && formData.longitude ? '重新地图选点' : '去地图选点'}}</button>
+          <view class="map-picker-status {{formData.latitude && formData.longitude ? '' : 'placeholder'}}">
+            <text class="map-picker-title">{{formData.locationName || '尚未选择地图位置'}}</text>
+            <text class="map-picker-meta" wx:if="{{formData.locationAddress}}">{{formData.locationAddress}}</text>
+            <text class="map-picker-meta" wx:if="{{!formData.latitude || !formData.longitude}}">请先在地图上选择位置，保存后地址才可用于导航</text>
           </view>
-        </picker>
-      </view>
-      <view class="form-item">
-        <text class="form-label">地图选点</text>
-        <button size="mini" bindtap="chooseLocation">地图选点（可选）</button>
-        <view class="region-picker {{formData.locationName || (formData.latitude && formData.longitude) ? '' : 'placeholder'}}">
-          {{formData.locationName || (formData.latitude && formData.longitude ? ('已选坐标：' + formData.latitude + ',' + formData.longitude) : '未选择地图位置，支持手动填写地址')}}
         </view>
       </view>
       <view class="form-item">
-        <text class="form-label">详细地址</text>
-        <textarea class="form-textarea" placeholder="请输入详细地址（街道、门牌号等）" value="{{formData.detail}}" bindinput="onInputDetail" />
+        <text class="form-label">地点特征</text>
+        <textarea class="form-textarea" placeholder="请输入门牌号、楼栋、地标等地点特征" value="{{formData.detail}}" bindinput="onInputDetail" />
       </view>
       <view class="form-item switch-item">
         <text class="form-label">设为默认地址</text>
