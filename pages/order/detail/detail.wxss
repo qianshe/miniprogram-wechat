@@ -3,12 +3,10 @@
   background: var(--bg-color);
   min-height: 100vh;
 }
-
 .order-detail {
   padding: 20rpx;
   padding-bottom: calc(156rpx + env(safe-area-inset-bottom));
 }
-
 /* 状态栏 */
 .status-bar {
   padding: 40rpx 32rpx;
@@ -19,28 +17,23 @@
   position: relative;
   overflow: hidden;
 }
-
 .status {
   font-size: 40rpx;
   font-weight: bold;
   margin-bottom: 12rpx;
 }
-
 .status-desc {
   font-size: 26rpx;
   opacity: 0.9;
 }
-
 /* 白事系统状态栏 */
 .white-theme .status-bar {
   background: linear-gradient(135deg, var(--primary-color), #05a050);
 }
-
 /* 红事系统状态栏 */
 .red-theme .status-bar {
   background: linear-gradient(135deg, var(--danger-color), #b71c1c);
 }
-
 /* 时间线 */
 .timeline {
   display: flex;
@@ -51,7 +44,6 @@
   margin-bottom: 24rpx;
   box-shadow: var(--shadow-sm);
 }
-
 .timeline-item {
   display: flex;
   flex-direction: column;
@@ -60,17 +52,14 @@
   position: relative;
   color: var(--text-sub);
 }
-
 .timeline-item.active {
   color: #07c160;
   font-weight: 500;
 }
-
 .timeline-item.current {
   color: #fa8c16;
   font-weight: 500;
 }
-
 .timeline-dot {
   width: 24rpx;
   height: 24rpx;
@@ -80,23 +69,19 @@
   border: 4rpx solid #fff;
   box-shadow: 0 0 0 2rpx #e0e0e0;
 }
-
 .timeline-item.active .timeline-dot {
   background: #07c160;
   box-shadow: 0 0 0 2rpx #07c160;
 }
-
 .timeline-item.current .timeline-dot {
   background: #fa8c16;
   box-shadow: 0 0 0 2rpx #fa8c16;
 }
-
 .timeline-text {
   font-size: 24rpx;
   margin-bottom: 8rpx;
   white-space: nowrap;
 }
-
 .timeline-time {
   font-size: 20rpx;
   color: var(--text-sub);
@@ -104,7 +89,6 @@
   min-height: 28rpx;
   line-height: 28rpx;
 }
-
 .timeline-line {
   flex: 0 0 56rpx;
   height: 4rpx;
@@ -113,11 +97,9 @@
   margin-top: 14rpx;
   border-radius: 2rpx;
 }
-
 .timeline-line.active {
   background: #07c160;
 }
-
 /* 信息区块 */
 .section {
   background: #fff;
@@ -126,15 +108,12 @@
   margin-bottom: 24rpx;
   box-shadow: var(--shadow-sm);
 }
-
 .section-compact {
   padding: 20rpx 24rpx;
 }
-
 .status-tip-section {
   margin-bottom: 20rpx;
 }
-
 .section-title {
   font-size: 30rpx;
   font-weight: bold;
@@ -144,11 +123,9 @@
   border-left: 6rpx solid var(--primary-color);
   line-height: 1;
 }
-
 .red-theme .section-title {
   border-left-color: var(--danger-color);
 }
-
 .info-item {
   display: flex;
   align-items: flex-start;
@@ -156,24 +133,20 @@
   font-size: 28rpx;
   line-height: 1.5;
 }
-
 .info-item:last-child {
   margin-bottom: 0;
 }
-
 .label {
   color: var(--text-sub);
   width: 160rpx;
   flex-shrink: 0;
   display: block;
 }
-
 .value {
   color: var(--text-main);
   flex: 1;
   display: block;
 }
-
 .value-with-action {
   flex: 1;
   display: flex;
@@ -181,34 +154,41 @@
   justify-content: flex-start;
   min-width: 0;
 }
-
 .value-with-action .value {
   flex: 1;
   margin-right: 16rpx;
   min-width: 0;
 }
-
 .value-with-action t-button {
   flex-shrink: 0;
   width: 120rpx;
   margin-left: auto;
 }
-
 .info-item--center {
   align-items: center;
 }
 
+.info-item--address {
+  align-items: center;
+}
+
+.info-item--address .label {
+  line-height: 64rpx;
+}
 .info-item--center .label {
   display: block;
   height: auto;
   line-height: 64rpx;
 }
-
 .value-with-action--center-btn {
   align-items: center;
   min-height: 64rpx;
 }
 
+.value-with-action--address {
+  align-items: center;
+  min-height: 64rpx;
+}
 .value-with-action--center-btn t-button {
   --td-button-height: 64rpx;
 }
@@ -218,27 +198,28 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .value.address {
   word-break: break-all;
 }
 
+.value-with-action--address .value.address {
+  display: flex;
+  align-items: center;
+  min-height: 64rpx;
+}
 /* 商品列表 */
 .goods-list {
   margin-bottom: 0;
 }
-
 .goods-item {
   display: flex;
   padding: 24rpx 0;
   border-bottom: 1rpx solid #f5f5f5;
 }
-
 .goods-item:last-child {
   border-bottom: none;
   padding-bottom: 0;
 }
-
 .goods-image {
   width: 140rpx;
   height: 140rpx;
@@ -246,7 +227,6 @@
   margin-right: 24rpx;
   background: #f8f8f8;
 }
-
 .goods-info {
   flex: 1;
   display: flex;
@@ -254,32 +234,27 @@
   justify-content: space-between;
   padding: 4rpx 0;
 }
-
 .goods-name {
   font-size: 28rpx;
   color: var(--text-main);
   margin-bottom: 10rpx;
   font-weight: 500;
 }
-
 .goods-price-row {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 8rpx;
 }
-
 .goods-price {
   color: var(--text-main);
   font-size: 30rpx;
   font-weight: 500;
 }
-
 .goods-quantity {
   color: var(--text-sub);
   font-size: 26rpx;
 }
-
 /* 商品分组小计 */
 .goods-section-subtotal {
   display: flex;
@@ -289,37 +264,31 @@
   border-top: 1rpx dashed #eee;
   margin-top: 8rpx;
 }
-
 .goods-section-subtotal .subtotal-label {
   font-size: 26rpx;
   color: var(--text-sub);
 }
-
 .goods-section-subtotal .subtotal-value {
   font-size: 28rpx;
   color: var(--text-main);
   font-weight: 500;
 }
-
 /* 追加商品区域 */
 .appended-section {
   margin-top: 24rpx;
   padding-top: 20rpx;
   border-top: 2rpx solid #f0f0f0;
 }
-
 .appended-header {
   display: flex;
   align-items: center;
   margin-bottom: 16rpx;
 }
-
 .appended-title {
   font-size: 28rpx;
   color: #ff9800;
   font-weight: 500;
 }
-
 .appended-badge {
   margin-left: 12rpx;
   padding: 4rpx 12rpx;
@@ -328,31 +297,26 @@
   font-size: 22rpx;
   border-radius: 16rpx;
 }
-
 .appended-goods-list {
   background: #fffbf5;
   border-radius: 12rpx;
   padding: 0 16rpx;
   border: 1rpx solid #fff3e0;
 }
-
 .appended-item {
   position: relative;
 }
-
 .appended-time {
   font-size: 22rpx;
   color: #ff9800;
   margin-top: 4rpx;
 }
-
 /* 价格汇总 */
 .price-summary {
   padding-top: 24rpx;
   border-top: 1rpx solid #f5f5f5;
   margin-top: 10rpx;
 }
-
 .price-item {
   display: flex;
   justify-content: space-between;
@@ -360,7 +324,6 @@
   font-size: 28rpx;
   color: var(--text-main);
 }
-
 .price-item.total {
   font-size: 32rpx;
   font-weight: bold;
@@ -368,17 +331,14 @@
   padding-top: 16rpx;
   border-top: 1rpx dashed #eee;
 }
-
 .discount {
   color: #ff9800;
 }
-
 .total-amount {
   color: var(--danger-color);
   font-weight: bold;
   font-size: 36rpx;
 }
-
 /* 二维码容器 */
 .qrcode-container {
   display: flex;
@@ -390,18 +350,15 @@
   box-shadow: var(--shadow-sm);
   margin-bottom: 24rpx;
 }
-
 .qrcode-image {
   width: 360rpx;
   height: 360rpx;
   margin-bottom: 24rpx;
 }
-
 .qrcode-tip {
   font-size: 26rpx;
   color: var(--text-sub);
 }
-
 /* 底部按钮 */
 .actions {
   position: fixed;
@@ -417,24 +374,19 @@
   padding-bottom: calc(14rpx + env(safe-area-inset-bottom));
   z-index: 100;
 }
-
 .actions > t-button {
   margin-left: 16rpx;
 }
-
 .actions > t-button:first-child {
   margin-left: 0;
 }
-
 /* 管理员按钮样式 */
 .btn-primary {
   min-width: 160rpx;
 }
-
 .btn-secondary {
   min-width: 140rpx;
 }
-
 .back-btn {
   min-width: 200rpx;
   height: 80rpx;
@@ -446,14 +398,12 @@
   font-size: 28rpx;
   font-weight: 500;
 }
-
 .loading {
   text-align: center;
   padding: 60rpx 0;
   color: var(--text-sub);
   font-size: 28rpx;
 }
-
 /* ===== 双状态标签区域 ===== */
 .order-status-section {
   padding: 24rpx 32rpx;
@@ -462,50 +412,42 @@
   margin-bottom: 24rpx;
   box-shadow: var(--shadow-sm);
 }
-
 .status-label {
   font-size: 28rpx;
   color: #666;
   margin-bottom: 16rpx;
 }
-
 .status-tags {
   display: flex;
   gap: 16rpx;
   flex-wrap: wrap;
 }
-
 .status-tag {
   padding: 10rpx 20rpx;
   border-radius: 8rpx;
   font-size: 26rpx;
   font-weight: 500;
 }
-
 /* 订单流程状态颜色 */
 .flow-status-0 { background: #e3f2fd; color: #1976d2; } /* CREATED - 待服务 */
 .flow-status-1 { background: #fff3e0; color: #f57c00; } /* PROCESSING - 服务中 */
 .flow-status-2 { background: #e8f5e9; color: #388e3c; } /* SERVICE_DONE - 服务完成 */
 .flow-status-3 { background: #f5f5f5; color: #757575; } /* COMPLETED - 已完成 */
 .flow-status-4 { background: #ffebee; color: #d32f2f; } /* CANCELLED - 已取消 */
-
 /* 支付状态颜色 */
 .payment-status-0 { background: #fff8e1; color: #ffa000; } /* UNPAID - 待支付 */
 .payment-status-1 { background: #e8f5e9; color: #388e3c; } /* PAID - 已支付 */
-
 /* ===== 管理员操作按钮样式 ===== */
 .btn-success {
   background: #388e3c !important;
   color: #fff !important;
   min-width: 160rpx;
 }
-
 .btn-danger {
   background: #d32f2f !important;
   color: #fff !important;
   min-width: 140rpx;
 }
-
 .no-action-tip {
   width: 100%;
   text-align: center;
@@ -515,7 +457,6 @@
   background: #f5f5f5;
   border-radius: 8rpx;
 }
-
 /* ===== 用户端操作按钮样式 ===== */
 .user-action-buttons {
   display: flex;
@@ -525,7 +466,6 @@
   justify-content: space-between;
   width: 100%;
 }
-
 .user-action-buttons .btn-append {
   flex: 2;
   min-width: 220rpx;
@@ -533,13 +473,11 @@
   --td-button-font-size: 30rpx;
   font-weight: 600;
 }
-
 .btn-pay {
   flex: 2;
   min-width: 200rpx;
   font-size: 30rpx;
 }
-
 .btn-cancel-light {
   flex: 1;
   min-width: 140rpx;
@@ -552,14 +490,12 @@
   box-shadow: 0 2rpx 6rpx rgba(210, 75, 65, 0.12);
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-
 .btn-cancel-light:active {
   background: rgba(210, 75, 65, 0.12) !important;
   border-color: #d24b41 !important;
   color: #d24b41 !important;
   box-shadow: none;
 }
-
 .user-status-tip {
   width: 100%;
   text-align: center;
@@ -568,29 +504,24 @@
   font-size: 24rpx;
   line-height: 1.6;
 }
-
 .user-status-tip-inline {
   padding: 0;
   text-align: left;
 }
-
 .user-status-tip.ended {
   color: #666;
 }
-
 .ended-actions {
   display: flex;
   gap: 16rpx;
   width: 100%;
 }
-
 .ended-actions .btn-delete {
   flex: 1;
   min-width: 140rpx;
   background: #f5f5f5 !important;
   color: #666 !important;
 }
-
 .ended-actions .btn-rebuy {
   flex: 2;
   min-width: 200rpx;

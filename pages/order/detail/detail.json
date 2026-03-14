@@ -1,9 +1,8 @@
 {
   "navigationBarTitleText": "订单详情",
   "usingComponents": {
+    "c-empty": "/components/c-empty/c-empty",
     "t-button": "tdesign-miniprogram/button/button",
-    "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-loading": "tdesign-miniprogram/loading/loading",
-    "t-empty": "tdesign-miniprogram/empty/empty"
+    "t-loading": "tdesign-miniprogram/loading/loading"
   }
 }

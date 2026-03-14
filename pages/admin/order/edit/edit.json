@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "编辑订单",
+  "usingComponents": {
+    "c-empty": "/components/c-empty/c-empty",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-textarea": "tdesign-miniprogram/textarea/textarea",
+    "t-button": "tdesign-miniprogram/button/button",
+    "product-selector": "../../../../components/product-selector/product-selector"
+  }
+}

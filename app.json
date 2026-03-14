@@ -3,24 +3,29 @@
     "pages/index_home/index_home",
     "pages/index/index",
     "pages/goods/category/category",
+    "pages/goods/detail/detail",
     "pages/user/user",
     "pages/address/address",
-    "pages/goods/detail/detail",
     "pages/process/list/list",
     "pages/process/detail/detail",
     "pages/cart/cart",
     "pages/feedback/feedback",
-    "pages/order/list/list",
-    "pages/order/detail/detail",
-    "pages/order/confirm/confirm",
-    "pages/order/create/create",
-    "pages/order/append-items/append-items",
     "pages/scan-result/scan-result",
     "pages/package/list/list",
     "pages/package/detail/detail",
     "pages/package/confirm/confirm"
   ],
   "subpackages": [
+    {
+      "root": "pages/order",
+      "name": "order",
+      "pages": [
+        "list/list",
+        "confirm/confirm",
+        "create/create",
+        "detail/detail"
+      ]
+    },
     {
       "root": "pages/admin",
       "name": "admin",
@@ -35,6 +40,7 @@
         "product/scan/scan",
         "order/list/list",
         "order/create/create",
+        "order/edit/edit",
         "order/qr-code/qr-code",
         "package/list/list",
         "package/edit/edit",

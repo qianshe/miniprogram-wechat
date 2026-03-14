@@ -1,0 +1,116 @@
+<view class="page-container">
+  <view class="loading-state" wx:if="{{loading}}">
+    <t-loading theme="circular" size="48rpx" text="加载中..." />
+  </view>
+  <view class="error-state" wx:elif="{{error}}">
+    <c-empty show="{{true}}" title="加载失败" description="{{error}}" />
+  </view>
+  <view class="empty-state" wx:elif="{{!orderInfo && !loading}}">
+    <c-empty show="{{true}}" title="未找到订单信息" />
+  </view>
+  <block wx:else>
+    <view class="header-section">
+      <view class="header-title">编辑订单信息</view>
+      <view class="header-subtitle">统一暂存商品与服务信息，保存后一次生效</view>
+    </view>
+    <view class="error-summary-banner" wx:if="{{error || hasValidationErrors}}">
+      <text class="error-text">{{error || '表单校验未通过，请检查填写项'}}</text>
+    </view>
+    <view class="form-container">
+      <view class="form-card">
+        <view class="card-title">服务信息</view>
+        <view class="input-group">
+          <view class="input-label">服务时间</view>
+          <picker mode="date" value="{{formData.serviceTime}}" bindchange="onServiceTimeChange">
+            <view class="filled-input picker-trigger">
+              <text class="{{formData.serviceTime ? 'text-value' : 'text-placeholder'}}">{{formData.serviceTime || '请选择服务日期'}}</text>
+              <text class="picker-inline-mark">日</text>
+            </view>
+          </picker>
+          <view class="field-error" wx:if="{{fieldErrors.serviceTime}}">
+            <text class="error-text">{{fieldErrors.serviceTime}}</text>
+          </view>
+        </view>
+        <view class="input-group">
+          <view class="input-label">订单备注</view>
+          <t-textarea
+            placeholder="可选填备注信息"
+            value="{{formData.remark}}"
+            bind:change="onInputChange"
+            data-field="remark"
+            autosize
+            borderless="{{true}}"
+            class="filled-input textarea-input"
+            placeholder-class="placeholder-style"
+          />
+          <view class="field-error" wx:if="{{fieldErrors.remark}}">
+            <text class="error-text">{{fieldErrors.remark}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="form-card">
+        <view class="card-header compact">
+          <view>
+            <view class="card-title compact">商品清单</view>
+            <view class="card-tip">支持新增商品、调整数量、删除商品，保存后统一生效</view>
+          </view>
+          <t-button theme="primary" variant="outline" size="small" bindtap="openProductSelector" disabled="{{itemMutationBlocked}}">新增商品</t-button>
+        </view>
+        <view class="item-warning" wx:if="{{itemMutationBlocked}}">
+          当前订单存在历史拆分商品行，暂不支持直接编辑商品。
+        </view>
+        <view class="item-list" wx:if="{{itemsDraft.length > 0}}">
+          <view class="item-row" wx:for="{{itemsDraft}}" wx:key="productId">
+            <view class="item-main">
+              <view class="item-name">{{item.name || item.productId}}</view>
+              <view class="item-price">单价 ¥{{item.displayPrice}}</view>
+            </view>
+            <view class="item-actions">
+              <t-button size="small" variant="outline" data-index="{{index}}" bindtap="decreaseItemQuantity" disabled="{{itemMutationBlocked}}">-</t-button>
+              <view class="item-quantity">{{item.quantity}}</view>
+              <t-button size="small" variant="outline" data-index="{{index}}" bindtap="increaseItemQuantity" disabled="{{itemMutationBlocked}}">+</t-button>
+              <t-button size="small" theme="danger" variant="text" data-index="{{index}}" bindtap="removeItem" disabled="{{itemMutationBlocked}}">删除</t-button>
+            </view>
+            <view class="item-subtotal">小计 ¥{{item.displaySubtotal}}</view>
+          </view>
+        </view>
+        <view class="item-empty" wx:else>
+          暂无商品，请至少保留一个商品后再保存。
+        </view>
+        <view class="draft-summary">
+          <text class="draft-summary-label">暂存订单金额</text>
+          <text class="draft-summary-value">¥{{draftTotalAmount}}</text>
+        </view>
+      </view>
+    </view>
+    <product-selector
+      visible="{{showProductSelector}}"
+      title="选择商品"
+      categories="{{categories}}"
+      currentCategoryIndex="{{currentCategoryIndex}}"
+      products="{{filteredProducts}}"
+      productsLoading="{{productsLoading}}"
+      hasMore="{{productsPagination.hasMore}}"
+      bind:close="closeProductSelector"
+      bind:categorychange="onCategoryChange"
+      bind:productselect="onProductSelect"
+      bind:loadmore="onLoadMoreProducts"
+    />
+    <view class="footer-bar">
+      <view class="footer-actions">
+        <t-button theme="light" size="large" shape="round" class="action-btn cancel" bindtap="goBack">取消</t-button>
+        <t-button
+          theme="primary"
+          size="large"
+          shape="round"
+          class="action-btn submit"
+          loading="{{saving}}"
+          bindtap="submitEdit"
+          disabled="{{saving || !canSave || hasValidationErrors}}"
+        >
+          保存修改
+        </t-button>
+      </view>
+    </view>
+  </block>
+</view>

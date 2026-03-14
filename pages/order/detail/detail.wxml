@@ -6,7 +6,6 @@
       <text class="status">{{orderInfo.displayStatusText}}</text>
       <view class="status-desc">{{orderInfo.flowStatusDesc || orderInfo.statusDesc}}</view>
     </view>
-
     <!-- 双状态标签（管理端显示） -->
     <view class="order-status-section" wx:if="{{isAdmin}}">
       <view class="status-label">订单状态</view>
@@ -15,7 +14,6 @@
         <view wx:if="{{orderInfo.showPaymentStatusTag}}" class="status-tag payment-status-{{orderInfo.paymentStatus}}">{{orderInfo.paymentStatusText}}</view>
       </view>
     </view>
-
     <!-- 状态时间线（基于双字段状态系统：orderStatus + paymentStatus） -->
     <view class="timeline">
       <view class="timeline-item {{orderInfo.orderStatus === 0 && orderInfo.paymentStatus === 0 ? 'current' : 'active'}}">
@@ -42,7 +40,6 @@
         <text class="timeline-time">{{orderInfo.orderStatus === 3 ? (orderInfo.timelineCompleteTime || '-') : ''}}</text>
       </view>
     </view>
-
     <view class="section">
       <view class="section-title">基本信息</view>
       <view class="info-item info-item--center">
@@ -61,7 +58,6 @@
         <text class="value">{{orderInfo.serviceTime}}</text>
       </view>
     </view>
-
     <view class="section">
       <view class="section-title">联系信息</view>
       <view class="info-item">
@@ -80,9 +76,9 @@
           >拨打</t-button>
         </view>
       </view>
-      <view class="info-item">
+      <view class="info-item info-item--address">
         <text class="label">服务地址</text>
-        <view class="value-with-action">
+        <view class="value-with-action value-with-action--address">
           <text class="value address">{{orderInfo.addressText}}</text>
           <t-button
             wx:if="{{isAdmin && hasValidCoordinates}}"
@@ -90,15 +86,9 @@
             theme="primary"
             bindtap="handleAdminNavigate"
           >导航</t-button>
-          <t-button size="small" theme="default" bindtap="viewLocation" wx:if="{{orderInfo.latitude && orderInfo.longitude}}">查看</t-button>
-          <text
-            wx:if="{{isAdmin && (!orderInfo.address.latitude || !orderInfo.address.longitude)}}"
-            class="value"
-          >地址信息不完整，无法导航</text>
         </view>
       </view>
     </view>
-
     <view class="section">
       <view class="section-title">商品信息</view>
       <!-- 原始商品 -->
@@ -120,7 +110,6 @@
         <text class="subtotal-label">原始商品小计</text>
         <text class="subtotal-value">¥{{orderInfo.originalSubtotal}}</text>
       </view>
-
       <!-- 追加商品 -->
       <view class="appended-section" wx:if="{{orderInfo.appendedItems.length > 0}}">
         <view class="appended-header">
@@ -149,7 +138,6 @@
           <text class="subtotal-value">¥{{orderInfo.appendedSubtotal}}</text>
         </view>
       </view>
-
       <view class="price-summary">
         <view class="price-item">
           <text>商品金额</text>
@@ -165,12 +153,10 @@
         </view>
       </view>
     </view>
-
     <view class="section" wx:if="{{orderInfo.remark}}">
       <view class="section-title">备注</view>
       <view class="remark">{{orderInfo.remark}}</view>
     </view>
-
     <!-- 用户端状态提示（放在内容流中，避免撑高底部固定栏） -->
     <view wx:if="{{!isAdmin && orderInfo.orderStatus < 3}}" class="section section-compact status-tip-section">
       <view class="user-status-tip user-status-tip-inline">
@@ -182,7 +168,6 @@
         <text wx:if="{{orderInfo.orderStatus === 2 && orderInfo.paymentStatus === 1}}">服务已完成，已确认收款。</text>
       </view>
     </view>
-
     <view class="actions">
       <!-- 管理员按钮（双字段状态系统） -->
       <block wx:if="{{isAdmin}}">
@@ -192,8 +177,8 @@
         <t-button wx:if="{{showMarkServiceDoneBtn}}" theme="primary" class="btn-primary" bindtap="handleMarkServiceDone">标记服务完成</t-button>
         <!-- 确认收款：未支付且订单未完成/未取消时可用 -->
         <t-button wx:if="{{showConfirmPaymentBtn}}" theme="success" class="btn-success" bindtap="handleConfirmPaymentNew">确认收款</t-button>
-        <!-- 追加商品：未支付 且 服务未完成 -->
-        <t-button wx:if="{{showAppendItemsBtn}}" theme="default" class="btn-append" bindtap="handleAppendItems">追加商品</t-button>
+        <!-- 编辑订单：仅管理员且订单仍可编辑时展示 -->
+        <t-button wx:if="{{showEditOrderBtn}}" theme="default" class="btn-secondary" bindtap="handleEditOrder">编辑订单</t-button>
         <!-- 取消订单：仅 CREATED 或 PROCESSING 状态可用 -->
         <t-button wx:if="{{showCancelBtn}}" theme="danger" class="btn-danger" bindtap="handleCancelOrderNew">取消订单</t-button>
         <!-- 无操作提示：已完成或已取消 -->
@@ -208,15 +193,7 @@
                   bindtap="handleUserCancelOrder">
           取消订单
         </t-button>
-        
-        <!-- 追加商品按钮 -->
-        <t-button wx:if="{{showAppendItemsBtn}}"
-                  theme="primary"
-                  class="btn-append"
-                  bindtap="handleAppendItems">
-          追加商品
-        </t-button>
-        
+
         <!-- 订单结束状态 -->
         <view wx:if="{{orderInfo.orderStatus >= 3}}" class="ended-actions">
           <t-button theme="default" class="btn-delete" bindtap="deleteOrder">删除订单</t-button>
@@ -225,7 +202,5 @@
       </view>
     </view>
   </block>
-  <t-empty wx:else description="订单不存在">
-    <t-button theme="primary" bindtap="goBack">返回列表</t-button>
-  </t-empty>
+  <c-empty wx:else show="{{true}}" title="订单不存在" showButton="{{true}}" buttonText="返回列表" bind:action="goBack" />
 </view>

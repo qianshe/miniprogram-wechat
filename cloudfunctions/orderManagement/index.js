@@ -18,6 +18,7 @@ const {
   Roles
 } = require('./_shared/fieldFilter');
 const config = require('./config');
+const { checkSensitiveWords } = require('./_shared/sensitiveWords');
 
 const { verifyAdminByOpenid: _verifyAdmin } = require('./_shared/permission');
 
@@ -61,6 +62,268 @@ function normalizeCoordinate(value) {
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+const UPDATE_ORDER_CONTENT_EDITABLE_STATUSES = [0, 1];
+
+const UPDATE_ORDER_CONTENT_EDITABLE_FIELDS = [
+  'remark',
+  'serviceTime'
+];
+
+const UPDATE_ORDER_CONTENT_ALLOWED_CHANGE_KEYS = [
+  ...UPDATE_ORDER_CONTENT_EDITABLE_FIELDS,
+  'items'
+];
+
+const UPDATE_ORDER_CONTENT_REMARK_MAX_LENGTH = 500;
+const UPDATE_ORDER_CONTENT_MIN_ITEM_COUNT = 1;
+
+function normalizeTimestampForCompare(value) {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString();
+}
+
+function isEditableOrderStatus(status) {
+  return UPDATE_ORDER_CONTENT_EDITABLE_STATUSES.includes(Number(status));
+}
+
+function normalizeRequestedOrderItemsSnapshot(items = []) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items.map((item) => ({
+    productId: typeof item?.productId === 'string' ? item.productId.trim() : '',
+    quantity: Number(item?.quantity)
+  }));
+}
+
+function getDuplicateProductIds(items = []) {
+  const seen = new Set();
+  const duplicates = new Set();
+
+  items.forEach((item) => {
+    const productId = typeof item?.productId === 'string' ? item.productId.trim() : '';
+    if (!productId) {
+      return;
+    }
+
+    if (seen.has(productId)) {
+      duplicates.add(productId);
+      return;
+    }
+
+    seen.add(productId);
+  });
+
+  return Array.from(duplicates);
+}
+
+function findMixedPriceDuplicateProductIds(items = []) {
+  const grouped = new Map();
+
+  (Array.isArray(items) ? items : []).forEach((item) => {
+    const productId = typeof item?.productId === 'string' ? item.productId.trim() : '';
+    if (!productId) {
+      return;
+    }
+
+    if (!grouped.has(productId)) {
+      grouped.set(productId, new Set());
+    }
+
+    grouped.get(productId).add(Number(item.price || 0));
+  });
+
+  return Array.from(grouped.entries())
+    .filter(([, priceSet]) => priceSet.size > 1)
+    .map(([productId]) => productId);
+}
+
+function collapseSamePriceOrderItems(items = []) {
+  const indexMap = new Map();
+  const collapsed = [];
+
+  (Array.isArray(items) ? items : []).forEach((rawItem) => {
+    const productId = typeof rawItem?.productId === 'string' ? rawItem.productId.trim() : '';
+    if (!productId) {
+      return;
+    }
+
+    const quantity = parseInt(rawItem.quantity, 10) || 0;
+    if (quantity <= 0) {
+      return;
+    }
+
+    const price = Number(rawItem.price || 0);
+    const existingIndex = indexMap.get(productId);
+    if (existingIndex === undefined) {
+      indexMap.set(productId, collapsed.length);
+      collapsed.push({
+        ...rawItem,
+        productId,
+        quantity,
+        price,
+        subtotal: price * quantity
+      });
+      return;
+    }
+
+    const existingItem = collapsed[existingIndex];
+    collapsed[existingIndex] = {
+      ...existingItem,
+      quantity: existingItem.quantity + quantity,
+      subtotal: Number(existingItem.price || 0) * (existingItem.quantity + quantity),
+      appendedAt: existingItem.appendedAt && rawItem.appendedAt
+        ? (new Date(existingItem.appendedAt) <= new Date(rawItem.appendedAt) ? existingItem.appendedAt : rawItem.appendedAt)
+        : (existingItem.appendedAt || rawItem.appendedAt)
+    };
+  });
+
+  return collapsed;
+}
+
+async function buildUpdatedOrderItemsPatch(order = {}, requestedItemsSnapshot = []) {
+  const normalizedRequestedItems = normalizeRequestedOrderItemsSnapshot(requestedItemsSnapshot);
+  if (normalizedRequestedItems.length < UPDATE_ORDER_CONTENT_MIN_ITEM_COUNT) {
+    return { error: paramError('订单至少保留一个商品') };
+  }
+
+  const duplicatePayloadProductIds = getDuplicateProductIds(normalizedRequestedItems);
+  if (duplicatePayloadProductIds.length > 0) {
+    return { error: paramError(`items中存在重复商品: ${duplicatePayloadProductIds.join(', ')}`) };
+  }
+
+  const existingItems = Array.isArray(order.items) ? order.items : [];
+  const mixedPriceDuplicateProductIds = findMixedPriceDuplicateProductIds(existingItems);
+  if (mixedPriceDuplicateProductIds.length > 0) {
+    return { error: paramError(`订单存在历史拆分商品行，暂不支持编辑商品: ${mixedPriceDuplicateProductIds.join(', ')}`) };
+  }
+
+  const collapsedExistingItems = collapseSamePriceOrderItems(existingItems);
+  const existingItemMap = new Map(
+    collapsedExistingItems.map((item) => [item.productId, item])
+  );
+
+  const newProductIds = normalizedRequestedItems
+    .map((item) => item.productId)
+    .filter((productId) => !existingItemMap.has(productId));
+
+  let fetchedProductMap = new Map();
+  if (newProductIds.length > 0) {
+    const productsResult = await db.collection('products')
+      .where({ _id: _.in(newProductIds) })
+      .get();
+
+    fetchedProductMap = new Map(
+      (productsResult.data || []).map((product) => [product._id, product])
+    );
+
+    const missingProductIds = newProductIds.filter((productId) => !fetchedProductMap.has(productId));
+    if (missingProductIds.length > 0) {
+      return { error: error(ErrorCodes.BUSINESS_ERROR, `商品不存在: ${missingProductIds.join(', ')}`) };
+    }
+  }
+
+  const finalItems = normalizedRequestedItems.map((item) => {
+    const existingItem = existingItemMap.get(item.productId);
+    if (existingItem) {
+      const preservedPrice = Number(existingItem.price || 0);
+      return {
+        ...existingItem,
+        productId: item.productId,
+        quantity: item.quantity,
+        subtotal: preservedPrice * item.quantity
+      };
+    }
+
+    const product = fetchedProductMap.get(item.productId);
+    const price = Number(product.price || 0);
+    return {
+      productId: item.productId,
+      productName: product.name || '',
+      price,
+      quantity: item.quantity,
+      subtotal: price * item.quantity,
+      productImage: product.coverImage || product.thumb || product.imageUrl || product.image || (Array.isArray(product.images) ? product.images[0] : '') || ''
+    };
+  });
+
+  return {
+    items: finalItems,
+    totalAmount: finalItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0)
+  };
+}
+
+function sanitizeContentChangePatch(changes = {}) {
+  const patch = {};
+
+  if (Object.prototype.hasOwnProperty.call(changes, 'remark')) {
+    patch.remark = typeof changes.remark === 'string' ? changes.remark.trim() : '';
+  }
+
+  if (Object.prototype.hasOwnProperty.call(changes, 'serviceTime')) {
+    patch.serviceTime = typeof changes.serviceTime === 'string' ? changes.serviceTime.trim() : '';
+  }
+
+  if (Object.prototype.hasOwnProperty.call(changes, 'items')) {
+    patch.items = normalizeRequestedOrderItemsSnapshot(changes.items);
+  }
+
+  return patch;
+}
+
+function validateUpdateOrderContentPatch(patchData = {}) {
+  if (Object.prototype.hasOwnProperty.call(patchData, 'serviceTime')) {
+    if (!patchData.serviceTime) {
+      return paramError('服务时间不能为空');
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(patchData, 'remark')) {
+    const normalizedRemark = patchData.remark;
+    if (normalizedRemark && normalizedRemark.length > UPDATE_ORDER_CONTENT_REMARK_MAX_LENGTH) {
+      return paramError(`备注长度不能超过${UPDATE_ORDER_CONTENT_REMARK_MAX_LENGTH}个字符`);
+    }
+
+    if (normalizedRemark) {
+      const sensitiveResult = checkSensitiveWords(normalizedRemark, 'remark');
+      if (!sensitiveResult.valid) {
+        return paramError(`备注包含敏感词：${sensitiveResult.matchedWords.join('、')}`);
+      }
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(patchData, 'items')) {
+    if (!Array.isArray(patchData.items)) {
+      return paramError('items参数无效');
+    }
+
+    if (patchData.items.length < UPDATE_ORDER_CONTENT_MIN_ITEM_COUNT) {
+      return paramError('订单至少保留一个商品');
+    }
+
+    const duplicateProductIds = getDuplicateProductIds(patchData.items);
+    if (duplicateProductIds.length > 0) {
+      return paramError(`items中存在重复商品: ${duplicateProductIds.join(', ')}`);
+    }
+
+    const invalidItem = patchData.items.find((item) => !item.productId || !Number.isInteger(item.quantity) || item.quantity <= 0);
+    if (invalidItem) {
+      return paramError('商品数量必须为正整数');
+    }
+  }
+
+  return null;
 }
 
 function isProductionLikeEnv(envId) {
@@ -1154,6 +1417,190 @@ async function updateOrderFlowStatus(data, context, logger) {
 }
 
 /**
+ * 更新订单备注（管理员）
+ * @param {object} data - 请求数据
+ * @param {object} context - 云函数上下文
+ * @param {object} logger - 追踪日志记录器
+ */
+async function updateOrderRemark(data, context, logger) {
+  const { OPENID } = cloud.getWXContext();
+  const { orderId, orderNo, remark } = data || {};
+
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+  if (!isAdmin) {
+    return permissionError('仅管理员可执行此操作');
+  }
+
+  const orderIdentifier = orderId || orderNo;
+  if (!orderIdentifier) {
+    return paramError('订单ID或订单号不能为空');
+  }
+
+  const normalizedRemark = typeof remark === 'string' ? remark.trim() : '';
+  if (normalizedRemark.length > 200) {
+    return paramError('备注不能超过200个字符');
+  }
+
+  logger.info('Updating order remark', {
+    orderId,
+    orderNo,
+    remarkLength: normalizedRemark.length
+  });
+
+  const whereCondition = _.or([
+    { _id: orderIdentifier },
+    { orderNo: orderIdentifier }
+  ]);
+
+  const orderResult = await db.collection('orders').where(whereCondition).get();
+  if (orderResult.data.length === 0) {
+    return notFoundError('订单');
+  }
+
+  const order = orderResult.data[0];
+  const updateResult = await db.collection('orders').doc(order._id).update({
+    data: {
+      remark: normalizedRemark,
+      updateTime: new Date()
+    }
+  });
+
+  if (updateResult.stats.updated === 0) {
+    return error(ErrorCodes.DB_UPDATE_ERROR, '更新订单备注失败');
+  }
+
+  logger.info('Order remark updated', {
+    orderId: order._id,
+    orderNo: order.orderNo,
+    remarkLength: normalizedRemark.length
+  });
+
+  return success({
+    orderId: order._id,
+    orderNo: order.orderNo,
+    remark: normalizedRemark
+  }, '订单备注更新成功');
+}
+
+/**
+ * 更新订单内容（管理员）
+ * v1字段白名单：remark、serviceTime、address、latitude、longitude、locationName
+ * @param {object} data - 请求数据
+ * @param {object} context - 云函数上下文
+ * @param {object} logger - 追踪日志记录器
+ */
+async function updateOrderContent(data, context, logger) {
+  const { OPENID } = cloud.getWXContext();
+  const { _traceId: _ignoredTraceId, ...payload } = data || {};
+  const payloadKeys = Object.keys(payload);
+  const allowedPayloadKeys = ['orderId', 'expectedUpdateTime', 'changes'];
+  const unexpectedPayloadKeys = payloadKeys.filter((key) => !allowedPayloadKeys.includes(key));
+
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+  if (!isAdmin) {
+    return permissionError('仅管理员可执行此操作');
+  }
+
+  if (unexpectedPayloadKeys.length > 0) {
+    return paramError(`不支持的参数: ${unexpectedPayloadKeys.join(', ')}`);
+  }
+
+  const { orderId, expectedUpdateTime, changes } = payload;
+
+  if (!orderId || typeof orderId !== 'string') {
+    return paramError('订单ID不能为空');
+  }
+
+  const normalizedExpectedUpdateTime = normalizeTimestampForCompare(expectedUpdateTime);
+  if (!normalizedExpectedUpdateTime) {
+    return paramError('expectedUpdateTime格式无效');
+  }
+
+  if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
+    return paramError('changes参数无效');
+  }
+
+  const changeKeys = Object.keys(changes);
+  if (changeKeys.length === 0) {
+    return paramError('changes不能为空');
+  }
+
+  const unsupportedFields = changeKeys.filter((field) => !UPDATE_ORDER_CONTENT_ALLOWED_CHANGE_KEYS.includes(field));
+  if (unsupportedFields.length > 0) {
+    return paramError(`不支持更新字段: ${unsupportedFields.join(', ')}`);
+  }
+
+  let patchData = sanitizeContentChangePatch(changes);
+  if (Object.keys(patchData).length === 0) {
+    return paramError('没有可更新字段');
+  }
+
+  const patchValidationResult = validateUpdateOrderContentPatch(patchData);
+  if (patchValidationResult) {
+    return patchValidationResult;
+  }
+
+  logger.info('Updating order content', {
+    orderId,
+    changeKeys
+  });
+
+  const orderResult = await db.collection('orders').doc(orderId).get();
+  if (!orderResult || !orderResult.data) {
+    return notFoundError('订单');
+  }
+
+  const order = orderResult.data;
+  if (!isEditableOrderStatus(order.orderStatus)) {
+    return error(ErrorCodes.INVALID_OPERATION, '当前订单状态不允许编辑内容');
+  }
+
+  const normalizedPersistedUpdateTime = normalizeTimestampForCompare(order.updateTime);
+  if (!normalizedPersistedUpdateTime || normalizedPersistedUpdateTime !== normalizedExpectedUpdateTime) {
+    return error(ErrorCodes.RESOURCE_CONFLICT, '订单已被更新，请刷新后重试');
+  }
+
+  if (Object.prototype.hasOwnProperty.call(patchData, 'items')) {
+    const nextItemsPatch = await buildUpdatedOrderItemsPatch(order, patchData.items);
+    if (nextItemsPatch.error) {
+      return nextItemsPatch.error;
+    }
+
+    patchData = {
+      ...patchData,
+      items: nextItemsPatch.items,
+      totalAmount: nextItemsPatch.totalAmount
+    };
+  }
+
+  const now = new Date();
+  const updateResult = await db.collection('orders').where({
+    _id: order._id,
+    updateTime: order.updateTime
+  }).update({
+    data: {
+      ...patchData,
+      updateTime: now
+    }
+  });
+
+  if (updateResult.stats.updated === 0) {
+    return error(ErrorCodes.RESOURCE_CONFLICT, '订单已被更新，请刷新后重试');
+  }
+
+  logger.info('Order content updated', {
+    orderId: order._id,
+    changeKeys
+  });
+
+  return success({
+    orderId: order._id,
+    updateTime: now.toISOString(),
+    changes: patchData
+  }, '订单内容更新成功');
+}
+
+/**
  * 更新支付状态（新API - 双字段系统）
  * @param {object} data - 请求数据
  * @param {object} context - 云函数上下文
@@ -1970,9 +2417,25 @@ async function appendOrderItems(data, context, logger) {
       return error(ErrorCodes.BUSINESS_ERROR, `商品不存在: ${missingProducts.join(', ')}`);
     }
 
+    const normalizedAppendItems = items.map((item) => {
+      const quantity = Number(item.quantity);
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        return null;
+      }
+      return {
+        ...item,
+        quantity
+      };
+    });
+
+    if (normalizedAppendItems.some(item => !item)) {
+      await transaction.rollback();
+      return paramError('商品数量必须为正整数');
+    }
+
     // 4. 构建新商品列表（使用数据库权威价格）
     const existingItems = Array.isArray(order.items) ? order.items : [];
-    const newItems = items.map(item => {
+    const newItems = normalizedAppendItems.map(item => {
       const dbProduct = productMap.get(item.productId);
       const price = dbProduct.price; // 使用数据库价格（分）
       return {
@@ -2015,10 +2478,10 @@ async function appendOrderItems(data, context, logger) {
 
     const mergedItems = mergeAppendedItems(existingItems, newItems);
 
-    // 4. 重算总金额
+    // 5. 重算总金额
     const newTotalAmount = mergedItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
 
-    // 5. 更新订单
+    // 6. 更新订单
     await ordersCollection.doc(order._id).update({
       data: {
         items: mergedItems,
@@ -2140,6 +2603,8 @@ const handler = async (event, context, logger) => {
       return await recordOfflinePayment(data, context, logger);
     case 'updateOrderFlowStatus':
       return await updateOrderFlowStatus(data, context, logger);
+    case 'updateOrderContent':
+      return await updateOrderContent(data, context, logger);
     case 'updatePaymentStatus':
       return await updatePaymentStatus(data, context, logger);
     case 'migrateOrderStatus':

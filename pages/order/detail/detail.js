@@ -11,7 +11,8 @@ const {
   mapLegacyStatusToNew
 } = require('../../../config/constants.js');
 const { formatDate } = require('../../../utils/util.js');
-const navigationUtils = require('../../../utils/navigation.js');
+const navigationUtils = require('../utils/navigation.js');
+const { getAdminEditOrderState } = require('./order-edit-state.helper.js');
 
 const PENDING_CART_CLEANUP_KEY = 'pendingCartCleanupOrders';
 
@@ -29,6 +30,7 @@ Page({
     showConfirmPaymentBtn: false,
     showCancelBtn: false,
     showNoActionTip: false,
+    showEditOrderBtn: false,
     hasValidCoordinates: false,
     // 用户端按钮显示控制（双字段系统）
     showPayBtn: false,
@@ -417,6 +419,12 @@ Page({
    * | CANCELLED(4) | - | 无操作按钮 |
    */
   calculateAdminButtonStates(orderStatus, paymentStatus) {
+    const adminEditState = getAdminEditOrderState({
+      isAdmin: true,
+      orderStatus,
+      isSharedView: false
+    });
+
     return {
       // 开始处理：仅 CREATED 状态可用
       showStartProcessingBtn: orderStatus === ORDER_FLOW_STATUS.CREATED,
@@ -426,9 +434,10 @@ Page({
       showConfirmPaymentBtn: paymentStatus === PAYMENT_STATUS.UNPAID && orderStatus < ORDER_FLOW_STATUS.COMPLETED,
       // 取消订单：仅 CREATED 或 PROCESSING 状态可用
       showCancelBtn: orderStatus <= ORDER_FLOW_STATUS.PROCESSING,
+      // 编辑订单：仅管理员且订单仍可编辑时展示
+      showEditOrderBtn: adminEditState.showEditOrderEntry,
       // 无操作提示：已完成或已取消
-      showNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED,
-      ...this.getAppendItemsBtnState(paymentStatus, orderStatus)
+      showNoActionTip: orderStatus >= ORDER_FLOW_STATUS.COMPLETED
     };
   },
 
@@ -1043,10 +1052,27 @@ Page({
     });
   },
 
-  // 追加商品到订单
-  handleAppendItems() {
+  handleEditOrder() {
+    const { orderInfo, isAdmin } = this.data;
+    const orderNo = orderInfo && orderInfo.orderNo ? String(orderInfo.orderNo).trim() : '';
+
+    if (!isAdmin || !orderNo) {
+      wx.showToast({
+        title: '缺少可编辑订单信息',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const editState = getAdminEditOrderState({
+      isAdmin,
+      orderStatus: orderInfo.orderStatus,
+      isSharedView: false
+    });
+    const editRoute = editState.adminEditRoutePath || '/pages/admin/order/edit/edit';
+
     wx.navigateTo({
-      url: `/pages/order/append-items/append-items?orderNo=${this.data.orderInfo.orderNo}&isAdmin=${this.data.isAdmin}`
+      url: `${editRoute}?orderNo=${encodeURIComponent(orderNo)}&isAdmin=true`
     });
   },
 

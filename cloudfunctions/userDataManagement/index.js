@@ -217,7 +217,7 @@ async function addAddress(data, context, logger) {
 
   logger.info('Adding address', { openid: OPENID, name });
 
-  if (!name || !phone || !province || !detail) {
+  if (!name || !phone || !detail || normalizedLatitude === null || normalizedLongitude === null) {
     return paramError('地址信息不完整');
   }
 
@@ -242,7 +242,7 @@ async function addAddress(data, context, logger) {
     userOpenid: OPENID,
     name: name.trim(),
     phone: phone.trim(),
-    province,
+    province: province || '',
     city: city || '',
     district: district || '',
     detail: detail.trim(),
@@ -278,11 +278,17 @@ async function updateAddress(data, context, logger) {
     latitude,
     longitude
   } = data;
+  const normalizedLatitude = latitude !== undefined ? normalizeCoordinate(latitude) : undefined;
+  const normalizedLongitude = longitude !== undefined ? normalizeCoordinate(longitude) : undefined;
 
   logger.info('Updating address', { openid: OPENID, addressId });
 
   if (!addressId) {
     return paramError('地址ID不能为空');
+  }
+
+  if (!name || !phone || !detail || normalizedLatitude === null || normalizedLongitude === null) {
+    return paramError('地址信息不完整');
   }
 
   // 验证地址归属
@@ -314,8 +320,8 @@ async function updateAddress(data, context, logger) {
   if (isDefault !== undefined) updateData.isDefault = isDefault;
   if (locationName !== undefined) updateData.locationName = normalizeLocationName(locationName);
   if (locationAddress !== undefined) updateData.locationAddress = normalizeLocationName(locationAddress);
-  if (latitude !== undefined) updateData.latitude = normalizeCoordinate(latitude);
-  if (longitude !== undefined) updateData.longitude = normalizeCoordinate(longitude);
+  if (latitude !== undefined) updateData.latitude = normalizedLatitude;
+  if (longitude !== undefined) updateData.longitude = normalizedLongitude;
 
   await db.collection('addresses').doc(addressId).update({ data: updateData });
 
