@@ -1,5 +1,5 @@
 const { adminApi } = require('../../../../utils/api.js');
-const validation = require('../../../../utils/validation.js');
+const validation = require('../../utils/validation.js');
 const { checkAdminAccess } = require('../../common/adminGuard.js');
 
 const MAX_GALLERY_IMAGES = 9;

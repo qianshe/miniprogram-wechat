@@ -1,5 +1,5 @@
-const addressApi = require('../api/address.js');
-const { normalizeAddressFromLocation } = require('./addressSelection.js');
+const addressApi = require('../../../api/address.js');
+const { normalizeAddressFromLocation } = require('../../../utils/addressSelection.js');
 
 const NAVIGATION_PATH_MAP_APP = 'mapContext.openMapApp';
 const NAVIGATION_PATH_OPEN_LOCATION = 'wx.openLocation';

@@ -1,5 +1,5 @@
 const { api } = require('../../../utils/api.js');
-const validation = require('../../../utils/validation.js');
+const validation = require('../utils/validation.js');
 const { loadSelectableAddresses, pickDefaultAddress } = require('../../../utils/addressSelection.js');
 
 const PENDING_CART_CLEANUP_KEY = 'pendingCartCleanupOrders';

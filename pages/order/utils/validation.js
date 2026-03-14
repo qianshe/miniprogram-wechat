@@ -66,7 +66,6 @@ module.exports = {
       return { valid: false, message: `密码长度不能超过${maxLength}位` };
     }
 
-    // 密码强度验证（可选）
     const hasLetter = /[a-zA-Z]/.test(password);
     const hasNumber = /\d/.test(password);
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
@@ -110,7 +109,6 @@ module.exports = {
       return { valid: false, message: `用户名长度不能超过${maxLength}位` };
     }
 
-    // 验证用户名格式
     const usernameRegex = /^[a-zA-Z0-9_\u4e00-\u9fa5]+$/;
     if (!usernameRegex.test(username)) {
       return { valid: false, message: '用户名只能包含字母、数字、下划线和中文' };
@@ -215,7 +213,6 @@ module.exports = {
       return { valid: false, message: '地址信息不完整' };
     }
 
-    // 验证手机号
     const phoneValidation = this.validatePhone(address.telNumber);
     if (!phoneValidation.valid) {
       return phoneValidation;
@@ -230,7 +227,6 @@ module.exports = {
   validateOrderData(orderData) {
     const errors = [];
 
-    // 验证商品列表
     if (!orderData.items || orderData.items.length === 0) {
       errors.push('订单商品不能为空');
     } else {
@@ -247,13 +243,11 @@ module.exports = {
       });
     }
 
-    // 验证订单金额
     if (!orderData.totalAmount || orderData.totalAmount <= 0) {
       errors.push('订单金额必须大于0');
     }
 
-    // 验证配送信息
-    if (orderData.deliveryType === 1) { // 配送
+    if (orderData.deliveryType === 1) {
       if (!orderData.address) {
         errors.push('配送地址不能为空');
       }
@@ -339,7 +333,6 @@ module.exports = {
       const rule = rules[fieldName];
       const value = formData[fieldName];
 
-      // 必填验证
       if (rule.required) {
         const result = this.validateRequired(value, rule.label || fieldName);
         if (!result.valid) {
@@ -347,43 +340,46 @@ module.exports = {
         }
       }
 
-      // 类型验证
       if (rule.type && value !== undefined && value !== null && value !== '') {
         switch (rule.type) {
-          case 'phone':
+          case 'phone': {
             const phoneResult = this.validatePhone(value);
             if (!phoneResult.valid) {
               errors[fieldName] = phoneResult.message;
             }
             break;
-          case 'email':
+          }
+          case 'email': {
             const emailResult = this.validateEmail(value);
             if (!emailResult.valid) {
               errors[fieldName] = emailResult.message;
             }
             break;
-          case 'password':
+          }
+          case 'password': {
             const passwordResult = this.validatePassword(value, rule.minLength, rule.maxLength);
             if (!passwordResult.valid) {
               errors[fieldName] = passwordResult.message;
             }
             break;
-          case 'number':
+          }
+          case 'number': {
             const numberResult = this.validateNumberRange(value, rule.min, rule.max, rule.label || fieldName);
             if (!numberResult.valid) {
               errors[fieldName] = numberResult.message;
             }
             break;
-          case 'string':
+          }
+          case 'string': {
             const stringResult = this.validateStringLength(value, rule.minLength, rule.maxLength, rule.label || fieldName);
             if (!stringResult.valid) {
               errors[fieldName] = stringResult.message;
             }
             break;
+          }
         }
       }
 
-      // 自定义验证函数
       if (rule.validator && typeof rule.validator === 'function') {
         const customResult = rule.validator(value, formData);
         if (!customResult.valid) {

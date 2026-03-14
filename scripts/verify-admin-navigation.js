@@ -8,7 +8,7 @@ const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 const selectedCaseArg = process.argv.find((arg) => arg.startsWith('--case='));
 const selectedCase = selectedCaseArg ? selectedCaseArg.split('=')[1] : '';
 
-const navigationUtil = read('utils/navigation.js');
+const navigationUtil = read('pages/order/utils/navigation.js');
 const addressApi = read('api/address.js');
 const orderDetailJs = read('pages/order/detail/detail.js');
 const orderDetailWxml = read('pages/order/detail/detail.wxml');
@@ -30,16 +30,17 @@ const checks = {
   },
   'order-detail-admin-entry': {
     adminRoutePassesIsAdmin: /url:\s*`\/pages\/order\/detail\/detail\?orderNo=\$\{orderno\}&isAdmin=true`/.test(adminOrderListJs),
-    detailImportsNavigationHelper: /const navigationUtils = require\('\.\.\/\.\.\/\.\.\/utils\/navigation\.js'\);/.test(orderDetailJs),
-    adminButtonRoleAndCoordinateGate: /wx:if="\{\{isAdmin && orderInfo\.address\.latitude && orderInfo\.address\.longitude\}\}"/.test(orderDetailWxml),
+    detailImportsNavigationHelper: /const navigationUtils = require\('\.\.\/utils\/navigation\.js'\);/.test(orderDetailJs),
+    adminButtonUsesValidCoordinateGate: /wx:if="\{\{isAdmin && hasValidCoordinates\}\}"/.test(orderDetailWxml),
     adminButtonBindsNavigateHandler: /bindtap="handleAdminNavigate"/.test(orderDetailWxml),
-    handlerCallsNavigateToAddress: /navigationUtils\.navigateToAddress\(\{\s*address:\s*orderDetail\.address,\s*page:\s*this\s*\}\)/.test(orderDetailJs),
-    secondaryViewLocationKept: /bindtap="viewLocation"/.test(orderDetailWxml) && /viewLocation\(\)\s*\{[\s\S]*wx\.openLocation\(/.test(orderDetailJs)
+    handlerCallsNavigationHelper: /navigationUtils\.navigateToAddress\([\s\S]*?address:\s*orderDetail\.address[\s\S]*?page:\s*this[\s\S]*?\)|navigationUtils\.openAdminNavigation\([\s\S]*?address:\s*orderDetail\.address[\s\S]*?page:\s*this[\s\S]*?\)/.test(orderDetailJs),
+    adminViewLocationHidden: !/wx:if="\{\{isAdmin && orderInfo\.latitude && orderInfo\.longitude\}\}"/.test(orderDetailWxml),
+    userViewLocationRemoved: !/bindtap="viewLocation"/.test(orderDetailWxml)
+      && !/viewLocation/.test(orderDetailJs)
   },
   'missing-coordinates': {
-    fallbackTextVisibleForAdmin: /地址信息不完整，无法导航/.test(orderDetailWxml),
-    fallbackTextUsesCoordinateNegationGate: /wx:if="\{\{isAdmin && \(!orderInfo\.address\.latitude \|\| !orderInfo\.address\.longitude\)\}\}"/.test(orderDetailWxml),
-    handlerRejectsMissingCoordinatesEarly: /if \(!this\.hasNavigationCoordinates\(navigationAddress\)\)\s*\{[\s\S]*地址信息不完整，无法导航/.test(orderDetailJs),
+    missingCoordinatesHideAdminButton: !/地址信息缺失，无法导航|地址信息不完整，无法导航/.test(orderDetailWxml),
+    handlerStillGuardsMissingCoordinates: /if \(!this\.hasNavigationCoordinates\(navigationAddress\)\)\s*\{[\s\S]*地址信息不完整，无法导航/.test(orderDetailJs),
     missingCoordinateGateExists: /if \(inputLatitude !== null && inputLongitude !== null\)/.test(navigationUtil),
     geocodeResolverExists: /resolveGeocodeAddress\(/.test(navigationUtil)
       && /geocodeAddress\(geocodeQuery/.test(navigationUtil),
