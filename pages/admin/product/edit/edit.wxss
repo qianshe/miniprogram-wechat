@@ -91,6 +91,25 @@
   z-index: 10;
 }
 
+.icon-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.icon-text--white {
+  color: #fff;
+  font-size: 28rpx;
+}
+
+.upload-add-symbol {
+  font-size: 64rpx;
+  line-height: 1;
+  color: #999;
+  font-weight: 400;
+}
+
 .upload-tips {
   font-size: 24rpx;
   color: var(--text-sub);
@@ -194,6 +213,13 @@
 
 .text-placeholder {
   color: var(--text-sub);
+}
+
+.picker-arrow {
+  color: #ccc;
+  font-size: 40rpx;
+  line-height: 1;
+  margin-left: 16rpx;
 }
 
 /* ... (中间省略) ... */

@@ -53,11 +53,19 @@
       <t-button variant="text" bindtap="hideProductSelector">×</t-button>
     </view>
     <view class="search-container">
-      <t-search
-        placeholder="搜索商品"
-        bind:change="onSearchChange"
-        value="{{searchValue}}"
-      />
+      <view class="search-box">
+        <input
+          class="search-input"
+          type="text"
+          placeholder="搜索商品"
+          value="{{searchValue}}"
+          bindinput="onSearchChange"
+          confirm-type="search"
+        />
+        <view class="search-icon" wx:if="{{searchValue}}" bindtap="onSearchClear">
+          <text class="search-icon-text">×</text>
+        </view>
+      </view>
     </view>
     <scroll-view
       scroll-y

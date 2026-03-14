@@ -78,7 +78,7 @@
         <view class="module-card-desc">{{item.desc}}</view>
       </view>
       <view class="module-card-arrow">
-        <t-icon name="chevron-right" size="40rpx" color="#999" />
+        <text class="module-card-arrow-icon">›</text>
       </view>
     </view>
   </view>

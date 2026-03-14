@@ -3,21 +3,25 @@
   <view class="page-header">
     <view class="page-title">套餐管理</view>
     <view class="action-buttons">
-      <t-button theme="primary" size="small" icon="add" bindtap="createPackage">新增</t-button>
+      <t-button theme="primary" size="small" bindtap="createPackage">新增</t-button>
     </view>
   </view>
   
   <!-- 搜索框 -->
   <view class="search-container">
-    <view class="search-input-box full-width">
-      <t-search
+    <view class="search-box full-width">
+      <input
+        class="search-input"
+        type="text"
         placeholder="搜索套餐名称"
-        bind:change="onSearchInput"
-        bind:submit="onSearchConfirm"
-        bind:clear="onSearchClear"
         value="{{keyword}}"
-        shape="round"
+        confirm-type="search"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
       />
+      <view class="search-icon" wx:if="{{keyword}}" bindtap="onSearchClear">
+        <text class="search-icon-text">×</text>
+      </view>
     </view>
   </view>
   

@@ -1,9 +1,6 @@
 {
   "navigationBarTitleText": "治丧清单",
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-stepper": "tdesign-miniprogram/stepper/stepper",
-    "t-button": "tdesign-miniprogram/button/button",
     "c-loading": "/components/c-loading/c-loading",
     "c-empty": "/components/c-empty/c-empty",
     "c-price": "/components/c-price/c-price"

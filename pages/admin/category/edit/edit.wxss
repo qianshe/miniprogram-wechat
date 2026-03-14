@@ -169,3 +169,18 @@ page {
   display: flex;
   align-items: center;
 }
+
+.product-count-tip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32rpx;
+  height: 32rpx;
+  margin-right: 12rpx;
+  border-radius: 50%;
+  background-color: #fa9550;
+  color: #fff;
+  font-size: 22rpx;
+  line-height: 1;
+  font-weight: 700;
+}

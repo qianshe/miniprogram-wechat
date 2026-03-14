@@ -9,14 +9,19 @@
 
   <!-- 搜索框 -->
   <view class="search-container">
-    <view class="search-wrapper">
-      <t-search
+    <view class="search-box">
+      <input
+        class="search-input"
+        type="text"
         placeholder="搜索用户昵称"
         value="{{keyword}}"
-        bind:change="onSearchChange"
-        bind:submit="onSearch"
-        bind:clear="onSearchClear"
-      ></t-search>
+        confirm-type="search"
+        bindinput="onSearchChange"
+        bindconfirm="onSearch"
+      />
+      <view class="search-icon" wx:if="{{keyword}}" bindtap="onSearchClear">
+        <text class="search-icon-text">×</text>
+      </view>
     </view>
   </view>
 
@@ -56,7 +61,8 @@
         <!-- 卡片头部：昵称 + 状态标签 -->
         <view class="user-header">
           <view class="user-avatar">
-            <t-avatar image="{{item.avatarUrl || ''}}" icon="user" size="medium" />
+            <image wx:if="{{item.avatarUrl}}" class="user-avatar-image" src="{{item.avatarUrl}}" mode="aspectFill" />
+            <view wx:else class="user-avatar-fallback">{{item.nickName ? item.nickName.slice(0, 1) : '用'}}</view>
           </view>
           <text class="user-name">{{item.nickName || '未设置昵称'}}</text>
           <text class="user-status status-tag-admin" wx:if="{{item.isAdmin}}">管理员</text>

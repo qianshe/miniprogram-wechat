@@ -43,51 +43,38 @@
   gap: 20rpx;
 }
 
-.search-wrapper {
-  flex: 1;
-  min-width: 0;
-}
-
-.search-wrapper .t-search {
-  padding: 0;
-}
-
-.search-wrapper .t-search__input-container {
-  background-color: #f5f5f5;
-  border-radius: 40rpx;
-}
-
 .search-box {
   flex: 1;
   position: relative;
-  margin-right: 20rpx;
+  min-width: 0;
 }
 
 .search-input {
   width: 100%;
   height: 80rpx;
   border-radius: 40rpx;
-  background-color: #fff;
+  background-color: #f5f5f5;
   padding: 0 80rpx 0 30rpx;
   font-size: 28rpx;
-  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
 }
 
 .search-icon {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: absolute;
   right: 30rpx;
   top: 50%;
   transform: translateY(-50%);
 }
 
-.search-icon .iconfont {
-  font-size: 0;
-  color: #666;
-}
-
-.search-icon .iconfont::before {
-  content: "🔍";
+.search-icon-text {
+  color: #999;
   font-size: 32rpx;
+  line-height: 1;
 }
 
 .filter-btn {
@@ -106,6 +93,18 @@
   font-size: 28rpx;
   border: 1rpx solid #e8e8e8;
   transition: all 0.3s;
+}
+
+.filter-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32rpx;
+  height: 32rpx;
+  font-size: 24rpx;
+  line-height: 1;
+  color: #666;
+  font-weight: 600;
 }
 
 .filter-btn:active {
@@ -173,6 +172,17 @@
   color: #333;
 }
 
+.filter-close-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  color: #666;
+  font-size: 40rpx;
+  line-height: 1;
+}
+
 .filter-content {
   padding: 32rpx 0;
   max-height: 60vh;
@@ -212,6 +222,21 @@
   border: 2rpx solid #e0e0e0;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
   padding: 0 16rpx;
+}
+
+.filter-input {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: #f8f8f8;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  text-align: center;
+  border: 2rpx solid #e0e0e0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  padding: 0 16rpx;
+  box-sizing: border-box;
 }
 
 .date-separator, .price-separator {

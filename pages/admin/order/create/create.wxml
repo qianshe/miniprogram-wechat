@@ -47,7 +47,7 @@
         >
           <view class="filled-input picker-trigger">
             <text class="{{formData.serviceTime ? 'text-value' : 'text-placeholder'}}">{{formData.serviceTime || '请选择服务日期'}}</text>
-            <t-icon name="calendar" size="40rpx" color="#ccc" />
+            <text class="picker-inline-mark">日</text>
           </view>
         </picker>
       </view>
@@ -83,10 +83,10 @@
     
     <!-- 产品信息卡片 -->
     <view class="form-card">
-      <view class="card-header">
-        <view class="card-title" style="margin-bottom: 0;">产品信息</view>
-        <view class="add-product-btn" bindtap="openProductSelector">
-          <t-icon name="add" size="32rpx" />
+        <view class="card-header">
+          <view class="card-title" style="margin-bottom: 0;">产品信息</view>
+          <view class="add-product-btn" bindtap="openProductSelector">
+          <text class="inline-plus">+</text>
           <text>添加产品</text>
         </view>
       </view>
@@ -122,7 +122,7 @@
       
       <view class="empty-state" wx:else bindtap="openProductSelector">
         <view class="empty-icon-wrapper">
-          <t-icon name="cart-add" size="48rpx" color="var(--primary-color)" />
+          <text class="empty-state-symbol">＋</text>
         </view>
         <text>点击添加服务产品</text>
       </view>

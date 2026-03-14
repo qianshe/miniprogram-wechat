@@ -104,7 +104,7 @@
 
       <!-- 商品数量提示 -->
       <view class="product-count-tip" wx:if="{{isEdit && formData.productCount > 0}}">
-        <t-icon name="info-circle-filled" size="32rpx" color="#fa9550" style="margin-right: 12rpx;" />
+        <text class="product-count-tip-icon">!</text>
         <text>该分类下有 {{formData.productCount}} 个商品</text>
       </view>
     </view>

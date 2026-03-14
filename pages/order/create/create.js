@@ -1,7 +1,7 @@
 const { api } = require('../../../utils/api.js');
 const auth = require('../../../utils/auth.js');
 const authGuard = require('../../../utils/authGuard.js');
-const validation = require('../../../utils/validation.js');
+const validation = require('../utils/validation.js');
 
 Page({
   data: {

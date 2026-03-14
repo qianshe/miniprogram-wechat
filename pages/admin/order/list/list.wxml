@@ -8,17 +8,22 @@
 
   <!-- 搜索框 -->
   <view class="search-container">
-    <view class="search-wrapper">
-      <t-search
+    <view class="search-box">
+      <input
+        class="search-input"
+        type="text"
         placeholder="搜索订单号或联系人"
         value="{{searchKeyword}}"
-        bind:change="onSearchChange"
-        bind:submit="onSearchConfirm"
-        bind:clear="onSearchClear"
-      ></t-search>
+        confirm-type="search"
+        bindinput="onSearchChange"
+        bindconfirm="onSearchConfirm"
+      />
+      <view class="search-icon" wx:if="{{searchKeyword}}" bindtap="onSearchClear">
+        <text class="search-icon-text">×</text>
+      </view>
     </view>
     <view class="filter-btn" bindtap="toggleFilterPanel">
-      <t-icon name="filter" size="20"></t-icon>
+      <text class="filter-btn-icon">筛</text>
       <text>筛选</text>
     </view>
   </view>
@@ -29,7 +34,7 @@
     <view class="filter-panel">
       <view class="filter-header">
         <text>筛选条件</text>
-        <t-icon name="close" size="20" bindtap="toggleFilterPanel"></t-icon>
+        <text class="filter-close-icon" bindtap="toggleFilterPanel">×</text>
       </view>
       <view class="filter-content">
         <view class="filter-item">
@@ -47,19 +52,21 @@
         <view class="filter-item">
           <text class="filter-label">价格区间</text>
           <view class="price-range">
-            <t-input
+            <input
+              class="filter-input"
               type="number"
               placeholder="最低价"
               value="{{minPrice}}"
-              bind:change="onMinPriceChange"
-            ></t-input>
+              bindinput="onMinPriceChange"
+            />
             <text class="price-separator">至</text>
-            <t-input
+            <input
+              class="filter-input"
               type="number"
               placeholder="最高价"
               value="{{maxPrice}}"
-              bind:change="onMaxPriceChange"
-            ></t-input>
+              bindinput="onMaxPriceChange"
+            />
           </view>
         </view>
       </view>
@@ -106,7 +113,7 @@
     <view class="loading-wrapper" wx:if="{{loading}}">
       <view class="loading-text">加载中...</view>
     </view>
-    <t-empty wx:elif="{{!orders.length}}" description="暂无订单"></t-empty>
+    <c-empty wx:elif="{{!orders.length}}" show="{{true}}" title="暂无订单"></c-empty>
     <view class="orders" wx:else>
       <view class="order-item" wx:for="{{orders}}" wx:key="orderNo">
         <view class="order-header">

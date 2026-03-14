@@ -1,7 +1,7 @@
 /*
-  Patch TDesign icon font for WeChat miniprogram.
-  - Convert assets/fonts/t.woff to base64 and inline into @font-face
-  - Apply to both node_modules and miniprogram_npm copies to avoid path issues
+  Restore official TDesign icon font URLs for WeChat miniprogram.
+  - Avoid the broken local font path rewriting seen in WeChat DevTools
+  - Apply to both node_modules and miniprogram_npm copies so rebuilds stay consistent
 */
 const fs = require('fs');
 const path = require('path');
@@ -11,42 +11,25 @@ const targets = [
   'miniprogram_npm/tdesign-miniprogram/icon/icon.wxss',
 ];
 
-function getDataUri() {
-  const fontPath = path.resolve('assets/fonts/t.woff');
-  if (!fs.existsSync(fontPath)) return null;
-  const buf = fs.readFileSync(fontPath);
-  const b64 = buf.toString('base64');
-  return `src:url(data:font/woff;charset=utf-8;base64,${b64}) format('woff')`;
-}
+const OFFICIAL_FONT_FACE = "@font-face{font-family:t;src:url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.eot),url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.eot?#iefix) format('ded-opentype'),url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.woff) format('woff'),url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.ttf) format('truetype'),url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.svg) format('svg');font-weight:400;font-style:normal;}";
 
 function patchFile(file) {
   const abs = path.resolve(file);
   if (!fs.existsSync(abs)) return { file, status: 'skip_not_found' };
-  let text = fs.readFileSync(abs, 'utf8');
-  const before = text;
 
-  // Strategy 1: replace the whole @font-face src block for font-family t
-  const reBlock = /@font-face\{\s*font-family\s*:\s*t\s*;\s*src:[^}]*?;\s*font-weight:400;\s*font-style:normal;\s*\}/;
-  const dataSrc = getDataUri();
+  const before = fs.readFileSync(abs, 'utf8');
+  let text = before;
+  const reBlock = /@font-face\{\s*font-family\s*:\s*t\s*;[\s\S]*?font-weight:400;\s*font-style:normal;\s*\}/;
+
   if (reBlock.test(text)) {
-    text = text.replace(reBlock, (m) => {
-      // keep exact prefix and suffix while replacing only src
-      const pre = '@font-face{font-family:t;';
-      const suf = 'font-weight:400;font-style:normal;}';
-      const srcLine = dataSrc || "src:url(../../../assets/fonts/t.woff) format('woff')";
-      return pre + srcLine + ';' + suf;
-    });
+    text = text.replace(reBlock, OFFICIAL_FONT_FACE);
   }
-
-  // Strategy 2 fallback: directly replace remote woff url with local one
-  const reWoff = /https?:\/\/tdesign\.gtimg\.com\/icon\/[\w.\-]+\/fonts\/t\.woff/g;
-  const repl = (dataSrc && dataSrc.match(/\(([^)]+)\)/)[1]) || '../../../assets/fonts/t.woff';
-  text = text.replace(reWoff, repl);
 
   if (text !== before) {
     fs.writeFileSync(abs, text);
     return { file, status: 'patched' };
   }
+
   return { file, status: 'no_change' };
 }
 

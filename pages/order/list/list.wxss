@@ -43,6 +43,11 @@
   color: var(--text-sub);
 }
 
+.search-icon-text {
+  font-size: 32rpx;
+  line-height: 1;
+}
+
 .filter-btn {
   min-width: 140rpx;
   height: 72rpx;
@@ -57,6 +62,30 @@
   color: var(--text-main);
   border: 1rpx solid #eee;
   box-shadow: var(--shadow-sm);
+}
+
+.filter-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32rpx;
+  height: 32rpx;
+  margin-right: 8rpx;
+  font-size: 24rpx;
+  line-height: 1;
+  color: var(--text-sub);
+  font-weight: 600;
+}
+
+.filter-close-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  font-size: 40rpx;
+  line-height: 1;
+  color: var(--text-sub);
 }
 
 .filter-btn .iconfont {
@@ -554,6 +583,11 @@
 
 .date-picker {
   padding: 0 16rpx;
+}
+
+.price-input {
+  padding: 0 16rpx;
+  box-sizing: border-box;
 }
 
 .date-separator, .price-separator {

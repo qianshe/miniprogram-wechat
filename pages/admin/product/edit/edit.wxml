@@ -17,7 +17,7 @@
         <view class="upload-preview" bindtap="onPreviewImage" data-index="{{index}}">
           <image src="{{item.url}}" mode="aspectFill" class="preview-image" />
           <view class="delete-btn" catchtap="onRemoveImage" data-index="{{index}}">
-            <t-icon name="close" size="32rpx" color="#fff" />
+            <text class="icon-text icon-text--white">×</text>
           </view>
           <view
             wx:if="{{index === coverIndex}}"
@@ -34,7 +34,7 @@
 
       <!-- 上传按钮 (未满 9 张时显示) -->
       <view class="upload-add" bindtap="onSelectImage" wx:if="{{fileList.length < 9}}">
-        <t-icon name="add" size="64rpx" color="#999" />
+        <text class="upload-add-symbol">+</text>
         <text class="upload-text">上传图片</text>
         <text class="upload-text">{{fileList.length}}/9</text>
       </view>
@@ -68,7 +68,7 @@
           <view class="{{selectedCategoryName ? 'text-value' : 'text-placeholder'}}">
             {{selectedCategoryName || '请选择商品分类'}}
           </view>
-          <t-icon name="chevron-right" size="40rpx" color="#ccc" />
+          <text class="picker-arrow">›</text>
         </view>
       </view>
 

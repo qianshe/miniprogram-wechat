@@ -36,18 +36,38 @@
   align-items: center;
 }
 
-.search-wrapper {
+.search-box {
   flex: 1;
   min-width: 0;
+  position: relative;
 }
 
-.search-wrapper .t-search {
-  padding: 0;
-}
-
-.search-wrapper .t-search__input-container {
+.search-input {
+  width: 100%;
+  height: 72rpx;
   background-color: #f5f5f5;
   border-radius: 40rpx;
+  padding: 0 70rpx 0 28rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.search-icon {
+  position: absolute;
+  right: 24rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
+.search-icon-text {
+  font-size: 32rpx;
+  line-height: 1;
 }
 
 /* 标签页样式 - 与订单列表统一 */
@@ -165,6 +185,27 @@
 .user-avatar {
   margin-right: 16rpx;
   flex-shrink: 0;
+}
+
+.user-avatar-image,
+.user-avatar-fallback {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+}
+
+.user-avatar-image {
+  display: block;
+}
+
+.user-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--admin-primary-light);
+  color: var(--admin-primary);
+  font-size: 28rpx;
+  font-weight: 600;
 }
 
 .user-name {

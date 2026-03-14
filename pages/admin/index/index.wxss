@@ -80,6 +80,14 @@
   margin-left: 16rpx;
 }
 
+.module-card-arrow-icon {
+  display: block;
+  color: #999;
+  font-size: 40rpx;
+  line-height: 1;
+  font-weight: 500;
+}
+
 /* 数据统计卡片网格 */
 .stat-card-grid {
   display: grid;

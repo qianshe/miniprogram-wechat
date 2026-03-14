@@ -3,7 +3,7 @@
   <view class="page-header">
     <view class="page-title">分类管理</view>
     <view class="action-buttons">
-      <t-button theme="primary" size="small" variant="text" icon="chart-bar" bindtap="toggleSort">
+      <t-button theme="primary" size="small" variant="text" bindtap="toggleSort">
         {{isSorting ? '完成' : '排序'}}
       </t-button>
       <t-button theme="primary" size="small" bindtap="createCategory">新增分类</t-button>
@@ -12,13 +12,20 @@
   
   <!-- 搜索框 -->
   <view class="search-container">
-    <t-search
-      placeholder="搜索分类名称"
-      bind:change="onSearchInput"
-      bind:submit="onSearchConfirm"
-      bind:clear="onSearchClear"
-      value="{{keyword}}"
-    />
+    <view class="search-box">
+      <input
+        class="search-input"
+        type="text"
+        placeholder="搜索分类名称"
+        value="{{keyword}}"
+        confirm-type="search"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+      />
+      <view class="search-icon" wx:if="{{keyword}}" bindtap="onSearchClear">
+        <text class="search-icon-text">×</text>
+      </view>
+    </view>
   </view>
 
   <!-- 类型筛选 -->
@@ -107,11 +114,11 @@
                   <text class="product-count">商品数量: {{item.productCount || 0}}</text>
                 </view>
               </view>
-              <view class="category-extra">
-                <view class="drag-handle">
-                  <t-icon name="move" size="48rpx" color="#ccc" />
+                <view class="category-extra">
+                  <view class="drag-handle">
+                    <text class="drag-handle-text">⋮⋮</text>
+                  </view>
                 </view>
-              </view>
             </view>
           </view>
         </movable-view>

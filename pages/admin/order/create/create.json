@@ -4,10 +4,8 @@
     "t-input": "tdesign-miniprogram/input/input",
     "t-textarea": "tdesign-miniprogram/textarea/textarea",
     "t-button": "tdesign-miniprogram/button/button",
-    "t-icon": "tdesign-miniprogram/icon/icon",
     "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
     "t-cell": "tdesign-miniprogram/cell/cell",
-    "t-empty": "tdesign-miniprogram/empty/empty",
     "product-selector": "/components/product-selector/product-selector"
   }
-} 
+}

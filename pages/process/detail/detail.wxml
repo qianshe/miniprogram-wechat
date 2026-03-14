@@ -67,5 +67,5 @@
   </block>
   
   <!-- 无数据显示 -->
-  <t-empty wx:else description="暂无步骤详情" />
+  <c-empty wx:else show="{{true}}" title="暂无步骤详情" />
 </view>

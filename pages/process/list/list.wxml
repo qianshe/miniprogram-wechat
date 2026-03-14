@@ -29,7 +29,7 @@
   </view>
 
   <!-- 无数据显示 -->
-  <t-empty wx:else description="暂无流程数据" />
+  <c-empty wx:else show="{{true}}" title="暂无流程数据" />
 
   <!-- 底部提示 -->
   <view class="page-footer" wx:if="{{steps.length > 0}}">

@@ -5,7 +5,6 @@
     "t-cell": "tdesign-miniprogram/cell/cell",
     "t-input": "tdesign-miniprogram/input/input",
     "t-button": "tdesign-miniprogram/button/button",
-    "t-popup": "tdesign-miniprogram/popup/popup",
-    "t-search": "tdesign-miniprogram/search/search"
+    "t-popup": "tdesign-miniprogram/popup/popup"
   }
 }

@@ -4,9 +4,6 @@
   "backgroundColor": "#f6f0e7",
   "usingComponents": {
     "c-empty": "/components/c-empty/c-empty",
-    "t-search": "tdesign-miniprogram/search/search",
-    "t-button": "tdesign-miniprogram/button/button",
-    "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-empty": "tdesign-miniprogram/empty/empty"
+    "t-button": "tdesign-miniprogram/button/button"
   }
 }

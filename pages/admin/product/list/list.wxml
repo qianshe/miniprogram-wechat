@@ -4,35 +4,39 @@
     <view class="page-title">商品管理</view>
     <view class="action-buttons">
       <view class="action-btn-item">
-        <t-button class="action-btn" theme="default" size="small" icon="download" variant="outline" bindtap="exportProducts">导出</t-button>
+        <t-button class="action-btn" theme="default" size="small" variant="outline" bindtap="exportProducts">导出</t-button>
       </view>
       <view class="action-btn-item">
-        <t-button class="action-btn" theme="default" size="small" icon="upload" variant="outline" bindtap="importProducts">导入</t-button>
+        <t-button class="action-btn" theme="default" size="small" variant="outline" bindtap="importProducts">导入</t-button>
       </view>
       <view class="action-btn-item">
-        <t-button class="action-btn" theme="default" size="small" icon="scan" bindtap="scanProduct">扫码</t-button>
+        <t-button class="action-btn" theme="default" size="small" bindtap="scanProduct">扫码</t-button>
       </view>
       <view class="action-btn-item">
-        <t-button class="action-btn" theme="primary" size="small" icon="add" bindtap="createProduct">新增</t-button>
+        <t-button class="action-btn" theme="primary" size="small" bindtap="createProduct">新增</t-button>
       </view>
     </view>
   </view>
   
   <!-- 搜索框 -->
   <view class="search-container">
-    <view class="search-input-box">
-      <t-search
+    <view class="search-box">
+      <input
+        class="search-input"
+        type="text"
         placeholder="搜索商品名称"
-        bind:change="onSearchInput"
-        bind:submit="onSearchConfirm"
-        bind:clear="onSearchClear"
         value="{{keyword}}"
-        shape="round"
+        confirm-type="search"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
       />
+      <view class="search-icon" wx:if="{{keyword}}" bindtap="onSearchClear">
+        <text class="search-icon-text">×</text>
+      </view>
     </view>
     <view class="category-filter-btn {{selectedCategoryId ? 'active' : ''}}" bindtap="showCategoryPicker">
       <text>{{selectedCategoryName || '分类'}}</text>
-      <t-icon name="filter" size="32rpx" />
+      <text class="category-filter-icon">筛</text>
     </view>
   </view>
   
@@ -67,7 +71,7 @@
 
   <!-- 产品列表 -->
   <view class="product-list" wx:else>
-    <t-empty wx:if="{{products.length === 0 && !isLoading}}" description="暂无相关商品" icon="info-circle-filled" />
+    <c-empty wx:if="{{products.length === 0 && !isLoading}}" show="{{true}}" title="暂无相关商品" />
     
     <block wx:else>
       <view class="product-item" wx:for="{{products}}" wx:key="id" bindtap="editProduct" data-id="{{item.id}}">
@@ -125,7 +129,7 @@
     <view class="filter-panel">
       <view class="filter-header">
         <text>选择分类</text>
-        <t-icon name="close" size="20" bindtap="onPickerCancel"></t-icon>
+        <text class="filter-close-icon" bindtap="onPickerCancel">×</text>
       </view>
       <view class="filter-content">
         <view class="category-list">
@@ -136,7 +140,7 @@
             data-label="全部分类"
           >
             <text>全部分类</text>
-            <t-icon wx:if="{{selectedCategoryId === ''}}" name="check" color="var(--primary-color)"/>
+            <text wx:if="{{selectedCategoryId === ''}}" class="picker-check">✓</text>
           </view>
           <view
             wx:for="{{categories}}"
@@ -147,7 +151,7 @@
             data-label="{{item.name}}"
           >
             <text>{{item.name}}</text>
-            <t-icon wx:if="{{selectedCategoryId === item._id}}" name="check" color="var(--primary-color)"/>
+            <text wx:if="{{selectedCategoryId === item._id}}" class="picker-check">✓</text>
           </view>
         </view>
       </view>

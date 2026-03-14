@@ -4,13 +4,10 @@
   "backgroundColor": "#f5f5f5",
   "usingComponents": {
     "c-empty": "/components/c-empty/c-empty",
-    "t-search": "tdesign-miniprogram/search/search",
     "t-button": "tdesign-miniprogram/button/button",
     "t-loading": "tdesign-miniprogram/loading/loading",
-    "t-empty": "tdesign-miniprogram/empty/empty",
     "t-tag": "tdesign-miniprogram/tag/tag",
     "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell",
-    "t-dialog": "tdesign-miniprogram/dialog/dialog",
-    "t-icon": "tdesign-miniprogram/icon/icon"
+    "t-dialog": "tdesign-miniprogram/dialog/dialog"
   }
 }

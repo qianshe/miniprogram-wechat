@@ -1,5 +1,5 @@
 const { adminApi } = require('../../../../utils/api.js');
-const validation = require('../../../../utils/validation.js');
+const validation = require('../../utils/validation.js');
 const { SYSTEM_TYPE, CURRENT_SYSTEM_TYPE } = require('../../../../config/constants.js');
 const { checkAdminAccess } = require('../../common/adminGuard.js');
 

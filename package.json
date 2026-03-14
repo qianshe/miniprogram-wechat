@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "tdesign-miniprogram": "^1.9.0"
+    "tdesign-miniprogram": "1.12.3"
   },
   "scripts": {
     "patch:tdesign": "node scripts/patch-tdesign-icon-font.js",
