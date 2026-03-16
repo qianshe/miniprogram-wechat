@@ -1,0 +1,69 @@
+<view class="admin-process-container">
+  <view class="page-header">
+    <view>
+      <view class="page-title">流程管理</view>
+      <view class="page-subtitle">浏览当前治丧流程步骤与状态</view>
+    </view>
+    <view class="summary-chip">共 {{total}} 条</view>
+  </view>
+
+  <view class="search-container">
+    <view class="search-box">
+      <input
+        class="search-input"
+        type="text"
+        placeholder="搜索步骤标题或摘要"
+        value="{{keyword}}"
+        confirm-type="search"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+      />
+      <view class="search-icon" wx:if="{{keyword}}" bindtap="onSearchClear">
+        <text class="search-icon-text">×</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="type-filter">
+    <view class="filter-item {{currentType === 'white' ? 'active' : ''}}" bindtap="onTypeChange" data-type="white">白事优先</view>
+    <view class="filter-item {{currentType === 'red' ? 'active' : ''}}" bindtap="onTypeChange" data-type="red">兼容红事</view>
+  </view>
+
+  <view class="process-list">
+    <view class="skeleton-list" wx:if="{{isLoading && page === 1}}">
+      <view class="skeleton-item" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+        <view class="skeleton-title"></view>
+        <view class="skeleton-line"></view>
+        <view class="skeleton-line short"></view>
+      </view>
+    </view>
+
+    <c-empty wx:elif="{{displaySteps.length === 0 && !isLoading}}" title="暂无流程步骤" description="当前筛选条件下没有可展示的流程数据"></c-empty>
+
+    <view wx:else class="step-cards">
+      <view class="step-card" wx:for="{{displaySteps}}" wx:key="id">
+        <view class="step-card-header">
+          <view class="step-order">{{item.order || index + 1}}</view>
+          <view class="step-title-group">
+            <view class="step-title">{{item.title}}</view>
+            <view class="step-description">{{item.description}}</view>
+          </view>
+        </view>
+
+        <view class="step-meta-row">
+          <t-tag theme="{{item.type === 1 ? 'danger' : 'default'}}" variant="light" size="small">{{item.typeText}}</t-tag>
+          <view class="status-pill {{item.status === 1 ? 'status-on' : 'status-off'}}">{{item.statusText}}</view>
+          <view class="meta-text">提示 {{item.tips.length}}</view>
+          <view class="meta-text">商品 {{item.productList.length}}</view>
+        </view>
+      </view>
+
+      <view class="load-more" wx:if="{{isLoading && page > 1}}">
+        <t-loading theme="circular" size="32rpx" loading />
+        <text class="load-more-text">正在加载更多...</text>
+      </view>
+
+      <view class="no-more" wx:if="{{!hasMore && displaySteps.length > 0}}">- 已加载全部 -</view>
+    </view>
+  </view>
+</view>

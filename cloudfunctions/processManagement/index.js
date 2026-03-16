@@ -16,6 +16,26 @@ const _ = db.command
 
 const verifyAdminByOpenid = (openid) => _verifyAdmin(openid, db)
 
+function normalizeTips(tips) {
+  if (!Array.isArray(tips)) {
+    return []
+  }
+
+  return tips
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+}
+
+function normalizeProcessStep(step = {}) {
+  return {
+    ...step,
+    order: Number(step.order || 0),
+    status: step.status !== undefined ? Number(step.status) : 1,
+    tips: normalizeTips(step.tips),
+    productList: Array.isArray(step.productList) ? step.productList.filter(Boolean) : []
+  }
+}
+
 /**
  * 检查集合是否存在
  */
@@ -52,6 +72,7 @@ async function initDatabase() {
           type: 0,
           order: 1,
           imageUrl: '',
+          tips: [],
           productList: [],
           status: 1,
           createTime: new Date(),
@@ -64,6 +85,7 @@ async function initDatabase() {
           type: 0,
           order: 2,
           imageUrl: '',
+          tips: [],
           productList: [],
           status: 1,
           createTime: new Date(),
@@ -76,6 +98,7 @@ async function initDatabase() {
           type: 0,
           order: 3,
           imageUrl: '',
+          tips: [],
           productList: [],
           status: 1,
           createTime: new Date(),
@@ -89,6 +112,7 @@ async function initDatabase() {
           type: 1,
           order: 1,
           imageUrl: '',
+          tips: [],
           productList: [],
           status: 1,
           createTime: new Date(),
@@ -101,6 +125,7 @@ async function initDatabase() {
           type: 1,
           order: 2,
           imageUrl: '',
+          tips: [],
           productList: [],
           status: 1,
           createTime: new Date(),
@@ -113,6 +138,7 @@ async function initDatabase() {
           type: 1,
           order: 3,
           imageUrl: '',
+          tips: [],
           productList: [],
           status: 1,
           createTime: new Date(),
@@ -178,7 +204,7 @@ async function getProcessSteps(data) {
     })
 
     return success({
-      records: result.data,
+      records: result.data.map(normalizeProcessStep),
       total: countResult.total,
       page,
       size
@@ -242,7 +268,7 @@ async function getStepDetail(data) {
       title: result.data.title
     })
 
-    return success(result.data, '获取步骤详情成功')
+    return success(normalizeProcessStep(result.data), '获取步骤详情成功')
   } catch (err) {
     console.error('[PROCESS] getStepDetail error:', err)
     return dbError('获取步骤详情失败', { error: err.message })
@@ -295,10 +321,11 @@ async function createProcessStep(data) {
       description: data.description,
       content: data.content || '',
       type: normalizedType,
-      order: data.order || 1,
+      order: Number(data.order || 1),
       imageUrl: data.imageUrl || '',
-      productList: data.productList || [],
-      status: data.status || 1,
+      tips: normalizeTips(data.tips),
+      productList: Array.isArray(data.productList) ? data.productList.filter(Boolean) : [],
+      status: data.status !== undefined ? Number(data.status) : 1,
       createTime: new Date(),
       updateTime: new Date(),
       creatorOpenid: OPENID
@@ -313,10 +340,10 @@ async function createProcessStep(data) {
       title: data.title
     })
 
-    return success({
+    return success(normalizeProcessStep({
       _id: result._id,
       ...step
-    }, '创建流程步骤成功')
+    }), '创建流程步骤成功')
   } catch (err) {
     console.error('[PROCESS] createProcessStep error:', err)
     return dbError('创建流程步骤失败', { error: err.message })
@@ -370,6 +397,16 @@ async function updateProcessStep(data) {
 
     if (updateData.type !== undefined) {
       updateFields.type = updateData.type === 'white' ? 0 : parseInt(updateData.type)
+    }
+
+    if (updateData.tips !== undefined) {
+      updateFields.tips = normalizeTips(updateData.tips)
+    }
+
+    if (updateData.productList !== undefined) {
+      updateFields.productList = Array.isArray(updateData.productList)
+        ? updateData.productList.filter(Boolean)
+        : []
     }
 
     await db.collection('processSteps').doc(id).update({

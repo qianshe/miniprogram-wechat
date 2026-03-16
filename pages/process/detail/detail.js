@@ -6,6 +6,7 @@ Page({
     stepId: '',
     stepInfo: null,
     loading: true,
+    isFallbackData: false,
     systemType: 'white', // 默认为白事系统
     themeColor: '#333333', // 默认主题色
     relatedProducts: [], // 相关商品
@@ -45,18 +46,21 @@ Page({
         const mockStepInfo = this.getMockStepInfo(stepId);
         this.setData({
           stepInfo: mockStepInfo,
+          isFallbackData: true,
           loading: false
         });
         this.loadMockRelatedProducts();
         return;
       }
 
+      const normalizedStepDetail = this.normalizeStepDetail(stepDetail);
+
       // 如果有关联商品ID，获取商品详情
       let relatedProducts = [];
-      if (stepDetail.productList && stepDetail.productList.length > 0) {
+      if (normalizedStepDetail.productList.length > 0) {
         try {
           // 并行获取所有关联商品的详情
-          const productPromises = stepDetail.productList.map(productId =>
+          const productPromises = normalizedStepDetail.productList.map(productId =>
             api.getProductDetail(productId).catch(err => {
               console.warn('[process/detail] Failed to get product detail:', productId, err);
               return null;
@@ -70,8 +74,9 @@ Page({
       }
 
       this.setData({
-        stepInfo: stepDetail,
+        stepInfo: normalizedStepDetail,
         relatedProducts,
+        isFallbackData: false,
         loading: false,
         productsLoading: false
       });
@@ -87,10 +92,23 @@ Page({
       const mockStepInfo = this.getMockStepInfo(stepId);
       this.setData({
         stepInfo: mockStepInfo,
+        isFallbackData: true,
         loading: false
       });
       this.loadMockRelatedProducts();
     }
+  },
+
+  normalizeStepDetail(stepDetail = {}) {
+    return {
+      ...stepDetail,
+      title: stepDetail.title || '',
+      description: stepDetail.description || '',
+      content: stepDetail.content || '',
+      imageUrl: stepDetail.imageUrl || 'https://tdesign.gtimg.com/mobile/demos/example1.png',
+      tips: Array.isArray(stepDetail.tips) ? stepDetail.tips : [],
+      productList: Array.isArray(stepDetail.productList) ? stepDetail.productList : []
+    };
   },
   
   getMockStepInfo(stepId) {
@@ -99,8 +117,12 @@ Page({
       title: '',
       description: '',
       content: '',
+      type: this.data.systemType === 'red' ? 1 : 0,
+      order: 0,
       imageUrl: 'https://tdesign.gtimg.com/mobile/demos/example1.png',
-      productList: []
+      tips: [],
+      productList: [],
+      status: 1
     };
   },
   

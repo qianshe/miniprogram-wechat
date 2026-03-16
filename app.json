@@ -44,6 +44,7 @@
         "order/qr-code/qr-code",
         "package/list/list",
         "package/edit/edit",
+        "process/list/list",
         "user/list/list",
         "assets/images/images"
       ]
@@ -81,10 +82,6 @@
       {
         "pagePath": "pages/goods/category/category",
         "text": "分类"
-      },
-      {
-        "pagePath": "pages/cart/cart",
-        "text": "治丧清单"
       },
       {
         "pagePath": "pages/user/user",

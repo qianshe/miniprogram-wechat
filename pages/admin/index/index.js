@@ -43,6 +43,13 @@ Page({
         path: '/pages/admin/package/list/list'
       },
       {
+        id: 'process',
+        name: '流程管理',
+        icon: '序',
+        desc: '浏览治丧流程步骤',
+        path: '/pages/admin/process/list/list'
+      },
+      {
         id: 'user',
         name: '用户管理',
         icon: '👥',

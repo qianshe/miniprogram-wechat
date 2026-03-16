@@ -81,11 +81,6 @@ Component({
           emoji: "📦"
         },
         {
-          pagePath: "/pages/cart/cart",
-          text: "治丧清单",
-          emoji: "📋"
-        },
-        {
           pagePath: "/pages/user/user",
           text: "我的",
           emoji: "👤"

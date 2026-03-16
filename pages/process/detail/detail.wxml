@@ -28,7 +28,7 @@
     </view>
     
     <!-- 步骤提示 -->
-    <view class="step-tips-section {{systemType}}-section">
+    <view wx:if="{{stepInfo.tips && stepInfo.tips.length}}" class="step-tips-section {{systemType}}-section">
       <view class="section-title {{systemType}}-section-title">注意事项</view>
       <view class="tips-list">
         <view class="tip-item {{systemType}}-tip-item" wx:for="{{stepInfo.tips}}" wx:key="index">

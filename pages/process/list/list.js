@@ -7,6 +7,7 @@ Page({
     steps: [],
     loading: true,
     systemType: 'white',
+    isFallbackData: false,
     servicePhone: contactConfig.servicePhone
   },
 
@@ -23,13 +24,19 @@ Page({
     
     try {
       // 从云函数获取流程步骤
-      const steps = await api.getProcessSteps({ 
+      const response = await api.getProcessSteps({ 
         type: this.data.systemType === 'red' ? 1 : 0 
       });
+      const steps = Array.isArray(response) ? response : response?.records;
       
       if (steps && steps.length > 0) {
+        const normalizedSteps = steps
+          .map(step => this.normalizeStep(step))
+          .filter(step => step.status !== 0);
+
         this.setData({ 
-          steps,
+          steps: normalizedSteps,
+          isFallbackData: false,
           loading: false 
         });
       } else {
@@ -48,11 +55,27 @@ Page({
     const steps = this.data.systemType === 'red' 
       ? mockData.redSteps 
       : mockData.whiteSteps;
+
+    const normalizedSteps = (steps || []).map(step => this.normalizeStep(step));
     
     this.setData({ 
-      steps: steps || [],
+      steps: normalizedSteps,
+      isFallbackData: true,
       loading: false 
     });
+  },
+
+  normalizeStep(step = {}) {
+    return {
+      ...step,
+      content: step.content || '',
+      type: step.type !== undefined ? step.type : (this.data.systemType === 'red' ? 1 : 0),
+      order: step.order || 0,
+      imageUrl: step.imageUrl || '',
+      tips: Array.isArray(step.tips) ? step.tips : [],
+      productList: Array.isArray(step.productList) ? step.productList : [],
+      status: step.status !== undefined ? step.status : 1
+    };
   },
 
   onStepClick(e) {

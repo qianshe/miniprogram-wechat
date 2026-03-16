@@ -36,6 +36,7 @@ const PAGE_PERMISSIONS = {
     'pages/admin/category/edit/edit',
     'pages/admin/package/list/list',
     'pages/admin/package/edit/edit',
+    'pages/admin/process/list/list',
     'pages/admin/user/list/list'
   ]
 }
