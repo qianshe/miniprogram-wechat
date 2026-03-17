@@ -14,8 +14,8 @@
           <image class="item-icon" src="" mode="aspectFit" wx:if="{{false}}"/> 
           <view class="icon-placeholder main-icon">🕯️</view>
           <view class="text-group">
-            <view class="menu-title">一站式套餐</view>
-            <view class="menu-desc">省心之选</view>
+            <view class="menu-title">服务方案参考</view>
+            <view class="menu-desc">了解服务内容</view>
           </view>
         </view>
       </view>
@@ -30,7 +30,7 @@
         <view class="menu-item sub-item" bindtap="onTapService">
           <view class="item-content horizontal">
             <view class="icon-placeholder sub-icon">🎧</view>
-            <view class="menu-title">专业服务项</view>
+            <view class="menu-title">服务咨询项</view>
           </view>
         </view>
       </view>
@@ -38,7 +38,7 @@
 
     <view class="service-tags">
       <view class="tag-item">
-        <text class="iconfont">✔</text> 价格透明公示
+        <text class="iconfont">✔</text> 服务信息公开
       </view>
       <view class="tag-item">
         <text class="iconfont">🕓</text> 24小时专业响应

@@ -1,5 +1,4 @@
 const { api, priceToYuan } = require('../../../utils/api.js');
-const auth = require('../../../utils/auth.js');
 
 Page({
   data: {
@@ -209,56 +208,5 @@ Page({
         });
       }
     });
-  },
-  
-  addToCart(e) {
-    // 登录状态校验
-    if (!auth.checkAuth()) {
-      auth.loginWithPrompt();
-      return;
-    }
-
-    const { product } = e.currentTarget.dataset;
-    
-    try {
-      // 直接更新本地购物车数据
-      let cartList = wx.getStorageSync('cartListLocal') || [];
-      const existingIndex = cartList.findIndex(item => item.id === product.id);
-
-      if (existingIndex > -1) {
-        cartList[existingIndex].quantity += 1;
-      } else {
-        cartList.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.imageUrl || product.image,
-          quantity: 1,
-          systemType: this.data.systemType
-        });
-      }
-
-      // 更新本地存储
-      wx.setStorageSync('cartListLocal', cartList);
-
-      // 调用API同步到服务器
-      api.addToCart({
-        productId: product.id,
-        quantity: 1
-      }).catch(err => {
-        console.warn('[process/detail] Failed to sync cart to server:', err);
-      });
-
-      wx.showToast({
-        title: '添加成功',
-        icon: 'success'
-      });
-    } catch (err) {
-      console.error('[process/detail] Failed to add to cart:', err);
-      wx.showToast({
-        title: '添加失败',
-        icon: 'none'
-      });
-    }
   }
 });

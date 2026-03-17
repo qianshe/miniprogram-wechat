@@ -1,0 +1,131 @@
+<view class="page-container">
+  <!-- 加载中 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <block wx:elif="{{orderInfo}}">
+    <!-- 订单只读信息 -->
+    <view class="section">
+      <view class="section-title">服务记录</view>
+      <view class="info-row">
+        <text class="info-label">记录编号</text>
+        <text class="info-value">{{orderInfo.orderNo}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">联系人</text>
+        <text class="info-value">{{orderInfo.contactName || '—'}}</text>
+      </view>
+    </view>
+
+    <!-- 服务内容（只读） -->
+    <view class="section">
+      <view class="section-title">服务内容</view>
+      <view class="item-row" wx:for="{{orderInfo.items}}" wx:key="index">
+        <view class="item-name">{{item.productName}}</view>
+        <view class="item-right">
+          <text class="item-qty">x{{item.quantity}}</text>
+          <text class="item-price">¥{{item.subtotal}}</text>
+        </view>
+      </view>
+      <view class="total-row">
+        <text class="total-label">合计</text>
+        <text class="total-amount">¥{{orderInfo.totalAmount}}</text>
+      </view>
+    </view>
+
+    <!-- 可编辑信息 -->
+    <view class="section">
+      <view class="section-title">{{isReadOnly ? '服务信息' : '确认服务信息'}}</view>
+
+      <!-- 服务时间（必填） -->
+      <view class="form-row">
+        <text class="form-label required">服务时间</text>
+        <input
+          wx:if="{{!isReadOnly}}"
+          class="form-input"
+          placeholder="请填写服务时间"
+          value="{{serviceTime}}"
+          bindinput="onServiceTimeInput"
+        />
+        <text wx:else class="form-value">{{serviceTime || '—'}}</text>
+      </view>
+
+      <!-- 联系电话 -->
+      <view class="form-row">
+        <text class="form-label">联系电话</text>
+        <input
+          wx:if="{{!isReadOnly}}"
+          class="form-input"
+          type="number"
+          placeholder="请填写联系电话（选填）"
+          value="{{contactPhone}}"
+          bindinput="onPhoneInput"
+        />
+        <text wx:else class="form-value">{{contactPhone || '—'}}</text>
+      </view>
+
+      <!-- 服务地址 -->
+      <view class="form-row" bindtap="{{isReadOnly ? '' : 'onSelectAddress'}}">
+        <text class="form-label">服务地址</text>
+        <view class="form-address" wx:if="{{!isReadOnly}}">
+          <text class="{{addressText ? 'address-text' : 'address-placeholder'}}">{{addressText || '请选择服务地址（选填）'}}</text>
+          <text class="address-arrow">›</text>
+        </view>
+        <text wx:else class="form-value">{{addressText || '—'}}</text>
+      </view>
+
+      <!-- 备注（选填） -->
+      <view class="form-row form-row-textarea">
+        <text class="form-label">备注</text>
+        <textarea
+          wx:if="{{!isReadOnly}}"
+          class="form-textarea"
+          placeholder="如有特殊要求，请在此备注（选填）"
+          value="{{remarks}}"
+          bindinput="onRemarksInput"
+          maxlength="200"
+        />
+        <text wx:else class="form-value">{{remarks || '—'}}</text>
+      </view>
+    </view>
+
+    <!-- 只读状态提示 -->
+    <view class="readonly-tip" wx:if="{{isReadOnly}}">
+      <text>服务已开始处理，信息不可修改</text>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-bar">
+      <button
+        wx:if="{{!isReadOnly}}"
+        class="btn-confirm {{submitting ? 'btn-disabled' : ''}}"
+        bindtap="onSubmit"
+        disabled="{{submitting}}"
+      >{{submitting ? '提交中...' : '确认信息'}}</button>
+      <button
+        wx:else
+        class="btn-detail"
+        bindtap="onViewDetail"
+      >查看服务详情</button>
+    </view>
+  </block>
+</view>
+
+<!-- 地址选择弹窗 -->
+<view class="address-modal-mask" wx:if="{{showAddressModal}}" bindtap="onAddressModalClose"></view>
+<view class="address-modal" wx:if="{{showAddressModal}}">
+  <view class="address-modal-title">选择地址</view>
+  <view class="address-modal-empty" wx:if="{{addressList.length === 0}}">暂无保存的地址</view>
+  <view
+    class="address-item"
+    wx:for="{{addressList}}"
+    wx:key="id"
+    bindtap="onAddressPick"
+    data-address="{{item}}"
+  >
+    <view class="address-item-name">{{item.name}} {{item.phone}}</view>
+    <view class="address-item-detail">{{item.provinceName}}{{item.cityName}}{{item.countyName}} {{item.detailInfo}}</view>
+  </view>
+</view>

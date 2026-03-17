@@ -1,7 +1,6 @@
 const { api } = require('../../../utils/api.js');
 const auth = require('../../../utils/auth.js');
 const authGuard = require('../../../utils/authGuard.js');
-const cartApi = require('../../../api/cart.js');
 
 const DEFAULT_PRODUCT_IMAGE = 'https://tdesign.gtimg.com/mobile/demos/example1.png';
 
@@ -10,8 +9,6 @@ Page({
     id: '',
     loading: true,
     goods: null,
-    quantity: 1,
-    showSkuPopup: false,
     systemType: 'white',
     categoryName: ''
   },
@@ -103,116 +100,32 @@ Page({
     }
   },
 
-  showSkuPopup() {
-    this.setData({ showSkuPopup: true });
-  },
-
-  closeSkuPopup() {
-    this.setData({
-      showSkuPopup: false
-    });
-  },
-
-  onPopupChange(e) {
-    this.setData({
-      showSkuPopup: e.detail.visible
-    });
-  },
-
-  decreaseQuantity() {
-    const next = Math.max(1, this.data.quantity - 1);
-    this.setData({ quantity: next });
-  },
-
-  increaseQuantity() {
-    const maxStock = this.data.goods?.stock || 999;
-    const next = Math.min(maxStock, this.data.quantity + 1);
-    this.setData({ quantity: next });
-  },
-
-  onQuantityChange(e) {
-    // 兼容 c-quantity-stepper 组件和 t-stepper 组件
-    const value = Number(e.detail.value) || 1;
-    const maxStock = this.data.goods?.stock || 999;
-    const safeValue = Math.min(Math.max(value, 1), maxStock);
-    this.setData({ quantity: safeValue });
-  },
-
-  async addToCart() {
-    // 统一登录校验
-    const isLoggedIn = await authGuard.requireLogin({
-      reason: '加入清单需要登录',
-      onCancel: 'stay'
-    });
-
-    if (!isLoggedIn) {
-      return;
-    }
-
-    if (!this.data.goods) return;
-
-    if (this.data.quantity > this.data.goods.stock) {
-      wx.showToast({
-        title: '库存不足',
-        icon: 'none'
-      });
-      return;
-    }
-
-    let cartList = wx.getStorageSync('cartListLocal') || [];
-    const targetId = this.data.goods._id || this.data.goods.id;
-    const existingIndex = cartList.findIndex(item => item.id === targetId);
-
-    if (existingIndex > -1) {
-      cartList[existingIndex].quantity += this.data.quantity;
-    } else {
-      cartList.push({
-        id: targetId,
-        name: this.data.goods.name,
-        price: this.data.goods.price,
-        image: this.data.goods.image,
-        quantity: this.data.quantity,
-        systemType: this.data.systemType
-      });
-    }
-
-    wx.setStorageSync('cartListLocal', cartList);
-
-    // 云端同步 (仅登录用户)
-    if (isLoggedIn) {
-      const syncData = {
-        productId: targetId,
-        name: this.data.goods.name,
-        price: this.data.goods.price,
-        image: this.data.goods.image || '',
-        quantity: this.data.quantity,
-        systemType: this.data.systemType
-      };
-
-      // 验证必需字段 - 使用更严格的空字符串检查
-      if (!syncData.productId || syncData.productId === '' ||
-          !syncData.name || syncData.name === '' ||
-          syncData.price === undefined || syncData.price === null) {
-        console.warn('[addToCart] Cloud sync skipped - missing required fields:', {
-          hasProductId: !!syncData.productId,
-          hasName: !!syncData.name,
-          hasPrice: syncData.price !== undefined
-        });
-      } else {
-        cartApi.add(syncData).then(() => {
-          console.log('[addToCart] Cloud sync success');
-        }).catch(err => {
-          console.error('Cart cloud sync failed:', err);
-        });
+  contactService() {
+    // 咨询服务 - 引导用户通过联系方式咨询
+    wx.showModal({
+      title: '咨询详情',
+      content: '如需了解更多商品信息，请联系我们的客服人员。',
+      showCancel: true,
+      cancelText: '取消',
+      confirmText: '拨打电话',
+      success: (res) => {
+        if (res.confirm) {
+          // 获取配置的联系电话
+          const contactConfig = require('../../../config/contact.js');
+          const phone = contactConfig.servicePhone || '';
+          if (phone) {
+            wx.makePhoneCall({
+              phoneNumber: phone,
+              fail: () => {
+                wx.showToast({ title: '拨号失败', icon: 'none' });
+              }
+            });
+          } else {
+            wx.showToast({ title: '暂无联系电话', icon: 'none' });
+          }
+        }
       }
-    }
-
-    wx.showToast({
-      title: '加入成功',
-      icon: 'success'
     });
-
-    this.closeSkuPopup();
   },
 
   previewImage(e) {

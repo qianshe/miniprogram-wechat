@@ -59,12 +59,12 @@
     </view>
 
     <view class="card-list" wx:if="{{hasUserInfo}}">
-      <view class="list-item" bindtap="toOrders">
+      <view class="list-item" bindtap="toServiceRecords">
         <view class="item-left">
           <view class="item-icon">
-            <text class="icon-text">单</text>
+            <text class="icon-text">录</text>
           </view>
-          <view class="item-title">我的订单</view>
+          <view class="item-title">我的服务记录</view>
         </view>
         <view class="item-arrow">></view>
       </view>
@@ -73,7 +73,7 @@
           <view class="item-icon">
             <text class="icon-text">址</text>
           </view>
-          <view class="item-title">收货地址管理</view>
+          <view class="item-title">地址管理</view>
         </view>
         <view class="item-arrow">></view>
       </view>
@@ -91,7 +91,7 @@
           <view class="item-icon">
             <text class="icon-text">建</text>
           </view>
-          <view class="item-title">创建订单（admin）</view>
+          <view class="item-title">创建服务记录（admin）</view>
         </view>
         <view class="item-arrow">></view>
       </view>

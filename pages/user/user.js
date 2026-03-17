@@ -41,13 +41,13 @@ Page({
     this.checkLoginStatus();
   },
 
-  toShoppingCart() {
-    wx.switchTab({
-      url: '/pages/cart/cart'
+  toFeedback() {
+    wx.navigateTo({
+      url: '/pages/feedback/feedback'
     });
   },
 
-  toOrders() {
+  toServiceRecords() {
     wx.navigateTo({
       url: '/pages/order/list/list'
     });
@@ -56,12 +56,6 @@ Page({
   toAddress() {
     wx.navigateTo({
       url: '/pages/address/address'
-    });
-  },
-
-  toFeedback() {
-    wx.navigateTo({
-      url: '/pages/feedback/feedback'
     });
   },
 
@@ -297,6 +291,17 @@ Page({
         title: '登录成功',
         icon: 'success'
       });
+
+      // 检查是否有扫码待跳转的订单
+      const pendingOrderNo = wx.getStorageSync('pendingScanOrderNo');
+      if (pendingOrderNo) {
+        wx.removeStorageSync('pendingScanOrderNo');
+        setTimeout(() => {
+          wx.navigateTo({
+            url: `/pages/scan-result/scan-result?orderNo=${pendingOrderNo}`
+          });
+        }, 500); // 等 toast 显示完再跳转
+      }
     } catch (err) {
       console.error('云函数登录失败:', err);
       wx.showToast({

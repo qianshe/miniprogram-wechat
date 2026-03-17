@@ -23,7 +23,8 @@
         "list/list",
         "confirm/confirm",
         "create/create",
-        "detail/detail"
+        "detail/detail",
+        "user-confirm/user-confirm"
       ]
     },
     {
@@ -46,7 +47,8 @@
         "package/edit/edit",
         "process/list/list",
         "user/list/list",
-        "assets/images/images"
+        "assets/images/images",
+        "assets/site-info/site-info"
       ]
     }
   ],

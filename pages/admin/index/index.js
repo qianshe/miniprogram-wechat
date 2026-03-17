@@ -76,6 +76,13 @@ Page({
         icon: '🖼️',
         desc: '管理系统图片资源',
         path: '/pages/admin/assets/images/images'
+      },
+      {
+        id: 'site-info',
+        name: '联系方式',
+        icon: '📞',
+        desc: '配置客服电话和微信号',
+        path: '/pages/admin/assets/site-info/site-info'
       }
     ],
     // 今日数据统计

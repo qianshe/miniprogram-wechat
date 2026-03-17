@@ -1,183 +1,133 @@
 const { api } = require('../../utils/api.js');
 const auth = require('../../utils/auth.js');
 
+const PENDING_SCAN_KEY = 'pendingScanOrderNo';
+
 Page({
-  /**
-   * 页面的初始数据
-   */
   data: {
     orderNo: '',
     orderInfo: null,
     loading: true,
     errorMessage: '',
-    isLoggedIn: false,
-    userId: null
+    isLoggedIn: false
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
   onLoad(options) {
-    // 获取订单号参数
+    let orderNo = '';
+
     if (options.orderNo) {
-      this.setData({
-        orderNo: options.orderNo
-      });
-      
-      // 检查登录状态
-      this.checkLoginStatus();
-      
-      // 获取订单信息
-      this.loadOrderInfo(options.orderNo);
+      orderNo = options.orderNo;
     } else if (options.q) {
-      // 处理二维码扫描场景
       try {
-        // 解码URL
         const url = decodeURIComponent(options.q);
-        // 从URL中提取订单号（支持order_YYYYMMDD_XXX格式）
-        const match = url.match(/orderNo=([A-Za-z0-9_]+)/);
+        const match = url.match(/orderNo=([A-Za-z0-9_-]+)/);
         if (match && match[1]) {
-          const orderNo = match[1];
-          this.setData({ orderNo });
-          
-          // 检查登录状态
-          this.checkLoginStatus();
-          
-          // 获取订单信息
-          this.loadOrderInfo(orderNo);
-        } else {
-          this.setData({
-            loading: false,
-            errorMessage: '无效的二维码'
-          });
+          orderNo = match[1];
         }
-      } catch (error) {
-        console.error('解析二维码参数失败:', error);
-        this.setData({
-          loading: false,
-          errorMessage: '无效的二维码'
-        });
+      } catch (e) {
+        console.error('解析二维码参数失败:', e);
       }
-    } else {
-      this.setData({
-        loading: false,
-        errorMessage: '缺少订单号参数'
-      });
+    }
+
+    if (!orderNo) {
+      this.setData({ loading: false, errorMessage: '无效的服务记录二维码' });
+      return;
+    }
+
+    this.setData({ orderNo });
+    this._checkLoginAndLoad(orderNo);
+  },
+
+  onShow() {
+    // 从用户中心登录回来后，重新检查登录状态
+    const { orderNo } = this.data;
+    if (orderNo && !this.data.isLoggedIn) {
+      const isLoggedIn = auth.checkAuth();
+      if (isLoggedIn) {
+        this.setData({ isLoggedIn });
+        this.loadOrderPreview(orderNo);
+      }
     }
   },
 
-  /**
-   * 检查登录状态
-   */
-  checkLoginStatus() {
+  _checkLoginAndLoad(orderNo) {
     const isLoggedIn = auth.checkAuth();
-    
-    this.setData({
-      isLoggedIn,
-      userId: isLoggedIn ? auth.getUserInfo().id : null
-    });
+    this.setData({ isLoggedIn });
+    this.loadOrderPreview(orderNo);
   },
 
   /**
-   * 加载订单信息
+   * 使用 getOrderPreview 加载订单预览（认领前无需登录）
    */
-  loadOrderInfo(orderNo) {
-    this.setData({
-      loading: true,
-      errorMessage: ''
-    });
-    
-    // 调用统一API获取订单详情
-    api.getOrderDetail(orderNo, false)
+  loadOrderPreview(orderNo) {
+    this.setData({ loading: true, errorMessage: '' });
+
+    api.getOrderPreview(orderNo)
       .then(data => {
+        // 如果已登录且订单已被绑定，直接跳到确认页
+        if (this.data.isLoggedIn && data.isBound) {
+          wx.redirectTo({
+            url: `/pages/order/user-confirm/user-confirm?orderNo=${orderNo}`
+          });
+          return;
+        }
+
         this.setData({
           orderInfo: {
             ...data,
-            // 检查是否已经绑定到当前用户
-            isBinded: this.data.isLoggedIn && data.userId === this.data.userId,
-            totalAmount: data.totalAmount.toFixed(2), // 云函数已转换为元
-            items: data.items.map(item => ({
+            totalAmount: Number(data.totalAmount).toFixed(2),
+            items: (data.items || []).map(item => ({
               ...item,
-              price: item.price.toFixed(2)
+              price: Number(item.price).toFixed(2),
+              subtotal: Number(item.subtotal).toFixed(2)
             }))
           },
           loading: false
         });
       })
       .catch(err => {
-        console.error('获取订单信息失败:', err);
+        console.error('获取服务记录信息失败:', err);
         this.setData({
           loading: false,
-          errorMessage: err.message || '获取订单信息失败'
+          errorMessage: err.message || '获取服务记录信息失败'
         });
       });
   },
 
   /**
-   * 登录操作
+   * 登录 - 存储 pending orderNo，跳转用户中心
    */
   login() {
-    // 调用登录授权
-    auth.loginWithPrompt(() => {
-      // 登录成功后，更新登录状态
-      this.checkLoginStatus();
-      
-      // 刷新订单信息
-      if (this.data.orderNo) {
-        this.loadOrderInfo(this.data.orderNo);
-      }
-    });
+    wx.setStorageSync(PENDING_SCAN_KEY, this.data.orderNo);
+    wx.switchTab({ url: '/pages/user/user' });
   },
 
   /**
-   * 绑定订单
+   * 认领服务记录
    */
   bindOrder() {
     if (!this.data.isLoggedIn) {
-      wx.showToast({
-        title: '请先登录',
-        icon: 'none'
-      });
+      wx.showToast({ title: '请先登录', icon: 'none' });
       return;
     }
-    
-    wx.showLoading({
-      title: '正在绑定...'
-    });
-    
-    // 调用统一API绑定订单
-    api.bindOrder(this.data.orderNo, this.data.userId)
+
+    wx.showLoading({ title: '正在认领...' });
+
+    const userInfo = auth.getUserInfo();
+    const userId = userInfo ? (userInfo.id || userInfo._id || '') : '';
+
+    api.bindOrder(this.data.orderNo, userId)
       .then(() => {
         wx.hideLoading();
-
-        wx.showToast({
-          title: '绑定成功',
-          icon: 'success'
-        });
-
-        // 刷新订单状态
-        this.setData({
-          'orderInfo.isBinded': true,
-          'orderInfo.userId': this.data.userId
+        // 认领成功 → 跳转到确认信息页
+        wx.redirectTo({
+          url: `/pages/order/user-confirm/user-confirm?orderNo=${this.data.orderNo}`
         });
       })
       .catch(err => {
         wx.hideLoading();
-
-        wx.showToast({
-          title: err.message || '绑定失败',
-          icon: 'none'
-        });
+        wx.showToast({ title: err.message || '认领失败', icon: 'none' });
       });
-  },
-
-  /**
-   * 查看订单详情
-   */
-  viewOrder() {
-    wx.navigateTo({
-      url: `/pages/order/detail/detail?orderNo=${this.data.orderNo}`
-    });
   },
 
   /**
@@ -185,9 +135,7 @@ Page({
    */
   retry() {
     if (this.data.orderNo) {
-      this.loadOrderInfo(this.data.orderNo);
+      this.loadOrderPreview(this.data.orderNo);
     }
-  },
-
-
-}); 
+  }
+});

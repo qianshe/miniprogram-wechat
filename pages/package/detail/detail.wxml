@@ -26,11 +26,9 @@
     <view class="items-section">
       <view class="section-header">
         <text class="section-title">套餐内容</text>
-        <text class="section-subtitle">可调整数量或更换商品</text>
       </view>
 
       <view class="items-list">
-        <!-- 遍历每个分类 -->
         <view
           class="item-card {{category.isCustomized ? 'customized' : ''}}"
           wx:for="{{items}}"
@@ -38,7 +36,6 @@
           wx:for-item="category"
           wx:key="categoryId"
         >
-          <!-- Category Header -->
           <view class="item-header">
             <text class="category-name">{{category.categoryName}}</text>
             <view class="category-subtotal">
@@ -47,7 +44,6 @@
             </view>
           </view>
 
-          <!-- Products List - 遍历该分类下的所有商品 -->
           <view class="products-container">
             <view
               class="product-swipe-wrapper"
@@ -56,33 +52,8 @@
               wx:for-item="product"
               wx:key="productId"
             >
-              <view
-                class="product-delete-action"
-                catchtap="onDeleteProduct"
-                data-category-index="{{categoryIndex}}"
-                data-product-index="{{productIndex}}"
-              >
-                删除
-              </view>
-
-              <view
-                class="product-item {{product.swipeIsTouchMove ? 'touch-move' : ''}}"
-                style="transform: translateX({{product.swipeTranslateX || 0}}rpx)"
-                data-category-index="{{categoryIndex}}"
-                data-product-index="{{productIndex}}"
-                bindtouchstart="onProductTouchStart"
-                bindtouchmove="onProductTouchMove"
-                bindtouchend="onProductTouchEnd"
-              >
-                <!-- Product Info -->
-                <view
-                  class="product-info"
-                  bindtap="onSelectProduct"
-                  data-category-index="{{categoryIndex}}"
-                  data-product-index="{{productIndex}}"
-                  data-category-id="{{category.categoryId}}"
-                  data-category-name="{{category.categoryName}}"
-                >
+              <view class="product-item">
+                <view class="product-info">
                   <image
                     class="product-image"
                     src="{{product.imageUrl}}"
@@ -98,61 +69,11 @@
                         <text class="product-subtotal">小计 ¥{{product.displaySubtotal}}</text>
                       </view>
                       <view class="product-meta-actions">
-                        <view class="quantity-control inline" catchtap="onQuantityTap">
-                          <view
-                            class="qty-btn {{product.quantity <= 1 ? 'disabled' : ''}}"
-                            bindtap="onQuantityChange"
-                            data-category-index="{{categoryIndex}}"
-                            data-product-index="{{productIndex}}"
-                            data-action="decrease"
-                          >
-                            <text class="qty-icon">-</text>
-                          </view>
-                          <text class="qty-value">{{product.quantity}}</text>
-                          <view
-                            class="qty-btn"
-                            bindtap="onQuantityChange"
-                            data-category-index="{{categoryIndex}}"
-                            data-product-index="{{productIndex}}"
-                            data-action="increase"
-                          >
-                            <text class="qty-icon">+</text>
-                          </view>
-                        </view>
-                        <view class="product-actions compact">
-                          <view class="change-btn compact">
-                            <text class="change-text">更换</text>
-                          </view>
-                        </view>
+                        <text class="qty-value">数量 {{product.quantity}}</text>
                       </view>
                     </view>
                   </view>
                 </view>
-              </view>
-            </view>
-
-            <view class="category-add-slot" wx:if="{{category.products.length > 0}}">
-              <view
-                class="category-add-btn"
-                bindtap="onSelectProductForEmpty"
-                data-category-index="{{categoryIndex}}"
-                data-category-id="{{category.categoryId}}"
-                data-category-name="{{category.categoryName}}"
-              >
-                <text class="category-add-text">添加商品</text>
-              </view>
-            </view>
-
-            <view class="empty-category-slot" wx:if="{{category.products.length === 0}}">
-              <text class="empty-slot-text">该分类暂无商品，可重新选择</text>
-              <view
-                class="empty-slot-btn"
-                bindtap="onSelectProductForEmpty"
-                data-category-index="{{categoryIndex}}"
-                data-category-id="{{category.categoryId}}"
-                data-category-name="{{category.categoryName}}"
-              >
-                <text class="empty-slot-btn-text">重新选择商品</text>
               </view>
             </view>
           </view>
@@ -172,108 +93,17 @@
       </view>
     </view>
 
+    <!-- Contact Button -->
+    <view class="contact-btn-section">
+      <text class="contact-hint-text">当前页面仅供查看套餐信息，具体服务内容请联系服务人员确认</text>
+      <view class="contact-btn" bindtap="onConfirm">
+        <text class="contact-btn-text">联系服务人员</text>
+      </view>
+    </view>
+
     <!-- Bottom Safe Area Placeholder -->
     <view class="bottom-placeholder"></view>
   </block>
 
-  <!-- Bottom Action Bar -->
-  <view class="bottom-bar {{enableBlur ? '' : 'no-blur'}}" wx:if="{{!loading}}">
-    <view class="price-display">
-      <text class="price-label">参考合计</text>
-      <view class="price-amount">
-        <text class="currency">¥</text>
-        <text class="amount">{{displayTotalPrice}}</text>
-      </view>
-    </view>
-    <view class="confirm-btn" bindtap="onConfirm">
-      <text class="btn-text">确认套餐</text>
-    </view>
-  </view>
-
-  <!-- Product Replacer Popup -->
-  <view class="popup-overlay {{showReplacer ? 'visible' : ''}}" bindtap="onCloseReplacer" catchtouchmove="preventTouchMove">
-    <view class="popup-container {{showReplacer ? 'visible' : ''}}" catchtap="onPopupTap">
-      <!-- Popup Header -->
-      <view class="popup-header">
-        <text class="popup-title">选择替换商品</text>
-        <view class="popup-close" bindtap="onCloseReplacer">
-          <text class="close-icon">X</text>
-        </view>
-      </view>
-
-      <!-- Current Product -->
-      <view class="current-product" wx:if="{{currentItem && currentProductIndex >= 0}}">
-        <text class="current-label">当前商品</text>
-        <view class="current-info">
-          <image
-            class="current-image"
-            src="{{currentItem.products[currentProductIndex].imageUrl}}"
-            mode="aspectFill"
-          />
-          <view class="current-details">
-            <text class="current-name">{{currentItem.products[currentProductIndex].productName}}</text>
-            <text class="current-price">{{currentItem.products[currentProductIndex].displayPrice}}</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- Loading State -->
-      <view class="replacer-loading" wx:if="{{loadingProducts}}">
-        <view class="loading-spinner small"></view>
-        <text class="loading-text">加载商品中...</text>
-      </view>
-
-      <!-- Available Products -->
-      <view class="available-products" wx:if="{{!loadingProducts && availableProducts.length > 0}}">
-        <text class="available-label">可选商品 ({{currentCategoryName}})</text>
-        <scroll-view class="products-scroll" scroll-y="true">
-          <view class="products-list">
-            <view
-              class="product-option {{item._id === selectedProductId ? 'selected' : ''}} {{item.isDisabled ? 'disabled' : ''}}"
-              wx:for="{{availableProducts}}"
-              wx:key="_id"
-              bindtap="onSelectReplacement"
-              data-product="{{item}}"
-            >
-              <image
-                class="option-image"
-                src="{{item.imageUrl}}"
-                mode="aspectFill"
-              />
-              <view class="option-info">
-                <view class="option-main-info">
-                  <text class="option-name">{{item.name}}</text>
-                  <view class="price-diff {{item.priceDiff > 0 ? 'positive' : item.priceDiff < 0 ? 'negative' : 'zero'}}" wx:if="{{item.priceDiff !== 0}}">
-                    <text class="diff-text">{{item.priceDiffText}}</text>
-                  </view>
-                </view>
-                <text class="option-price">{{item.displayPrice}}</text>
-              </view>
-              <view class="option-disabled-tag" wx:if="{{item.isDisabled}}">
-                <text class="option-disabled-text">已选中</text>
-              </view>
-              <view class="option-check" wx:if="{{item._id === selectedProductId}}">
-                <text class="check-icon">v</text>
-              </view>
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-
-      <!-- Empty State -->
-      <view class="empty-products" wx:if="{{!loadingProducts && availableProducts.length === 0}}">
-        <text class="empty-text">暂无可替换商品</text>
-      </view>
-
-      <!-- Confirm Button -->
-      <view class="popup-footer" wx:if="{{!loadingProducts && availableProducts.length > 0}}">
-        <view
-          class="replace-btn {{selectedProductId && (currentProductIndex < 0 || (currentItem && currentProductIndex >= 0 && selectedProductId !== currentItem.products[currentProductIndex].productId)) ? '' : 'disabled'}}"
-          bindtap="onConfirmReplace"
-        >
-          <text class="replace-btn-text">确认替换</text>
-        </view>
-      </view>
-    </view>
-  </view>
+<!-- Product Replacer Popup removed from ordinary user flow -->
 </view>

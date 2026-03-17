@@ -37,39 +37,9 @@
     </view>
   </view>
 
-  <!-- 底部操作栏 -->
+  <!-- 底部操作栏 - 咨询服务入口 -->
   <view class="bottom-bar {{systemType}}-theme">
-    <button class="add-cart-btn" bindtap="showSkuPopup">加入清单</button>
-  </view>
-
-  <!-- 自定义弹窗 -->
-  <view class="sku-mask" wx:if="{{showSkuPopup}}" catchtap="closeSkuPopup"></view>
-  <view class="sku-drawer" wx:if="{{showSkuPopup}}" catchtouchmove="true">
-    <view class="sku-popup">
-      <view class="sku-header">
-        <image src="{{goods.image}}" mode="aspectFill" class="sku-image" />
-        <view class="sku-info">
-          <view class="sku-price">¥{{goods.displayPrice}}</view>
-          <view class="sku-stock">库存：{{goods.stock}}</view>
-        </view>
-      </view>
-
-      <view class="sku-content">
-        <view class="quantity-section">
-          <text class="quantity-label">购买数量</text>
-          <c-quantity-stepper
-            value="{{quantity}}"
-            min="1"
-            max="{{goods.stock}}"
-            bindchange="onQuantityChange"
-          />
-        </view>
-      </view>
-
-      <view class="sku-footer">
-        <button class="confirm-btn" bindtap="addToCart">加入清单</button>
-      </view>
-    </view>
+    <button class="consult-btn" bindtap="contactService">咨询详情</button>
   </view>
 </view>
 

@@ -5,7 +5,7 @@
     "c-confirm-form-card": "/components/c-confirm-form-card/c-confirm-form-card",
     "c-confirm-price-summary": "/components/c-confirm-price-summary/c-confirm-price-summary"
   },
-  "navigationBarTitleText": "确认订单",
+  "navigationBarTitleText": "确认服务信息",
   "navigationBarBackgroundColor": "#f6f0e7",
   "navigationBarTextStyle": "black"
 }

@@ -5,7 +5,7 @@
       <input
         class="search-input"
         type="text"
-        placeholder="搜索订单号"
+        placeholder="搜索服务记录编号"
         value="{{searchKeyword}}"
         confirm-type="search"
         bindinput="onSearchChange"
@@ -31,7 +31,7 @@
       </view>
       <scroll-view scroll-y class="filter-content">
         <view class="filter-item">
-          <text class="filter-label">订单时间</text>
+          <text class="filter-label">记录时间</text>
           <view class="date-range">
             <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
               <view class="date-picker">{{startDate || '开始日期'}}</view>
@@ -40,26 +40,6 @@
             <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
               <view class="date-picker">{{endDate || '结束日期'}}</view>
             </picker>
-          </view>
-        </view>
-        <view class="filter-item">
-          <text class="filter-label">价格区间</text>
-          <view class="price-range">
-            <input
-              class="price-input"
-              type="number"
-              placeholder="最低价"
-              value="{{minPrice}}"
-              bindinput="onMinPriceChange"
-            />
-            <text class="price-separator">至</text>
-            <input
-              class="price-input"
-              type="number"
-              placeholder="最高价"
-              value="{{maxPrice}}"
-              bindinput="onMaxPriceChange"
-            />
           </view>
         </view>
       </scroll-view>
@@ -92,7 +72,7 @@
     <view class="loading-wrapper" wx:if="{{loading}}">
       <view class="loading-text">加载中...</view>
     </view>
-    <c-empty wx:elif="{{!orders.length}}" show="{{true}}" title="暂无订单" />
+    <c-empty wx:elif="{{!orders.length}}" show="{{true}}" title="暂无服务记录" />
     <view class="orders" wx:else>
       <view class="order-item"
             wx:for="{{orders}}"
@@ -100,34 +80,23 @@
             bindtap="onOrderClick"
             data-orderid="{{item.orderNo}}">
         <view class="order-header">
-          <text class="order-no">订单号：{{item.orderNo}}</text>
-          <!-- 双状态标签显示 -->
+          <text class="order-no">记录编号：{{item.orderNo}}</text>
           <view class="order-status-tags">
             <text class="status-tag flow-status-{{item.orderStatus}}">{{item.orderStatusText}}</text>
-            <text wx:if="{{item.showPaymentStatusTag}}" class="status-tag payment-status-{{item.paymentStatus}}">{{item.paymentStatusText}}</text>
           </view>
         </view>
         <view class="order-info">
           <view class="info-row">
-            <text class="label">创建时间：</text>
+            <text class="label">记录时间：</text>
             <text>{{item.createdTime}}</text>
           </view>
           <view class="info-row" wx:if="{{item.orderStatus === 3 && item.completedTime}}">
             <text class="label">完成时间：</text>
             <text>{{item.completedTime}}</text>
           </view>
-        </view>
-        <view class="order-footer">
-          <view class="order-amount">
-            <text class="amount-label">合计: </text>
-            <text class="amount">¥{{item.totalAmount}}</text>
-          </view>
-          <!-- 根据状态显示操作按钮 -->
-          <view class="order-actions">
-            <button wx:if="{{item.orderStatus === 0 && item.paymentStatus === 0}}"
-                    class="btn btn-cancel-light"
-                    catchtap="handleCancel"
-                    data-id="{{item._id}}">取消订单</button>
+          <view class="info-row" wx:if="{{item.serviceTime}}">
+            <text class="label">服务时间：</text>
+            <text>{{item.serviceTime}}</text>
           </view>
         </view>
       </view>

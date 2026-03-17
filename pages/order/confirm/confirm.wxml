@@ -24,11 +24,11 @@
 
   <c-confirm-price-summary rows="{{priceSummaryRows}}"></c-confirm-price-summary>
 
-  <c-confirm-form-card title="订单备注" custom-class="remarks-card">
+  <c-confirm-form-card title="服务备注" custom-class="remarks-card">
     <input 
       class="remarks-input"
       type="text" 
-      placeholder="请输入订单备注" 
+      placeholder="请输入服务备注" 
       value="{{remarks}}"
       bindinput="onRemarksChange"
     />
@@ -38,7 +38,7 @@
 
   <view class="bottom-placeholder"></view>
 
-  <!-- 底部结算栏 -->
+  <!-- 底部操作栏 -->
   <view class="footer">
     <view class="total-amount">
       合计：<text class="amount">¥{{totalAmount}}</text>
@@ -46,10 +46,10 @@
     <button 
       class="submit-btn" 
       bindtap="submitOrder" 
-      loading="{{loading}}"
-      disabled="{{loading}}"
+      loading="{{false}}"
+      disabled="{{false}}"
     >
-      提交意向单
+      联系服务人员
     </button>
   </view>
 </view>

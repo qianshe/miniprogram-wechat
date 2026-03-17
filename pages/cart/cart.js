@@ -285,39 +285,11 @@ Page({
   },
 
   async checkout() {
-    // 统一登录校验
-    const isLoggedIn = await authGuard.requireLogin({
-      reason: '提交订单需要登录',
-      onCancel: 'stay'
-    });
-
-    if (!isLoggedIn) {
-      return;
-    }
-
-    const selectedItems = this.data.cartItems.filter(item => item.selected);
-    if (selectedItems.length === 0) {
-      wx.showToast({ title: '请选择商品', icon: 'none' });
-      return;
-    }
-
-    wx.showLoading({ title: '正在处理订单' });
-
-    wx.navigateTo({
-      url: '../order/confirm/confirm',
-      success: (res) => {
-        res.eventChannel.emit('acceptDataFromCart', {
-          selectedItems,
-          totalAmount: this.data.totalAmount
-        });
-        this.updateTotalAmount();
-      },
-      fail: () => {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
-      },
-      complete: () => {
-        wx.hideLoading();
-      }
+    wx.showModal({
+      title: '当前不可在线提交',
+      content: '当前小程序仅支持信息查询、服务记录查看与线下服务确认。如需继续，请联系服务人员。',
+      showCancel: false,
+      confirmText: '我知道了'
     });
   },
 

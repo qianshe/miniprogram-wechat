@@ -39,7 +39,6 @@
         <view class="package-info">
           <text class="package-name">{{packageInfo.name}}</text>
           <text class="package-desc">{{packageInfo.description}}</text>
-          <!-- [殡葬平台转型] 已清理红事关键词 -->
           <view class="package-type-badge {{packageInfo.type}}">
             <text class="badge-text">{{packageInfo.type === 'white' ? '白事套餐' : '服务套餐'}}</text>
           </view>
@@ -53,7 +52,6 @@
       items="{{confirmItemRows}}"
     ></c-confirm-item-list>
 
-    <!-- Service Time -->
     <c-confirm-form-card title="服务时间" compact="{{true}}">
       <picker mode="date" value="{{serviceTime}}" bindchange="onServiceTimeChange">
         <view class="confirm-field plain-field {{serviceTime ? 'has-value' : ''}}">
@@ -62,15 +60,13 @@
       </picker>
     </c-confirm-form-card>
 
-    <!-- Price Summary -->
     <c-confirm-price-summary rows="{{priceSummaryRows}}"></c-confirm-price-summary>
 
-    <!-- Remarks -->
-    <c-confirm-form-card title="订单备注" custom-class="remarks-card">
+    <c-confirm-form-card title="服务备注" custom-class="remarks-card">
       <input 
         class="remarks-input" 
         type="text"
-        placeholder="请输入订单备注"
+        placeholder="请输入服务备注"
         value="{{remarks}}"
         bindinput="onRemarksInput"
         maxlength="200"
@@ -79,24 +75,21 @@
 
     <view class="disclaimer-text">本小程序仅用于展示与需求登记，最终以电话/微信沟通及线下结算为准。</view>
 
-    <!-- Bottom Placeholder -->
     <view class="bottom-placeholder"></view>
 
-    <!-- Bottom Bar -->
     <view class="bottom-bar">
       <view class="bottom-left">
-        <text class="total-label">参考合计:</text>
+        <text class="total-label">服务咨询:</text>
         <view class="total-amount">
-          <text class="total-currency">¥</text>
-          <text class="total-value">{{displayTotalPrice}}</text>
+          <text class="total-value">请联系服务人员确认</text>
         </view>
       </view>
       <view class="bottom-right">
         <view class="back-btn" bindtap="onGoBack">
-          <text class="back-text">返回修改</text>
+          <text class="back-text">返回查看</text>
         </view>
-        <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="onSubmitOrder">
-          <text class="submit-text">{{submitting ? '提交中...' : '提交意向单'}}</text>
+        <view class="submit-btn" bindtap="onSubmitOrder">
+          <text class="submit-text">联系服务人员</text>
         </view>
       </view>
     </view>

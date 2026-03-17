@@ -769,62 +769,30 @@ Page({
    * Navigate to confirm page - 支持多商品结构
    */
   async onConfirm() {
-    if (this.data.submitting) return;
-
-    // 登录校验
-    const ok = await requireLogin({
-      reason: '提交意向单前需要登录，用于保存地址并便于商家联系你',
-      onCancel: 'stay'
-    });
-    if (!ok) return;
-
-    const { packageInfo, items, totalPrice, originalPrice } = this.data;
-
-    // Prepare order data with customization info - 新的多商品结构
-    const orderData = {
-      packageId: this.data.packageId,
-      packageInfo: {
-        _id: packageInfo._id,
-        name: packageInfo.name,
-        description: packageInfo.description,
-        type: packageInfo.type,
-        imageUrl: packageInfo.imageUrl,
-        price: packageInfo.price
-      },
-      // 新结构：每个分类包含多个商品
-      items: items.map(category => ({
-        categoryId: category.categoryId,
-        categoryName: category.categoryName,
-        categorySubtotal: category.categorySubtotal,
-        products: category.products.map(product => ({
-          productId: product.productId,
-          productName: product.productName,
-          productImage: product.imageUrl,
-          unitPrice: product.price,
-          quantity: product.quantity,
-          subtotal: product.subtotal,
-          isCustomized: product.isCustomized || false
-        }))
-      })),
-      totalPrice: totalPrice,
-      originalPrice: originalPrice,
-      savedAmount: 0
-    };
-
-    // Store in global data
-    const app = getApp();
-    app.globalData.pendingPackageOrder = orderData;
-
-    wx.navigateTo({
-      url: '/pages/package/confirm/confirm',
-      fail: (err) => {
-        console.error('Navigation failed:', err);
-        wx.showToast({
-          title: '页面跳转失败',
-          icon: 'none'
-        });
-      }
-    });
+    try {
+      const db = wx.cloud.database();
+      const res = await db.collection('siteConfig').doc('contact').get();
+      const { phone, wechatId } = res.data;
+      wx.showActionSheet({
+        itemList: [`📞 拨打电话 ${phone}`, `💬 复制微信号 ${wechatId}`],
+        success(ret) {
+          if (ret.tapIndex === 0) {
+            wx.makePhoneCall({ phoneNumber: phone });
+          } else if (ret.tapIndex === 1) {
+            wx.setClipboardData({
+              data: wechatId,
+              success() {
+                wx.showToast({ title: '微信号已复制', icon: 'success' });
+              }
+            });
+          }
+        }
+      });
+    } catch (err) {
+      console.error('获取联系方式失败:', err);
+      // fallback: 直接拨打
+      wx.makePhoneCall({ phoneNumber: '15025963707' });
+    }
   },
 
   /**
@@ -843,8 +811,10 @@ Page({
    */
   checkDevicePerformance() {
     try {
-      const systemInfo = wx.getSystemInfoSync();
-      const { platform, system, benchmarkLevel } = systemInfo;
+      const deviceInfo = wx.getDeviceInfo();
+      const appBaseInfo = wx.getAppBaseInfo();
+      const { platform, benchmarkLevel } = deviceInfo;
+      const { system } = appBaseInfo;
       
       // benchmarkLevel: -1未知, 0-50低端机
       // Android低端机禁用毛玻璃

@@ -46,20 +46,19 @@
       <view wx:else class="products-list">
         <view class="product-item {{systemType}}-product-item" 
               wx:for="{{relatedProducts}}" 
-              wx:key="id">
-          <view class="product-image-container" bindtap="onProductClick" data-id="{{item.id}}">
+              wx:key="id"
+              bindtap="onProductClick" 
+              data-id="{{item.id}}">
+          <view class="product-image-container">
             <image 
               src="{{item.imageUrl}}" 
               mode="aspectFill" 
               class="product-image"
             />
           </view>
-          <view class="product-info" bindtap="onProductClick" data-id="{{item.id}}">
+          <view class="product-info">
             <view class="product-name">{{item.name}}</view>
             <view class="product-price {{systemType}}-price">¥{{item.price}}</view>
-          </view>
-          <view class="add-to-cart-btn {{systemType}}-btn" bindtap="addToCart" data-product="{{item}}">
-            <text class="add-icon">+</text>
           </view>
         </view>
       </view>

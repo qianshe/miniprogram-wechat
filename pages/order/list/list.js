@@ -2,9 +2,6 @@ const { api } = require('../../../utils/api.js');
 const {
   ORDER_FLOW_STATUS,
   PAYMENT_STATUS,
-  getOrderFlowText,
-  getPaymentStatusDisplayText,
-  shouldShowPaymentStatusTag,
   mapLegacyStatusToNew
 } = require('../../../config/constants.js');
 const { formatDate } = require('../../../utils/util.js');
@@ -20,13 +17,13 @@ Page({
     },
     hasMore: true,
     activeTab: '0',
-    // 用户端标签页：更简洁的设计
+    // 用户端标签页：服务记录语义
     statusTabs: [
       { value: '0', label: '全部', filter: 'all' },
-      { value: '1', label: '待付款', filter: 'unpaid' },       // paymentStatus=0 且 orderStatus<3
-      { value: '2', label: '服务中', filter: 'processing' },   // orderStatus in [1, 2]
-      { value: '3', label: '已完成', filter: 'completed' },    // orderStatus=3
-      { value: '4', label: '已取消', filter: 'cancelled' }     // orderStatus=4
+      { value: '1', label: '待确认', filter: 'pending' },
+      { value: '2', label: '服务中', filter: 'processing' },
+      { value: '3', label: '已完成', filter: 'completed' },
+      { value: '4', label: '已取消', filter: 'cancelled' }
     ],
     searchKeyword: '',
     showFilterPanel: false,
@@ -161,6 +158,25 @@ Page({
     }
   },
 
+  getUserFacingStatusText(orderStatus, paymentStatus) {
+    const normalizedOrderStatus = Number(orderStatus);
+    const normalizedPaymentStatus = Number(paymentStatus);
+
+    if (normalizedOrderStatus === ORDER_FLOW_STATUS.CANCELLED) {
+      return '已取消';
+    }
+    if (normalizedOrderStatus === ORDER_FLOW_STATUS.COMPLETED) {
+      return '已完成';
+    }
+    if (normalizedOrderStatus === ORDER_FLOW_STATUS.PROCESSING || normalizedOrderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
+      return '服务中';
+    }
+    if (normalizedOrderStatus === ORDER_FLOW_STATUS.CREATED) {
+      return normalizedPaymentStatus === PAYMENT_STATUS.PAID ? '待安排' : '待确认';
+    }
+    return '待确认';
+  },
+
   async loadOrders(isLoadMore = false) {
     if (!isLoadMore) {
       this.setData({ loading: true });
@@ -188,13 +204,6 @@ Page({
         params.endDate = this.data.endDate;
       }
 
-      if (this.data.minPrice) {
-        params.minPrice = parseInt(this.data.minPrice) * 100;
-      }
-      if (this.data.maxPrice) {
-        params.maxPrice = parseInt(this.data.maxPrice) * 100;
-      }
-
       const data = await api.getUserOrders({
         ...params,
         page,
@@ -202,7 +211,7 @@ Page({
       });
 
       if (!data || !data.records) {
-        throw new Error('订单数据为空');
+        throw new Error('记录数据为空');
       }
 
       const { records, total } = data;
@@ -215,24 +224,20 @@ Page({
         return;
       }
 
-      // 处理订单数据，兼容旧数据
       const formattedOrders = records.map(order => {
-        // 兼容旧数据：如果没有 orderStatus 字段，使用映射函数转换
         if (order.orderStatus === undefined) {
           const mapped = mapLegacyStatusToNew(order.status, order.payTime);
           order.orderStatus = mapped.orderStatus;
           order.paymentStatus = mapped.paymentStatus;
         }
-        
+
         return {
           ...order,
-          // 新系统的状态文本
-          orderStatusText: getOrderFlowText(order.orderStatus),
-          paymentStatusText: getPaymentStatusDisplayText(order.orderStatus, order.paymentStatus, false),
-          showPaymentStatusTag: shouldShowPaymentStatusTag(order.orderStatus),
+          orderStatusText: this.getUserFacingStatusText(order.orderStatus, order.paymentStatus),
+          showPaymentStatusTag: false,
           createdTime: formatDate(order.createTime),
           serviceTime: formatDate(order.serviceTime) || '未指定',
-          totalAmount: Number(order.totalAmount).toFixed(2)
+          totalAmount: Number(order.totalAmount || 0).toFixed(2)
         };
       });
 
@@ -262,35 +267,24 @@ Page({
    */
   buildFilterParams(filter) {
     switch (filter) {
-      case 'unpaid':
-        // 待付款：未支付 + 已创建/服务已完成
+      case 'pending':
         return {
-          paymentStatus: PAYMENT_STATUS.UNPAID,
-          orderStatusList: [
-            ORDER_FLOW_STATUS.CREATED,
-            ORDER_FLOW_STATUS.SERVICE_DONE
-          ]
+          orderStatusList: [ORDER_FLOW_STATUS.CREATED]
         };
       case 'processing':
-        // 服务中：仅服务中（不论支付状态）
         return {
-          orderStatusList: [
-            ORDER_FLOW_STATUS.PROCESSING
-          ]
+          orderStatusList: [ORDER_FLOW_STATUS.PROCESSING, ORDER_FLOW_STATUS.SERVICE_DONE]
         };
       case 'completed':
-        // 已完成
         return {
           orderStatusList: [ORDER_FLOW_STATUS.COMPLETED]
         };
       case 'cancelled':
-        // 已取消
         return {
           orderStatusList: [ORDER_FLOW_STATUS.CANCELLED]
         };
       case 'all':
       default:
-        // 全部订单，不传状态筛选
         return {};
     }
   },
@@ -337,37 +331,10 @@ Page({
     });
   },
 
-  // 取消订单
-  handleCancel(e) {
-    const { id } = e.currentTarget.dataset;
-    const order = this.data.orders.find(o => o._id === id);
-    if (!order) return;
-
-    wx.showModal({
-      title: '确认取消',
-      content: '确定要取消该订单吗？',
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            wx.showLoading({ title: '取消中...' });
-            await api.cancelOrder(order.orderNo);
-            wx.hideLoading();
-            wx.showToast({ title: '订单已取消', icon: 'success' });
-            this.setData({
-              'pagination.page': 1,
-              orders: [],
-              hasMore: true,
-              loading: true
-            }, () => {
-              this.loadOrders();
-            });
-          } catch (err) {
-            wx.hideLoading();
-            wx.showToast({ title: err.message || '取消失败', icon: 'none' });
-          }
-        }
-      }
+  handleCancel() {
+    wx.showToast({
+      title: '当前记录仅支持查看',
+      icon: 'none'
     });
   },
-
 });

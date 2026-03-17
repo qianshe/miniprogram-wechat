@@ -169,6 +169,16 @@ const api = {
     return call('orderManagement', 'bindOrder', { orderNo, userId })
   },
 
+  // ============ 订单预览（认领前）============
+  getOrderPreview: (orderNo) => {
+    return call('orderManagement', 'getOrderPreview', { orderNo })
+  },
+
+  // ============ 用户确认订单信息 ============
+  updateOrderUserInfo: (orderNo, { contactPhone, serviceTime, address, remarks } = {}) => {
+    return call('orderManagement', 'updateOrderUserInfo', { orderNo, contactPhone, serviceTime, address, remarks })
+  },
+
   // ============ 登录 ============
   login: (userInfo) => {
     return call('login', 'userLogin', { userInfo }, { showError: false })

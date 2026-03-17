@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "治丧清单",
+  "navigationBarTitleText": "服务清单",
   "usingComponents": {
     "c-loading": "/components/c-loading/c-loading",
     "c-empty": "/components/c-empty/c-empty",

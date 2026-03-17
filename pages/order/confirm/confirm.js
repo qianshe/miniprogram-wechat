@@ -1,4 +1,5 @@
 const { api } = require('../../../utils/api.js');
+const auth = require('../../../utils/auth.js');
 const validation = require('../utils/validation.js');
 const { loadSelectableAddresses, pickDefaultAddress } = require('../../../utils/addressSelection.js');
 
@@ -124,7 +125,27 @@ Page({
     priceSummaryRows: []
   },
 
+  isOrderCreateAllowed() {
+    return auth.isAdmin();
+  },
+
+  handleOrderCreateBlocked() {
+    wx.showToast({ title: '清单仅用于需求登记', icon: 'none' });
+    setTimeout(() => {
+      wx.navigateBack({
+        delta: 1,
+        fail: () => {
+          wx.switchTab({ url: '/pages/index/index' });
+        }
+      });
+    }, 1200);
+  },
+
   onLoad(options) {
+    if (!this.isOrderCreateAllowed()) {
+      this.handleOrderCreateBlocked();
+      return;
+    }
     const systemType = options.systemType || 'white';
     const themeColor = systemType === 'red' ? '#d32f2f' : '#333333';
 
@@ -152,6 +173,10 @@ Page({
   },
 
   onShow() {
+    if (!this.isOrderCreateAllowed()) {
+      this.handleOrderCreateBlocked();
+      return;
+    }
     // 非 tabBar 页面，隐藏 custom-tab-bar
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ show: false });
@@ -204,7 +229,7 @@ Page({
       showAddressModal: false
     });
   },
-
+  
   // 使用微信地址
   useWechatAddress() {
     wx.chooseAddress({
@@ -255,105 +280,12 @@ Page({
   },
 
   async submitOrder() {
-    // 清除之前的错误
-    this.setData({ errors: {} })
-
-    // 表单验证规则
-    const validationRules = {
-      address: {
-        required: true,
-        label: '收货地址',
-        type: 'address'
-      },
-      remarks: {
-        required: false,
-        label: '备注',
-        type: 'string',
-        maxLength: 200
-      }
-    };
-
-    // 构建表单数据
-    const formData = {
-      address: this.data.address,
-      remarks: this.data.remarks || ''
-    };
-
-    // 验证地址对象
-    const addressValidation = validation.validateAddressObject(this.data.address);
-    if (!addressValidation.valid) {
-      wx.showToast({
-        title: addressValidation.message,
-        icon: 'none',
-        duration: 3000
-      });
-      return;
-    }
-
-    // 验证订单商品
-    if (!this.data.orderItems || this.data.orderItems.length === 0) {
-      wx.showToast({
-        title: '订单商品不能为空',
-        icon: 'none',
-        duration: 3000
-      });
-      return;
-    }
-
-    this.setData({ loading: true })
-
-    // 构建订单数据
-    const orderData = {
-      items: this.data.orderItems.map(item => ({
-        productId: item.id,
-        productName: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        productImage: item.image || ''
-      })),
-      totalAmount: this.data.totalAmount,
-      address: this.data.address,
-      remark: this.data.remarks || '',
-      serviceTime: this.data.serviceTime || null
-    }
-
-    try {
-      // 调用统一API创建订单
-      const data = await api.createOrder(orderData);
-
-      this.setData({ loading: false });
-
-      const { orderNo } = data;
-      appendPendingCartCleanupOrder(orderNo, this.data.orderItems);
-
-      wx.showToast({
-        title: '订单提交成功',
-        icon: 'success',
-        success: () => {
-          // 延迟返回，确保用户看到提示
-          setTimeout(() => {
-            // 跳转到订单详情页面
-            wx.redirectTo({
-              url: `../detail/detail?orderNo=${orderNo}`,
-              success: () => {
-                // 返回上一页并刷新清单
-                const pages = getCurrentPages()
-                const cartPage = pages[pages.length - 2]
-                if (cartPage && cartPage.loadCartItems) {
-                  cartPage.loadCartItems()
-                }
-              }
-            })
-          }, 1500)
-        }
-      });
-    } catch (error) {
-      console.error('创建订单失败:', error);
-      this.setData({ loading: false });
-      wx.showToast({
-        title: error.message || error.result?.message || '订单创建失败',
-        icon: 'none'
-      });
-    }
+    wx.showModal({
+      title: '当前不可在线提交',
+      content: '当前小程序仅支持信息查询、服务记录查看与线下服务确认。如需继续，请联系服务人员。',
+      showCancel: false,
+      confirmText: '我知道了'
+    });
+    return;
   }
 })

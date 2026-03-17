@@ -243,7 +243,7 @@ Page({
 
     // Update navigation title
     wx.setNavigationBarTitle({
-      title: '确认订单'
+      title: '确认服务信息'
     });
   },
 
@@ -316,87 +316,13 @@ Page({
    * Submit order
    */
   async onSubmitOrder() {
-    if (!this.validateOrder()) {
-      return;
-    }
-
-    if (this.data.submitting) {
-      return;
-    }
-
-    this.setData({ submitting: true });
-
-    try {
-      // Prepare order data matching orderManagement.createOrder protocol
-      // Expected: totalAmount (yuan), address object, items with productId/productName/price/quantity/productImage
-      const orderData = {
-        items: this.data.items.map(item => ({
-          productId: item.productId,
-          productName: item.productName,
-          price: item.unitPrice,
-          quantity: item.quantity,
-          productImage: item.productImage || ''
-        })),
-        totalAmount: this.data.totalPrice.toFixed(2),
-        address: this.data.address,
-        remark: this.data.remarks || '',
-        serviceTime: this.data.serviceTime || null,
-        // Package-specific fields for reference
-        orderType: 'package',
-        packageId: this.data.packageId,
-        packageName: this.data.packageInfo.name,
-        originalPrice: this.data.originalPrice,
-        savedAmount: this.data.savedAmount
-      };
-
-      // Call unified API to create order
-      const result = await api.createOrder(orderData);
-
-      // Clear pending order data
-      const app = getApp();
-      if (app.globalData) {
-        app.globalData.pendingPackageOrder = null;
-      }
-
-      const { orderNo } = result;
-
-      wx.showToast({
-        title: '订单提交成功',
-        icon: 'success'
-      });
-
-      // Navigate to order detail or list page
-      setTimeout(() => {
-        if (orderNo) {
-          wx.redirectTo({
-            url: `/pages/order/detail/detail?orderNo=${orderNo}`,
-            fail: () => {
-              wx.redirectTo({
-                url: '/pages/order/list/list'
-              });
-            }
-          });
-        } else {
-          wx.redirectTo({
-            url: '/pages/order/list/list',
-            fail: () => {
-              wx.switchTab({
-                url: '/pages/index/index'
-              });
-            }
-          });
-        }
-      }, 1500);
-
-    } catch (error) {
-      console.error('Submit order failed:', error);
-      wx.showToast({
-        title: error.message || '提交失败，请重试',
-        icon: 'none'
-      });
-    } finally {
-      this.setData({ submitting: false });
-    }
+    wx.showModal({
+      title: '当前不可在线提交',
+      content: '当前小程序仅支持查看套餐信息与线下服务咨询，如需继续，请联系服务人员。',
+      showCancel: false,
+      confirmText: '我知道了'
+    });
+    return;
   },
 
   /**

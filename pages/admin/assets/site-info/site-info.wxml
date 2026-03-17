@@ -1,0 +1,50 @@
+<view class="container">
+  <view class="header">
+    <view class="title">联系方式配置</view>
+    <view class="subtitle">配置用户点击「联系服务人员」时显示的电话和微信号</view>
+  </view>
+
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <t-loading theme="circular" size="40rpx" />
+  </view>
+
+  <block wx:else>
+    <view class="card">
+      <view class="field">
+        <view class="field-label">客服电话</view>
+        <view class="field-desc">用户可一键拨打此号码</view>
+        <input
+          class="field-input"
+          type="number"
+          placeholder="请输入电话号码"
+          value="{{phone}}"
+          bindinput="onPhoneInput"
+          maxlength="20"
+        />
+      </view>
+
+      <view class="field">
+        <view class="field-label">微信号</view>
+        <view class="field-desc">用户可复制此微信号添加好友</view>
+        <input
+          class="field-input"
+          type="text"
+          placeholder="请输入微信号"
+          value="{{wechatId}}"
+          bindinput="onWechatInput"
+          maxlength="50"
+        />
+      </view>
+    </view>
+
+    <view class="footer">
+      <t-button
+        theme="primary"
+        size="large"
+        block
+        loading="{{saving}}"
+        bindtap="onSave"
+      >保存</t-button>
+    </view>
+  </block>
+</view>

@@ -427,6 +427,15 @@ async function createOrder(data, context, logger) {
   if (!data.totalAmount || data.totalAmount <= 0) {
     return paramError('订单金额必须大于0');
   }
+
+  const isAdmin = await verifyAdminByOpenid(OPENID);
+  if (!isAdmin) {
+    logger.warn('Non-admin attempted to create order', {
+      openid: OPENID,
+      orderItemCount: Array.isArray(data.items) ? data.items.length : 0
+    });
+    return permissionError('仅管理员可创建服务记录');
+  }
   
   // 生成订单号
   const orderNo = generateOrderNo();
@@ -1015,6 +1024,129 @@ async function updateOrderStatus(data, context, logger) {
     logger.error('Order status update failed', { orderNo, error: err.message });
     return error(ErrorCodes.DB_UPDATE_ERROR, '更新订单状态失败', { originalError: err.message });
   }
+}
+
+/**
+ * 获取订单预览信息（认领前公开预览，无需绑定）
+ * @param {object} data - 请求数据
+ * @param {object} context - 云函数上下文
+ * @param {object} logger - 追踪日志记录器
+ */
+async function getOrderPreview(data, context, logger) {
+  const { orderNo } = data;
+
+  logger.info('Getting order preview', { orderNo });
+
+  if (!orderNo) {
+    return paramError('订单号不能为空');
+  }
+
+  const result = await db.collection('orders')
+    .where(_.or([
+      { _id: orderNo },
+      { orderNo: orderNo }
+    ]))
+    .get();
+
+  if (result.data.length === 0) {
+    logger.warn('Order not found for preview', { orderNo });
+    return notFoundError('订单');
+  }
+
+  const order = result.data[0];
+
+  // 只返回公开安全字段（含价格），不返回 userOpenid 等敏感字段
+  const preview = {
+    orderNo: order.orderNo,
+    orderStatus: order.orderStatus,
+    paymentStatus: order.paymentStatus,
+    contactName: order.contactName || '',
+    serviceTime: order.serviceTime || '',
+    waitForBind: order.waitForBind !== false,
+    isBound: order.waitForBind === false,
+    items: (order.items || []).map(item => ({
+      productName: item.productName || '',
+      productImage: item.productImage || '',
+      categoryName: item.categoryName || '',
+      quantity: item.quantity || 0,
+      price: (item.price || 0) / 100,
+      subtotal: (item.subtotal || 0) / 100
+    })),
+    totalAmount: (order.totalAmount || 0) / 100
+  };
+
+  logger.info('Order preview retrieved', { orderNo });
+  return success(preview, '获取订单预览成功');
+}
+
+/**
+ * 用户确认/补充订单信息（认领后，仅限 CREATED 状态）
+ * @param {object} data - 请求数据
+ * @param {object} context - 云函数上下文
+ * @param {object} logger - 追踪日志记录器
+ */
+async function updateOrderUserInfo(data, context, logger) {
+  const { OPENID } = cloud.getWXContext();
+  const { orderNo, contactPhone, serviceTime, address, remarks } = data;
+
+  logger.info('Updating order user info', { orderNo, openid: OPENID });
+
+  if (!orderNo) {
+    return paramError('订单号不能为空');
+  }
+
+  const result = await db.collection('orders')
+    .where(_.or([
+      { _id: orderNo },
+      { orderNo: orderNo }
+    ]))
+    .get();
+
+  if (result.data.length === 0) {
+    return notFoundError('订单');
+  }
+
+  const order = result.data[0];
+
+  // 必须是订单归属用户
+  if (order.userOpenid !== OPENID) {
+    return permissionError('无权限修改此订单信息');
+  }
+
+  // 只允许在 CREATED 状态下修改
+  if (order.orderStatus !== ORDER_FLOW_STATUS.CREATED) {
+    return error(ErrorCodes.PERMISSION_DENIED, '订单已进入服务流程，无法修改信息');
+  }
+
+  // 构建更新字段（只更新传入的非空字段）
+  const updateData = { updateTime: new Date() };
+
+  if (contactPhone !== undefined && contactPhone !== null) {
+    updateData.contactPhone = contactPhone;
+  }
+  if (serviceTime !== undefined && serviceTime !== null && serviceTime !== '') {
+    updateData.serviceTime = serviceTime;
+  }
+  if (address !== undefined && address !== null) {
+    updateData.address = address;
+  }
+  if (remarks !== undefined && remarks !== null) {
+    updateData.remarks = remarks;
+  }
+
+  const updateResult = await db.collection('orders')
+    .where(_.or([
+      { _id: orderNo },
+      { orderNo: orderNo }
+    ]))
+    .update({ data: updateData });
+
+  if (updateResult.stats.updated === 0) {
+    return error(ErrorCodes.DB_UPDATE_ERROR, '更新订单信息失败');
+  }
+
+  logger.info('Order user info updated', { orderNo, fields: Object.keys(updateData) });
+  return success(null, '订单信息更新成功');
 }
 
 /**
@@ -2591,6 +2723,10 @@ const handler = async (event, context, logger) => {
       return await submitOfflineSettlementIntent(data, context, logger);
     case 'updateOrderStatus':
       return await updateOrderStatus(data, context, logger);
+    case 'getOrderPreview':
+      return await getOrderPreview(data, context, logger);
+    case 'updateOrderUserInfo':
+      return await updateOrderUserInfo(data, context, logger);
     case 'bindOrder':
       return await bindOrder(data, context, logger);
     case 'deleteOrder':
