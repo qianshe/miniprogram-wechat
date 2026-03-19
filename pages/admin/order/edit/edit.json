@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "编辑订单",
+  "navigationBarTitleText": "编辑服务记录",
   "usingComponents": {
     "c-empty": "/components/c-empty/c-empty",
     "t-loading": "tdesign-miniprogram/loading/loading",

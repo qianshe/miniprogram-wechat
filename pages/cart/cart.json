@@ -1,8 +1,0 @@
-{
-  "navigationBarTitleText": "服务清单",
-  "usingComponents": {
-    "c-loading": "/components/c-loading/c-loading",
-    "c-empty": "/components/c-empty/c-empty",
-    "c-price": "/components/c-price/c-price"
-  }
-}

@@ -384,10 +384,6 @@ module.exports = {
       // 清除认证信息
       this.clearAuth();
 
-      // 清除购物车数据（可选）
-      wx.removeStorageSync('cartList');
-      wx.removeStorageSync('cartListLocal');
-
       return { success: true };
     } catch (error) {
       console.error('登出失败:', error);

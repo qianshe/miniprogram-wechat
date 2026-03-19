@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "创建服务记录",
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button"
+  }
+}

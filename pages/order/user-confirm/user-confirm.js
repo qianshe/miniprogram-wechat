@@ -4,6 +4,7 @@
  */
 const { api } = require('../../../utils/api.js');
 const { loadSelectableAddresses } = require('../../../utils/addressSelection.js');
+const { buildThumbUrl } = require('../../../utils/imageThumb.js');
 
 const ORDER_FLOW_STATUS_CREATED = 0;
 
@@ -14,6 +15,7 @@ Page({
     orderNo: '',
     orderInfo: null,
     // 可编辑字段
+    contactName: '',
     contactPhone: '',
     serviceTime: '',
     remarks: '',
@@ -41,6 +43,7 @@ Page({
     try {
       const data = await api.getOrderDetail(orderNo, false);
       const isReadOnly = data.orderStatus !== ORDER_FLOW_STATUS_CREATED;
+      const normalizedAddress = data.address && typeof data.address === 'object' ? data.address : null;
 
       this.setData({
         orderInfo: {
@@ -49,13 +52,15 @@ Page({
           items: (data.items || []).map(item => ({
             ...item,
             price: Number(item.price).toFixed(2),
-            subtotal: Number(item.subtotal).toFixed(2)
+            subtotal: Number(item.subtotal).toFixed(2),
+            thumbUrl: buildThumbUrl(item.productImage || item.thumb || item.coverImage, { size: 160 }) || ''
           }))
         },
+        contactName: data.contactName || '',
         contactPhone: data.contactPhone || '',
         serviceTime: data.serviceTime || '',
         remarks: data.remarks || '',
-        address: data.address || null,
+        address: normalizedAddress,
         addressText: this._formatAddress(data.address),
         isReadOnly,
         loading: false
@@ -69,8 +74,13 @@ Page({
 
   _formatAddress(address) {
     if (!address) return '';
+    if (typeof address === 'string') return address.trim();
     return [address.provinceName, address.cityName, address.countyName, address.detailInfo]
       .filter(Boolean).join(' ');
+  },
+
+  onNameInput(e) {
+    this.setData({ contactName: e.detail.value });
   },
 
   onPhoneInput(e) {
@@ -102,9 +112,14 @@ Page({
 
   onAddressPick(e) {
     const address = e.currentTarget.dataset.address;
+    const importedName = address.userName || address.name || '';
+    const importedPhone = address.telNumber || address.phone || '';
+
     this.setData({
       address,
       addressText: this._formatAddress(address),
+      contactName: importedName,
+      contactPhone: importedPhone,
       showAddressModal: false
     });
   },
@@ -112,16 +127,32 @@ Page({
   async onSubmit() {
     if (this.data.submitting || this.data.isReadOnly) return;
 
-    const { orderNo, contactPhone, serviceTime, address, remarks } = this.data;
+    const { orderNo, contactName, contactPhone, serviceTime, address, remarks } = this.data;
+
+    if (!contactName || !contactName.trim()) {
+      wx.showToast({ title: '请填写联系人', icon: 'none' });
+      return;
+    }
+
+    if (!contactPhone || !contactPhone.trim()) {
+      wx.showToast({ title: '请填写联系电话', icon: 'none' });
+      return;
+    }
 
     if (!serviceTime || !serviceTime.trim()) {
-      wx.showToast({ title: '请填写服务时间', icon: 'none' });
+      wx.showToast({ title: '请选择服务时间', icon: 'none' });
+      return;
+    }
+
+    if (!address || typeof address !== 'object') {
+      wx.showToast({ title: '请选择服务地址', icon: 'none' });
       return;
     }
 
     this.setData({ submitting: true });
     try {
       await api.updateOrderUserInfo(orderNo, {
+        contactName: contactName.trim(),
         contactPhone: contactPhone.trim(),
         serviceTime: serviceTime.trim(),
         address: address || undefined,

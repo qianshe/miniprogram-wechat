@@ -337,8 +337,6 @@ Page({
     });
   },
 
-
-
   // 修改订单状态
   async updateOrderStatus(e) {
     const { orderno, status } = e.currentTarget.dataset;
@@ -424,7 +422,7 @@ Page({
    */
   navigateToCreate() {
     wx.navigateTo({
-      url: '/pages/admin/order/create/create'
+      url: '/pages/admin/order/create-entry/create-entry'
     });
   }
 });

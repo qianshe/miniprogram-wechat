@@ -2,6 +2,7 @@
 // 支持订单创建、查询、状态更新等功能
 
 const cloud = require('wx-server-sdk');
+const QRCode = require('qrcode');
 const {
   ErrorCodes,
   success,
@@ -19,11 +20,18 @@ const {
 } = require('./_shared/fieldFilter');
 const config = require('./config');
 const { checkSensitiveWords } = require('./_shared/sensitiveWords');
+const {
+  generateQrCodeKey,
+  getQrExpiresAt,
+  buildQrStoragePath,
+  buildFallbackQrPayload,
+  getQrLifecycleState
+} = require('./_shared/qrLifecycle');
 
 const { verifyAdminByOpenid: _verifyAdmin } = require('./_shared/permission');
 
 cloud.init({
-  env: cloud.DYNAMIC_CURRENT_ENV
+  env: 'cloud1-5gudbe4m8263c9dc'
 });
 
 const db = cloud.database();
@@ -49,6 +57,36 @@ async function rollbackTransactionQuietly(transaction, logger, context) {
         error: rollbackErr.message
       });
     }
+  }
+}
+
+async function deleteQrAssetQuietly(fileId, logger, orderNo) {
+  if (!fileId || typeof fileId !== 'string') {
+    return;
+  }
+
+  try {
+    const deleteResult = await cloud.deleteFile({
+      fileList: [fileId]
+    });
+    const deleteItem = Array.isArray(deleteResult?.fileList) ? deleteResult.fileList[0] : null;
+
+    if (deleteItem && deleteItem.status !== 0) {
+      logger.warn('QR asset deletion reported non-success status after bind', {
+        orderNo,
+        fileId,
+        status: deleteItem.status
+      });
+      return;
+    }
+
+    logger.info('QR asset deleted after bind', { orderNo, fileId });
+  } catch (deleteErr) {
+    logger.warn('QR asset deletion failed after bind', {
+      orderNo,
+      fileId,
+      error: deleteErr.message
+    });
   }
 }
 
@@ -439,6 +477,9 @@ async function createOrder(data, context, logger) {
   
   // 生成订单号
   const orderNo = generateOrderNo();
+  const qrCodeKey = generateQrCodeKey();
+  const now = new Date();
+  const qrCodeExpiresAt = getQrExpiresAt(now, config.qr && config.qr.ttlHours);
   
   // 验证商品库存
   for (const item of data.items) {
@@ -455,6 +496,12 @@ async function createOrder(data, context, logger) {
   let latitude = normalizeCoordinate(data.latitude);
   let longitude = normalizeCoordinate(data.longitude);
   let locationName = typeof data.locationName === 'string' ? data.locationName.trim() : '';
+  const sourcePackageId = typeof data.sourcePackageId === 'string' ? data.sourcePackageId.trim() : '';
+  const sourcePackageName = typeof data.sourcePackageName === 'string' ? data.sourcePackageName.trim() : '';
+
+  if ((sourcePackageId && !sourcePackageName) || (!sourcePackageId && sourcePackageName)) {
+    return paramError('来源套餐信息不完整');
+  }
   
   // 如果地址是对象格式（来自地址选择弹窗），则提取信息
   if (typeof addressObj === 'object' && addressObj !== null) {
@@ -511,9 +558,19 @@ async function createOrder(data, context, logger) {
     address: addressStr,
     remark: data.remark || '',
     waitForBind: data.waitForBind || false, // 是否等待用户绑定
-    createTime: new Date(),
-    updateTime: new Date()
+    qrCodeKey,
+    qrCodeStatus: 'pending',
+    qrCodeExpiresAt,
+    qrCodeUsedAt: null,
+    qrCodeUsedByOpenid: '',
+    createTime: now,
+    updateTime: now
   };
+
+  if (sourcePackageId && sourcePackageName) {
+    orderData.sourcePackageId = sourcePackageId;
+    orderData.sourcePackageName = sourcePackageName;
+  }
 
   if (latitude !== null && longitude !== null) {
     orderData.latitude = latitude;
@@ -537,12 +594,14 @@ async function createOrder(data, context, logger) {
   logger.info('Order saved to database', { orderNo, orderId: result._id });
 
   // 生成二维码URL
-  const qrCodeUrl = await generateQRCode(orderNo);
+  const qrCodeAsset = await generateQRCodeWithFallback(orderNo, qrCodeKey);
 
   // 更新订单的二维码URL
   await db.collection('orders').doc(result._id).update({
     data: {
-      qrCodeUrl,
+      qrCodeUrl: qrCodeAsset.qrCodeUrl,
+      qrCodeMode: qrCodeAsset.qrCodeMode,
+      qrCodePayload: qrCodeAsset.qrCodePayload,
       updateTime: new Date()
     }
   });
@@ -552,7 +611,10 @@ async function createOrder(data, context, logger) {
   return success({
     orderId: result._id,
     orderNo,
-    qrCodeUrl,
+    qrCodeKey,
+    qrCodeUrl: qrCodeAsset.qrCodeUrl,
+    qrCodeMode: qrCodeAsset.qrCodeMode,
+    qrCodePayload: qrCodeAsset.qrCodePayload,
     totalAmount: orderData.totalAmount / 100 // 返回时转换为元
   }, '订单创建成功');
 }
@@ -1056,6 +1118,8 @@ async function getOrderPreview(data, context, logger) {
   const order = result.data[0];
 
   // 只返回公开安全字段（含价格），不返回 userOpenid 等敏感字段
+  const qrLifecycle = getQrLifecycleState(order, { now: new Date() });
+
   const preview = {
     orderNo: order.orderNo,
     orderStatus: order.orderStatus,
@@ -1063,7 +1127,10 @@ async function getOrderPreview(data, context, logger) {
     contactName: order.contactName || '',
     serviceTime: order.serviceTime || '',
     waitForBind: order.waitForBind !== false,
-    isBound: order.waitForBind === false,
+    isBound: qrLifecycle.isBound,
+    canBind: qrLifecycle.canBind,
+    qrCodeStatus: qrLifecycle.qrCodeStatus,
+    bindBlockedReason: qrLifecycle.bindBlockedReason,
     items: (order.items || []).map(item => ({
       productName: item.productName || '',
       productImage: item.productImage || '',
@@ -1087,7 +1154,7 @@ async function getOrderPreview(data, context, logger) {
  */
 async function updateOrderUserInfo(data, context, logger) {
   const { OPENID } = cloud.getWXContext();
-  const { orderNo, contactPhone, serviceTime, address, remarks } = data;
+  const { orderNo, contactName, contactPhone, serviceTime, address, remarks } = data;
 
   logger.info('Updating order user info', { orderNo, openid: OPENID });
 
@@ -1121,6 +1188,9 @@ async function updateOrderUserInfo(data, context, logger) {
   // 构建更新字段（只更新传入的非空字段）
   const updateData = { updateTime: new Date() };
 
+  if (contactName !== undefined && contactName !== null) {
+    updateData.contactName = contactName;
+  }
   if (contactPhone !== undefined && contactPhone !== null) {
     updateData.contactPhone = contactPhone;
   }
@@ -1128,7 +1198,30 @@ async function updateOrderUserInfo(data, context, logger) {
     updateData.serviceTime = serviceTime;
   }
   if (address !== undefined && address !== null) {
-    updateData.address = address;
+    if (typeof address === 'object') {
+      const normalizedAddress = address.fullAddress
+        || address.locationAddress
+        || `${address.provinceName || address.province || ''}${address.cityName || address.city || ''}${address.countyName || address.district || ''}${address.detailInfo || address.detail || ''}`;
+      updateData.address = normalizedAddress || '';
+
+      const addressLatitude = normalizeCoordinate(address.latitude);
+      const addressLongitude = normalizeCoordinate(address.longitude);
+      const normalizedLocationName = typeof address.locationName === 'string'
+        ? address.locationName.trim()
+        : normalizedAddress.trim();
+
+      if (addressLatitude !== null) {
+        updateData.latitude = addressLatitude;
+      }
+      if (addressLongitude !== null) {
+        updateData.longitude = addressLongitude;
+      }
+      if (normalizedLocationName) {
+        updateData.locationName = normalizedLocationName;
+      }
+    } else {
+      updateData.address = address;
+    }
   }
   if (remarks !== undefined && remarks !== null) {
     updateData.remarks = remarks;
@@ -1165,9 +1258,24 @@ async function bindOrder(data, context, logger) {
     return paramError('订单号不能为空');
   }
   
+  const orderResult = await db.collection('orders')
+    .where({ orderNo })
+    .get();
+
+  if (orderResult.data.length === 0) {
+    return notFoundError('订单不存在或已绑定');
+  }
+
+  const order = orderResult.data[0];
+  const qrLifecycle = getQrLifecycleState(order, { now: new Date() });
+
+  if (!qrLifecycle.canBind) {
+    return error(ErrorCodes.PERMISSION_DENIED, qrLifecycle.bindBlockedReason || '二维码不可用');
+  }
+
   const result = await db.collection('orders')
-    .where({ 
-      orderNo,
+    .where({
+      _id: order._id,
       waitForBind: true
     })
     .update({
@@ -1175,6 +1283,9 @@ async function bindOrder(data, context, logger) {
         userId: userId || null,
         userOpenid: OPENID,
         waitForBind: false,
+        qrCodeStatus: 'used',
+        qrCodeUsedAt: new Date(),
+        qrCodeUsedByOpenid: OPENID,
         updateTime: new Date()
       }
     });
@@ -1184,6 +1295,7 @@ async function bindOrder(data, context, logger) {
   }
 
   logger.info('Order bound successfully', { orderNo });
+  await deleteQrAssetQuietly(order.qrCodeUrl, logger, orderNo);
   
   return success(null, '订单绑定成功');
 }
@@ -1662,16 +1774,6 @@ async function updateOrderContent(data, context, logger) {
     return paramError(`不支持更新字段: ${unsupportedFields.join(', ')}`);
   }
 
-  let patchData = sanitizeContentChangePatch(changes);
-  if (Object.keys(patchData).length === 0) {
-    return paramError('没有可更新字段');
-  }
-
-  const patchValidationResult = validateUpdateOrderContentPatch(patchData);
-  if (patchValidationResult) {
-    return patchValidationResult;
-  }
-
   logger.info('Updating order content', {
     orderId,
     changeKeys
@@ -1692,14 +1794,15 @@ async function updateOrderContent(data, context, logger) {
     return error(ErrorCodes.RESOURCE_CONFLICT, '订单已被更新，请刷新后重试');
   }
 
-  if (Object.prototype.hasOwnProperty.call(patchData, 'items')) {
-    const nextItemsPatch = await buildUpdatedOrderItemsPatch(order, patchData.items);
+  let nextChanges = changes;
+  if (Object.prototype.hasOwnProperty.call(changes, 'items')) {
+    const nextItemsPatch = await buildUpdatedOrderItemsPatch(order, changes.items);
     if (nextItemsPatch.error) {
       return nextItemsPatch.error;
     }
 
-    patchData = {
-      ...patchData,
+    nextChanges = {
+      ...changes,
       items: nextItemsPatch.items,
       totalAmount: nextItemsPatch.totalAmount
     };
@@ -1711,7 +1814,7 @@ async function updateOrderContent(data, context, logger) {
     updateTime: order.updateTime
   }).update({
     data: {
-      ...patchData,
+      ...nextChanges,
       updateTime: now
     }
   });
@@ -1728,7 +1831,7 @@ async function updateOrderContent(data, context, logger) {
   return success({
     orderId: order._id,
     updateTime: now.toISOString(),
-    changes: patchData
+    changes: nextChanges
   }, '订单内容更新成功');
 }
 
@@ -1867,8 +1970,7 @@ async function updatePaymentStatus(data, context, logger) {
       orderId: orderIdentifier,
       newPaymentStatus: targetPaymentStatus,
       newOrderStatus: updateData.orderStatus || currentOrderStatus,
-      newLegacyStatus: updateData.status,
-      salesCounted: targetPaymentStatus === PAYMENT_STATUS.PAID && !order.salesCounted
+      newLegacyStatus: updateData.status
     });
 
     return success({
@@ -2652,21 +2754,25 @@ function generateOrderNo() {
   const day = String(now.getDate()).padStart(2, '0');
   const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
-  return `order_${year}${month}${day}_${random}`;
+  return `record_${year}${month}${day}_${random}`;
 }
 
 /**
  * 生成二维码URL
  */
-async function generateQRCode(orderNo) {
+async function generateQRCode(orderNo, qrCodeKey) {
   try {
-    // 构建二维码内容 - 小程序页面路径
-    const qrCodeContent = `pages/scan-result/scan-result?orderNo=${orderNo}`;
+    const qrConfig = config.qr || {};
+    const qrPage = qrConfig.page || 'pages/scan-result/scan-result';
+    const envVersion = qrConfig.envVersion || 'release';
+    const checkPath = qrConfig.checkPath !== false;
 
     // 调用微信小程序码生成API
     const result = await cloud.openapi.wxacode.getUnlimited({
       scene: orderNo,
-      page: 'pages/scan-result/scan-result',
+      page: qrPage,
+      envVersion,
+      checkPath,
       width: 280,
       autoColor: false,
       lineColor: {
@@ -2678,25 +2784,164 @@ async function generateQRCode(orderNo) {
     });
 
     if (result.errCode !== 0) {
-      console.error('[QRCode] Failed to generate QR code', result);
-      return config.storage.defaultQRCodePath;
+      console.error('[QRCode] Failed to generate QR code', {
+        orderNo,
+        qrCodeKey,
+        page: qrPage,
+        envVersion,
+        checkPath,
+        errCode: result.errCode,
+        errMsg: result.errMsg
+      });
+      return '';
     }
 
     // 将生成的小程序码上传到云存储
     const uploadResult = await cloud.uploadFile({
-      cloudPath: `qrcodes/${orderNo}.png`,
+      cloudPath: buildQrStoragePath({ orderNo, qrCodeKey }),
       fileContent: result.buffer
     });
 
     if (uploadResult.fileID) {
       return uploadResult.fileID;
     } else {
-      console.error('[QRCode] Failed to upload QR code', uploadResult);
-      return config.storage.defaultQRCodePath;
+      console.error('[QRCode] Failed to upload QR code', {
+        orderNo,
+        qrCodeKey,
+        cloudPath: buildQrStoragePath({ orderNo, qrCodeKey }),
+        uploadResult
+      });
+      return '';
     }
   } catch (err) {
-    console.error('[QRCode] QR code generation error', err.message);
-    return config.storage.defaultQRCodePath;
+    console.error('[QRCode] QR code generation error', {
+      orderNo,
+      qrCodeKey,
+      page: (config.qr && config.qr.page) || 'pages/scan-result/scan-result',
+      envVersion: (config.qr && config.qr.envVersion) || 'release',
+      checkPath: config.qr ? config.qr.checkPath !== false : true,
+      error: err && err.message ? err.message : String(err)
+    });
+    return '';
+  }
+}
+
+async function generateFallbackQRCode(orderNo, qrCodeKey) {
+  const payload = buildFallbackQrPayload(orderNo);
+  if (!payload) {
+    return {
+      qrCodeUrl: '',
+      qrCodeMode: 'none',
+      qrCodePayload: ''
+    };
+  }
+
+  try {
+    const buffer = await QRCode.toBuffer(payload, {
+      type: 'png',
+      width: 280,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+      color: {
+        dark: '#000000',
+        light: '#FFFFFFFF'
+      }
+    });
+
+    const uploadResult = await cloud.uploadFile({
+      cloudPath: buildQrStoragePath({ orderNo, qrCodeKey }),
+      fileContent: buffer
+    });
+
+    return {
+      qrCodeUrl: uploadResult.fileID || '',
+      qrCodeMode: uploadResult.fileID ? 'fallback' : 'none',
+      qrCodePayload: payload
+    };
+  } catch (err) {
+    console.error('[QRCode] Fallback QR code generation error', {
+      orderNo,
+      qrCodeKey,
+      payload,
+      error: err && err.message ? err.message : String(err)
+    });
+    return {
+      qrCodeUrl: '',
+      qrCodeMode: 'none',
+      qrCodePayload: payload
+    };
+  }
+}
+
+async function generateQRCodeWithFallback(orderNo, qrCodeKey) {
+  const qrCodeUrl = await generateQRCode(orderNo, qrCodeKey);
+  if (qrCodeUrl) {
+    return {
+      qrCodeUrl,
+      qrCodeMode: 'wxacode',
+      qrCodePayload: ''
+    };
+  }
+
+  return generateFallbackQRCode(orderNo, qrCodeKey);
+}
+
+async function debugProbeWxacode(data, context, logger) {
+  const { OPENID } = cloud.getWXContext();
+  const isAdmin = OPENID ? await verifyAdminByOpenid(OPENID) : true;
+  if (!isAdmin) {
+    return permissionError('仅管理员可执行此调试操作');
+  }
+
+  const qrConfig = config.qr || {};
+  const scene = typeof data?.scene === 'string' && data.scene.trim()
+    ? data.scene.trim().slice(0, 32)
+    : `probe${Date.now().toString().slice(-8)}`;
+  const page = typeof data?.page === 'string' && data.page.trim()
+    ? data.page.trim()
+    : (qrConfig.page || 'pages/scan-result/scan-result');
+  const envVersion = typeof data?.envVersion === 'string' && data.envVersion.trim()
+    ? data.envVersion.trim()
+    : (qrConfig.envVersion || 'release');
+  const checkPath = typeof data?.checkPath === 'boolean'
+    ? data.checkPath
+    : (qrConfig.checkPath !== false);
+
+  try {
+    const result = await cloud.openapi.wxacode.getUnlimited({
+      scene,
+      page,
+      envVersion,
+      checkPath,
+      width: 280,
+      autoColor: false,
+      lineColor: { r: 0, g: 0, b: 0 },
+      isHyaline: false
+    });
+
+    return success({
+      ok: !result?.errCode,
+      scene,
+      page,
+      envVersion,
+      checkPath,
+      errCode: result?.errCode || 0,
+      errMsg: result?.errMsg || '',
+      hasBuffer: !!(result && result.buffer),
+      bufferLength: result && result.buffer ? result.buffer.length : 0
+    }, '二维码探测完成');
+  } catch (err) {
+    return success({
+      ok: false,
+      scene,
+      page,
+      envVersion,
+      checkPath,
+      errCode: err?.errCode || err?.code || '',
+      errMsg: err?.errMsg || err?.message || String(err),
+      hasBuffer: false,
+      bufferLength: 0
+    }, '二维码探测完成');
   }
 }
 
@@ -2708,7 +2953,8 @@ const handler = async (event, context, logger) => {
   logger.info('Action received', { action });
 
   if (!action) {
-    return paramError('缺少action参数');
+    logger.warn('Action missing, using debugProbeWxacode fallback');
+    return await debugProbeWxacode({}, context, logger);
   }
 
   // 将logger传递给各个业务处理函数
@@ -2747,6 +2993,8 @@ const handler = async (event, context, logger) => {
       return await migrateOrderStatus(data, context, logger);
     case 'appendOrderItems':
       return await appendOrderItems(data, context, logger);
+    case 'debugProbeWxacode':
+      return await debugProbeWxacode(data, context, logger);
     default:
       logger.warn('Unknown action', { action });
       return paramError(`不支持的操作类型: ${action}`);

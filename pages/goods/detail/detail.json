@@ -3,7 +3,6 @@
   "usingComponents": {
     "t-popup": "tdesign-miniprogram/popup/popup",
     "t-stepper": "tdesign-miniprogram/stepper/stepper",
-    "c-price": "/components/c-price/c-price",
-    "c-quantity-stepper": "/components/c-quantity-stepper/c-quantity-stepper"
+    "c-price": "/components/c-price/c-price"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "订单管理",
+  "navigationBarTitleText": "服务记录管理",
   "enablePullDownRefresh": true,
   "backgroundColor": "#f5f5f5",
   "usingComponents": {

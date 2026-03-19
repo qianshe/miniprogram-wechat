@@ -61,7 +61,7 @@ Page({
         name: '创建订单',
         icon: '➕',
         desc: '为客户创建新订单',
-        path: '/pages/admin/order/create/create'
+        path: '/pages/admin/order/create-entry/create-entry'
       },
       {
         id: 'scan',

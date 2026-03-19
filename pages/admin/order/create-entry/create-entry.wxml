@@ -1,0 +1,43 @@
+<view class="entry-container">
+  <view class="entry-header">
+    <view class="entry-title">创建服务记录</view>
+    <view class="entry-subtitle">请选择一个套餐作为起点，或直接自由创建</view>
+  </view>
+
+  <view class="entry-card">
+    <view class="card-header">
+      <view class="card-title">选择创建起点</view>
+      <view class="card-hint">套餐会作为当前服务记录的内容模板</view>
+    </view>
+
+    <block wx:if="{{packageLoading}}">
+      <view class="card-loading">加载套餐中...</view>
+    </block>
+
+    <view class="package-list" wx:else>
+      <view
+        class="package-item"
+        wx:for="{{packageList}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="startPackageCreate"
+      >
+        <view class="package-main">
+          <view class="package-name">{{item.name}}</view>
+          <view class="package-price" wx:if="{{item.price}}">¥{{item.price}}</view>
+        </view>
+        <view class="package-desc" wx:if="{{item.description}}">{{item.description}}</view>
+        <view class="package-tag">套餐导入</view>
+      </view>
+
+      <view class="package-item free-item" bindtap="startFreeCreate">
+        <view class="package-main">
+          <view class="package-name">自由创建</view>
+          <view class="package-price free-price">自定义</view>
+        </view>
+        <view class="package-desc">不锚定套餐，直接添加服务内容并完善信息</view>
+        <view class="package-tag free-tag">无来源套餐</view>
+      </view>
+    </view>
+  </view>
+</view>

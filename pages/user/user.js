@@ -59,8 +59,102 @@ Page({
     });
   },
 
+  extractOrderNoFromScanResult(res) {
+    const resultText = typeof res.result === 'string' ? res.result.trim() : '';
+    if (!resultText) {
+      return '';
+    }
+
+    if (/orderNo=([A-Za-z0-9_-]+)/.test(resultText)) {
+      const match = resultText.match(/orderNo=([A-Za-z0-9_-]+)/);
+      return match && match[1] ? decodeURIComponent(match[1]) : '';
+    }
+
+    if (/^record_[A-Za-z0-9_-]+$/.test(resultText)) {
+      return resultText;
+    }
+
+    return '';
+  },
+
+  _extractOrderNoFromPath(path) {
+    if (typeof path !== 'string' || !path.trim()) {
+      return '';
+    }
+    const match = path.match(/orderNo=([A-Za-z0-9_%\-]+)/);
+    return match && match[1] ? decodeURIComponent(match[1]) : '';
+  },
+
+  _navigateToScanResult(orderNo) {
+    wx.navigateTo({
+      url: `/pages/scan-result/scan-result?orderNo=${encodeURIComponent(orderNo)}`
+    });
+  },
+
+  _validateScannedOrderAndNavigate(orderNo) {
+    api.getOrderPreview(orderNo)
+      .then((data) => {
+        if (data.canBind === false) {
+          wx.showModal({
+            title: '提示',
+            content: data.bindBlockedReason || '当前二维码不可用',
+            showCancel: false
+          });
+          return;
+        }
+
+        this._navigateToScanResult(orderNo);
+      })
+      .catch((err) => {
+        wx.showToast({
+          title: err.message || '二维码校验失败',
+          icon: 'none'
+        });
+      });
+  },
+
+  scanServiceRecord() {
+    wx.scanCode({
+      onlyFromCamera: false,
+      scanType: ['qrCode'],
+      success: (res) => {
+        const path = typeof res.path === 'string' ? res.path.trim() : '';
+        if (res.scanType === 'WX_CODE' && path) {
+          const orderNoFromPath = this._extractOrderNoFromPath(path);
+          if (orderNoFromPath) {
+            this._validateScannedOrderAndNavigate(orderNoFromPath);
+            return;
+          }
+          wx.navigateTo({ url: `/${path.replace(/^\//, '')}` });
+          return;
+        }
+
+        const orderNo = this.extractOrderNoFromScanResult(res);
+        if (!orderNo) {
+          wx.showToast({
+            title: '未识别到服务记录二维码',
+            icon: 'none'
+          });
+          return;
+        }
+
+        this._validateScannedOrderAndNavigate(orderNo);
+      },
+      fail: (err) => {
+        if (err && err.errMsg && err.errMsg.includes('cancel')) {
+          return;
+        }
+
+        wx.showToast({
+          title: '扫码失败，请重试',
+          icon: 'none'
+        });
+      }
+    })
+  },
+
   toCreateOrder() {
-    if (!this.ensureAdminEntry('/pages/admin/order/create/create', '/pages/admin/login/login')) {
+    if (!this.ensureAdminEntry('/pages/admin/order/create-entry/create-entry', '/pages/admin/login/login')) {
       return;
     }
   },
@@ -292,16 +386,7 @@ Page({
         icon: 'success'
       });
 
-      // 检查是否有扫码待跳转的订单
-      const pendingOrderNo = wx.getStorageSync('pendingScanOrderNo');
-      if (pendingOrderNo) {
-        wx.removeStorageSync('pendingScanOrderNo');
-        setTimeout(() => {
-          wx.navigateTo({
-            url: `/pages/scan-result/scan-result?orderNo=${pendingOrderNo}`
-          });
-        }, 500); // 等 toast 显示完再跳转
-      }
+      this.checkAndRedirectPendingScan();
     } catch (err) {
       console.error('云函数登录失败:', err);
       wx.showToast({
@@ -327,6 +412,10 @@ Page({
       });
       app.globalData.userInfo = userInfo;
       app.globalData.isAdmin = userInfo.isAdmin || false;
+
+      // 检查扫码待跳转（从缓存恢复的情况）
+      this.checkAndRedirectPendingScan();
+
       return true;
     }
 
@@ -346,6 +435,9 @@ Page({
         });
         app.globalData.userInfo = cloudUserInfo;
         app.globalData.isAdmin = cloudUserInfo.isAdmin || false;
+
+        // 检查扫码待跳转（从云端恢复的情况）
+        this.checkAndRedirectPendingScan();
 
         return true;
       } else {
@@ -376,6 +468,19 @@ Page({
       });
       app.globalData.isAdmin = false;
       return false;
+    }
+  },
+
+  // 检查是否有扫码待跳转的订单
+  checkAndRedirectPendingScan() {
+    const pendingOrderNo = wx.getStorageSync('pendingScanOrderNo');
+    if (pendingOrderNo) {
+      wx.removeStorageSync('pendingScanOrderNo');
+      setTimeout(() => {
+        wx.navigateTo({
+          url: `/pages/scan-result/scan-result?orderNo=${pendingOrderNo}`
+        });
+      }, 500);
     }
   },
 

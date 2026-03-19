@@ -1,61 +1,71 @@
 <view class="scan-result-container">
-  <view class="page-header">
-    <image class="logo" src="/assets/images/logo.png" mode="aspectFit"></image>
-    <view class="header-title">白事一站式服务平台</view>
+  <view class="editorial-header">
+    <view class="decorative-line"></view>
+    <view class="header-main-title">服务记录</view>
+    <view class="header-sub-title">SERVICE RECORD</view>
   </view>
 
   <!-- 加载中 -->
   <view class="loading-container" wx:if="{{loading}}">
     <view class="loading-icon"></view>
-    <view class="loading-text">正在获取服务记录信息...</view>
+    <view class="loading-text">正在获取信息...</view>
   </view>
 
   <!-- 服务记录信息 -->
   <block wx:elif="{{orderInfo}}">
-    <view class="order-section">
-      <view class="section-title">服务记录信息</view>
+    <view class="paper-card">
+      <view class="paper-clip"></view>
       
-      <view class="order-info">
-        <view class="info-row">
-          <text class="info-label">记录编号</text>
-          <text class="info-value">{{orderInfo.orderNo}}</text>
-        </view>
-        
-        <view class="info-row">
-          <text class="info-label">联系人</text>
-          <text class="info-value">{{orderInfo.contactName}}</text>
-        </view>
-        
-        <view class="info-row">
-          <text class="info-label">服务时间</text>
-          <text class="info-value">{{orderInfo.serviceTime}}</text>
+      <view class="card-section info-section">
+        <view class="section-heading">基本信息 / BASIC INFO</view>
+        <view class="info-grid">
+          <view class="info-cell">
+            <text class="info-lbl">记录编号</text>
+            <text class="info-val">{{orderInfo.orderNo}}</text>
+          </view>
+          <view class="info-cell">
+            <text class="info-lbl">联系人</text>
+            <text class="info-val">{{orderInfo.contactName || '—'}}</text>
+          </view>
+          <view class="info-cell full-width">
+            <text class="info-lbl">服务时间</text>
+            <text class="info-val">{{orderInfo.serviceTime || '—'}}</text>
+          </view>
         </view>
       </view>
       
-      <view class="goods-list">
-        <view class="goods-title">服务内容</view>
-        <view class="goods-item" wx:for="{{orderInfo.items}}" wx:key="index">
-          <view class="goods-name">{{item.productName}}</view>
-          <view class="goods-detail">
-            <text class="goods-quantity">x{{item.quantity}}</text>
+      <view class="card-section goods-section">
+        <view class="section-heading">服务内容 / ITEMS</view>
+        <view class="goods-list">
+          <view class="goods-item" wx:for="{{orderInfo.items}}" wx:key="index">
+            <image wx:if="{{item.thumbUrl}}" class="goods-thumb" src="{{item.thumbUrl}}" mode="aspectFill"></image>
+            <view wx:else class="goods-thumb placeholder-thumb">待补充图片</view>
+            <view class="goods-content">
+              <view class="goods-name">{{item.productName}}</view>
+              <view class="goods-qty">QTY: {{item.quantity}}</view>
+            </view>
           </view>
         </view>
       </view>
     </view>
     
-    <view class="action-section">
+    <view class="action-dock">
       <view wx:if="{{!isLoggedIn}}">
-        <view class="notice">请先登录后认领此服务记录</view>
-        <button class="login-btn" bindtap="login">立即登录</button>
-      </view>
-      <view wx:else>
-        <block wx:if="{{!orderInfo.isBinded}}">
-          <view class="notice success">您已登录，可以认领此服务记录并确认后续服务信息</view>
-          <button class="bind-btn" bindtap="bindOrder">认领服务记录</button>
+        <block wx:if="{{orderInfo.canBind !== false}}">
+          <view class="dock-msg">请先登录后认领此服务记录</view>
+          <button class="editorial-btn primary" bindtap="login">立即登录 / LOGIN</button>
         </block>
         <block wx:else>
-          <view class="notice success">您已认领此服务记录，可继续查看详情</view>
-          <button class="view-btn" bindtap="viewOrder">查看服务记录详情</button>
+          <view class="dock-msg">{{orderInfo.bindBlockedReason || '当前二维码不可用'}}</view>
+        </block>
+      </view>
+      <view wx:else>
+        <block wx:if="{{orderInfo.canBind !== false}}">
+          <view class="dock-msg highlight">您已登录，可以认领此服务记录并确认后续信息</view>
+          <button class="editorial-btn primary" bindtap="bindOrder">认领服务 / CLAIM</button>
+        </block>
+        <block wx:else>
+          <view class="dock-msg">{{orderInfo.bindBlockedReason || '当前二维码不可用'}}</view>
         </block>
       </view>
     </view>
@@ -63,8 +73,8 @@
 
   <!-- 错误信息 -->
   <view class="error-container" wx:elif="{{errorMessage}}">
-    <icon type="warn" size="64"></icon>
+    <view class="error-circle"></view>
     <view class="error-text">{{errorMessage}}</view>
-    <button class="retry-btn" bindtap="retry">重试</button>
+    <button class="editorial-btn outline small" bindtap="retry">返回重试 / RETRY</button>
   </view>
 </view>

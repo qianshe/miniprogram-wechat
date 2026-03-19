@@ -90,9 +90,16 @@
     </view>
     <view class="section">
       <view class="section-title">服务内容</view>
+      <view class="info-item" wx:if="{{isAdmin}}">
+        <text class="label">记录说明</text>
+        <text class="value">当前服务内容为记录快照，编辑仅影响本记录。</text>
+      </view>
       <view class="goods-list" wx:if="{{orderInfo.originalItems.length > 0}}">
         <view class="goods-item" wx:for="{{orderInfo.originalItems}}" wx:key="productId">
-          <image class="goods-image" src="{{item.productImage || '/assets/images/default-product.png'}}" mode="aspectFill"></image>
+          <block wx:if="{{item.productImage}}">
+            <image class="goods-image" src="{{item.productImage}}" mode="aspectFill"></image>
+          </block>
+          <view wx:else class="goods-image placeholder">暂无图片</view>
           <view class="goods-info">
             <text class="goods-name">{{item.productName}}</text>
             <view class="goods-price-row">
@@ -114,7 +121,10 @@
         </view>
         <view class="goods-list appended-goods-list">
           <view class="goods-item appended-item" wx:for="{{orderInfo.appendedItems}}" wx:key="productId">
-            <image class="goods-image" src="{{item.productImage || '/assets/images/default-product.png'}}" mode="aspectFill"></image>
+            <block wx:if="{{item.productImage}}">
+              <image class="goods-image" src="{{item.productImage}}" mode="aspectFill"></image>
+            </block>
+            <view wx:else class="goods-image placeholder">暂无图片</view>
             <view class="goods-info">
               <view class="goods-name-row">
                 <text class="goods-name">{{item.productName}}</text>
@@ -150,6 +160,7 @@
         <t-button wx:if="{{showStartProcessingBtn}}" theme="primary" class="btn-primary" bindtap="handleStartProcessing">开始处理</t-button>
         <t-button wx:if="{{showMarkServiceDoneBtn}}" theme="primary" class="btn-primary" bindtap="handleMarkServiceDone">标记服务完成</t-button>
         <t-button wx:if="{{showConfirmPaymentBtn}}" theme="success" class="btn-success" bindtap="handleConfirmPaymentNew">确认收款</t-button>
+        <t-button wx:if="{{showAdminQrEntry}}" theme="default" class="btn-secondary" bindtap="openAdminQrCode">查看认领二维码</t-button>
         <t-button wx:if="{{showEditOrderBtn}}" theme="default" class="btn-secondary" bindtap="handleEditOrder">编辑服务记录</t-button>
         <t-button wx:if="{{showCancelBtn}}" theme="danger" class="btn-danger" bindtap="handleCancelOrderNew">关闭服务记录</t-button>
         <view wx:if="{{showNoActionTip}}" class="no-action-tip">服务已结束，无可用操作</view>

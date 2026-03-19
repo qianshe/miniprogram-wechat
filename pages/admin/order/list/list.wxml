@@ -1,8 +1,8 @@
 <view class="admin-orders-container">
   <view class="page-header">
-    <view class="page-title">订单管理</view>
+    <view class="page-title">服务记录管理</view>
     <view class="action-buttons">
-      <t-button theme="primary" bindtap="navigateToCreate">新建订单</t-button>
+      <t-button theme="primary" bindtap="navigateToCreate">新建服务记录</t-button>
     </view>
   </view>
 
@@ -12,7 +12,7 @@
       <input
         class="search-input"
         type="text"
-        placeholder="搜索订单号或联系人"
+        placeholder="搜索记录编号或联系人"
         value="{{searchKeyword}}"
         confirm-type="search"
         bindinput="onSearchChange"
@@ -38,7 +38,7 @@
       </view>
       <view class="filter-content">
         <view class="filter-item">
-          <text class="filter-label">订单时间</text>
+          <text class="filter-label">记录时间</text>
           <view class="date-range">
             <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
               <view class="date-picker">{{startDate || '开始日期'}}</view>
@@ -113,11 +113,11 @@
     <view class="loading-wrapper" wx:if="{{loading}}">
       <view class="loading-text">加载中...</view>
     </view>
-    <c-empty wx:elif="{{!orders.length}}" show="{{true}}" title="暂无订单"></c-empty>
+    <c-empty wx:elif="{{!orders.length}}" show="{{true}}" title="暂无服务记录"></c-empty>
     <view class="orders" wx:else>
       <view class="order-item" wx:for="{{orders}}" wx:key="orderNo">
         <view class="order-header">
-          <text class="order-no">订单号：{{item.orderNo}}</text>
+          <text class="order-no">记录编号：{{item.orderNo}}</text>
           <!-- 双状态标签显示 -->
           <view class="order-status-tags">
             <view class="status-tag flow-status-{{item.orderStatus !== undefined ? item.orderStatus : item.status}}">{{item.orderStatusText}}</view>
@@ -142,7 +142,7 @@
             <text>{{item.createdTime}}</text>
           </view>
           <view class="info-row">
-            <text class="label">订单金额：</text>
+            <text class="label">服务金额：</text>
             <text class="amount">¥{{item.totalAmount}}</text>
           </view>
         </view>
@@ -195,7 +195,7 @@
               class="btn-primary"
               data-orderno="{{item.orderNo}}"
               data-status="3"
-              bindtap="updateOrderStatus">完成订单</t-button>
+              bindtap="updateOrderStatus">完成服务记录</t-button>
           </block>
           <block wx:if="{{item.showCancelButton}}">
             <t-button
@@ -204,7 +204,7 @@
               class="btn-danger"
               data-orderno="{{item.orderNo}}"
               data-status="4"
-              bindtap="updateOrderStatus">取消订单</t-button>
+              bindtap="updateOrderStatus">关闭服务记录</t-button>
           </block>
         </view>
       </view>

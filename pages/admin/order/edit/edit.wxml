@@ -6,12 +6,12 @@
     <c-empty show="{{true}}" title="加载失败" description="{{error}}" />
   </view>
   <view class="empty-state" wx:elif="{{!orderInfo && !loading}}">
-    <c-empty show="{{true}}" title="未找到订单信息" />
+    <c-empty show="{{true}}" title="未找到服务记录" />
   </view>
   <block wx:else>
     <view class="header-section">
-      <view class="header-title">编辑订单信息</view>
-      <view class="header-subtitle">统一暂存商品与服务信息，保存后一次生效</view>
+      <view class="header-title">编辑服务记录</view>
+      <view class="header-subtitle">仅编辑当前服务记录快照，不影响套餐模板或其他记录</view>
     </view>
     <view class="error-summary-banner" wx:if="{{error || hasValidationErrors}}">
       <text class="error-text">{{error || '表单校验未通过，请检查填写项'}}</text>
@@ -32,9 +32,9 @@
           </view>
         </view>
         <view class="input-group">
-          <view class="input-label">订单备注</view>
+          <view class="input-label">记录备注</view>
           <t-textarea
-            placeholder="可选填备注信息"
+            placeholder="可选填记录备注"
             value="{{formData.remark}}"
             bind:change="onInputChange"
             data-field="remark"
@@ -51,13 +51,13 @@
       <view class="form-card">
         <view class="card-header compact">
           <view>
-            <view class="card-title compact">商品清单</view>
-            <view class="card-tip">支持新增商品、调整数量、删除商品，保存后统一生效</view>
+            <view class="card-title compact">服务清单</view>
+            <view class="card-tip">支持新增/调整/删除服务项，保存后仅更新本记录</view>
           </view>
-          <t-button theme="primary" variant="outline" size="small" bindtap="openProductSelector" disabled="{{itemMutationBlocked}}">新增商品</t-button>
+          <t-button theme="primary" variant="outline" size="small" bindtap="openProductSelector" disabled="{{itemMutationBlocked}}">新增服务项</t-button>
         </view>
         <view class="item-warning" wx:if="{{itemMutationBlocked}}">
-          当前订单存在历史拆分商品行，暂不支持直接编辑商品。
+          当前记录存在历史拆分商品行，暂不支持直接编辑。
         </view>
         <view class="item-list" wx:if="{{itemsDraft.length > 0}}">
           <view class="item-row" wx:for="{{itemsDraft}}" wx:key="productId">
@@ -75,17 +75,17 @@
           </view>
         </view>
         <view class="item-empty" wx:else>
-          暂无商品，请至少保留一个商品后再保存。
+          暂无服务项，请至少保留一项后再保存。
         </view>
         <view class="draft-summary">
-          <text class="draft-summary-label">暂存订单金额</text>
+          <text class="draft-summary-label">暂存记录金额</text>
           <text class="draft-summary-value">¥{{draftTotalAmount}}</text>
         </view>
       </view>
     </view>
     <product-selector
       visible="{{showProductSelector}}"
-      title="选择商品"
+      title="选择服务项"
       categories="{{categories}}"
       currentCategoryIndex="{{currentCategoryIndex}}"
       products="{{filteredProducts}}"

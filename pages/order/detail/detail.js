@@ -1,6 +1,4 @@
 const { api, adminApi } = require('../../../utils/api.js');
-const cartApi = require('../../../api/cart.js');
-const auth = require('../../../utils/auth.js');
 const {
   getOrderStatusInfo,
   ORDER_FLOW_STATUS,
@@ -13,8 +11,6 @@ const {
 const { formatDate } = require('../../../utils/util.js');
 const navigationUtils = require('../utils/navigation.js');
 const { getAdminEditOrderState } = require('./order-edit-state.helper.js');
-
-const PENDING_CART_CLEANUP_KEY = 'pendingCartCleanupOrders';
 
 Page({
   data: {
@@ -31,6 +27,7 @@ Page({
     showCancelBtn: false,
     showNoActionTip: false,
     showEditOrderBtn: false,
+    showAdminQrEntry: false,
     hasValidCoordinates: false,
     // 用户端按钮显示控制（双字段系统）
     showPayBtn: false,
@@ -61,61 +58,6 @@ Page({
   onShow() {
     if (this.data.orderNo) {
       this.loadOrderDetail();
-    }
-  },
-
-  getPendingCartCleanupOrders() {
-    const orders = wx.getStorageSync(PENDING_CART_CLEANUP_KEY);
-    return Array.isArray(orders) ? orders : [];
-  },
-
-  savePendingCartCleanupOrders(orders = []) {
-    wx.setStorageSync(PENDING_CART_CLEANUP_KEY, orders);
-  },
-
-  shouldCleanupCartForOrder(orderStatus) {
-    return orderStatus >= ORDER_FLOW_STATUS.PROCESSING && orderStatus !== ORDER_FLOW_STATUS.CANCELLED;
-  },
-
-  async syncRemainingCartItems(remainingCartItems = []) {
-    if (!auth.checkAuth()) {
-      return;
-    }
-
-    try {
-      await cartApi.sync(remainingCartItems);
-    } catch (error) {
-      console.error('同步已确认订单后的购物车失败:', error);
-    }
-  },
-
-  async cleanupPendingCartItems(orderNo, itemIds = []) {
-    if (!orderNo || !Array.isArray(itemIds) || itemIds.length === 0) {
-      return;
-    }
-
-    const cartItems = wx.getStorageSync('cartListLocal') || [];
-    const remainingCartItems = cartItems.filter(item => !itemIds.includes(item.id));
-    wx.setStorageSync('cartListLocal', remainingCartItems);
-    await this.syncRemainingCartItems(remainingCartItems);
-  },
-
-  async handlePendingCartCleanup(orderNo, orderStatus) {
-    const pendingOrders = this.getPendingCartCleanupOrders();
-    const targetOrder = pendingOrders.find(item => item && item.orderNo === orderNo);
-
-    if (!targetOrder) {
-      return;
-    }
-
-    if (this.shouldCleanupCartForOrder(orderStatus)) {
-      await this.cleanupPendingCartItems(orderNo, targetOrder.itemIds || []);
-      this.savePendingCartCleanupOrders(pendingOrders.filter(item => item && item.orderNo !== orderNo));
-      return;
-    }
-
-    if (orderStatus === ORDER_FLOW_STATUS.CANCELLED) {
-      this.savePendingCartCleanupOrders(pendingOrders.filter(item => item && item.orderNo !== orderNo));
     }
   },
 
@@ -239,8 +181,6 @@ Page({
       
       const order = orderData;
 
-      await this.handlePendingCartCleanup(orderData.orderNo || this.data.orderNo, orderStatus);
-
       const orderInfo = {
         ...orderData,
         contactName: contactName,
@@ -304,10 +244,17 @@ Page({
         btnStates = this.calculateUserButtonStates({ orderStatus, paymentStatus });
       }
 
+      const showAdminQrEntry = this.getAdminQrEntryState({
+        isAdmin: this.data.isAdmin,
+        orderInfo,
+        hasValidCoordinates
+      });
+
       this.setData({
         orderInfo,
         loading: false,
         hasValidCoordinates,
+        showAdminQrEntry,
         ...btnStates
       });
     } catch (err) {
@@ -455,9 +402,43 @@ Page({
   },
 
   hasNavigationCoordinates(address = {}) {
-    const latitude = Number(address.latitude);
-    const longitude = Number(address.longitude);
+    const rawLatitude = address.latitude;
+    const rawLongitude = address.longitude;
+
+    if (rawLatitude === null || rawLatitude === undefined || rawLatitude === '') {
+      return false;
+    }
+
+    if (rawLongitude === null || rawLongitude === undefined || rawLongitude === '') {
+      return false;
+    }
+
+    const latitude = Number(rawLatitude);
+    const longitude = Number(rawLongitude);
     return Number.isFinite(latitude) && Number.isFinite(longitude);
+  },
+
+  getAdminQrEntryState({ isAdmin, orderInfo, hasValidCoordinates }) {
+    if (!isAdmin || !orderInfo) {
+      return false;
+    }
+
+    const contactPhone = orderInfo.contactPhone ? String(orderInfo.contactPhone).trim() : '';
+    return orderInfo.waitForBind === true && !contactPhone && !hasValidCoordinates;
+  },
+
+  openAdminQrCode() {
+    const { orderInfo, orderNo, isAdmin } = this.data;
+    if (!isAdmin) return;
+
+    const currentOrderNo = (orderInfo && orderInfo.orderNo) || orderNo;
+    if (!currentOrderNo) return;
+
+    const query = [`orderNo=${encodeURIComponent(currentOrderNo)}`];
+
+    wx.navigateTo({
+      url: `/pages/admin/order/qr-code/qr-code?${query.join('&')}`
+    });
   },
 
   getOrderNavigationAddress() {
@@ -642,78 +623,14 @@ Page({
     });
   },
 
-  // 再次购买
+  // 继续咨询相同服务内容（替代旧的“再次购买”购物车链路）
   async rebuyOrder() {
-    // 获取订单中的商品信息
-    const items = this.data.orderInfo.items;
-    if (!items || items.length === 0) {
-      wx.showToast({
-        title: '订单商品为空',
-        icon: 'none'
-      });
-      return;
-    }
-
-    wx.showLoading({ title: '添加中...' });
-
-    try {
-      const isLoggedIn = auth.checkAuth();
-      
-      // 同时更新本地缓存
-      const cart = wx.getStorageSync('cartListLocal') || [];
-      
-      for (const item of items) {
-        const productData = {
-          productId: item.productId,
-          name: item.productName,
-          price: Number(item.productPrice) || item.price || 0,
-          image: item.productImage,
-          quantity: item.quantity
-        };
-
-        // 如果已登录，调用云端API添加商品
-        if (isLoggedIn) {
-          await cartApi.add(productData);
-        }
-
-        // 更新本地缓存
-        const existingItem = cart.find(i => i.id === item.productId);
-        if (existingItem) {
-          existingItem.quantity += item.quantity;
-        } else {
-          cart.push({
-            id: item.productId,
-            name: item.productName,
-            price: Number(item.productPrice) || item.price || 0,
-            image: item.productImage,
-            quantity: item.quantity
-          });
-        }
-      }
-
-      // 保存本地缓存
-      wx.setStorageSync('cartListLocal', cart);
-
-      wx.hideLoading();
-      wx.showToast({
-        title: '已添加到购物车',
-        icon: 'success'
-      });
-      
-      // 跳转到购物车页面
-      setTimeout(() => {
-        wx.switchTab({
-          url: '/pages/cart/cart'
-        });
-      }, 1500);
-    } catch (err) {
-      wx.hideLoading();
-      console.error('再次购买失败:', err);
-      wx.showToast({
-        title: err.message || '添加失败',
-        icon: 'none'
-      });
-    }
+    wx.showModal({
+      title: '联系服务人员',
+      content: '当前小程序仅支持服务记录查看与线下沟通确认。如需复用当前服务内容，请直接联系服务人员处理。',
+      showCancel: false,
+      confirmText: '我知道了'
+    });
   },
 
   // 返回列表
@@ -1058,7 +975,7 @@ Page({
 
     if (!isAdmin || !orderNo) {
       wx.showToast({
-        title: '缺少可编辑订单信息',
+        title: '缺少可编辑服务记录信息',
         icon: 'none'
       });
       return;

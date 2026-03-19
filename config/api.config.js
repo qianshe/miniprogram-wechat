@@ -75,8 +75,6 @@ const config = {
     addresses: 'addresses',
     // 反馈表
     feedback: 'feedback',
-    // 购物车表
-    carts: 'carts',
     // 管理员表
     admins: 'admins'
   },

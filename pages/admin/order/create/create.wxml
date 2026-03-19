@@ -1,93 +1,41 @@
 <view class="page-container">
   <!-- 顶部导航/标题 -->
   <view class="header-section">
-    <view class="header-title">创建订单</view>
-    <view class="header-subtitle">填写客户信息并添加服务产品</view>
+    <view class="header-title">创建服务记录</view>
+    <view class="header-subtitle">
+      <text wx:if="{{createMode === 'package'}}">已选择套餐模板，可按需调整服务内容</text>
+      <text wx:elif="{{createMode === 'free'}}">自由创建服务内容并补充服务安排</text>
+    </view>
   </view>
   
   <view class="form-container">
-    <!-- 客户信息卡片 -->
-    <view class="form-card">
-      <view class="card-title">客户信息</view>
-      
-      <view class="input-group">
-        <view class="input-label">联系人</view>
-        <t-input
-          placeholder="请输入客户姓名"
-          value="{{formData.contactName}}"
-          bind:change="onInputChange"
-          data-field="contactName"
-          borderless="{{true}}"
-          class="filled-input"
-          placeholder-class="placeholder-style"
-        />
+    <!-- 来源套餐卡片 -->
+    <view class="form-card package-card" wx:if="{{createMode === 'package'}}">
+      <view class="card-header">
+        <view class="card-title" style="margin-bottom: 0;">来源套餐</view>
+        <view class="package-status">已锁定</view>
       </view>
+      <view class="package-subtitle">套餐将作为当前服务记录的内容模板</view>
 
-      <view class="input-group">
-        <view class="input-label">联系电话</view>
-        <t-input
-          type="number"
-          placeholder="请输入手机号码"
-          value="{{formData.contactPhone}}"
-          bind:change="onInputChange"
-          data-field="contactPhone"
-          borderless="{{true}}"
-          class="filled-input"
-          placeholder-class="placeholder-style"
-        />
+      <view class="package-loading" wx:if="{{packageImporting}}">正在导入套餐...</view>
+      <view class="package-source">
+        <view class="package-name">{{selectedPackageName || '加载中...'}}</view>
+        <view class="package-price" wx:if="{{selectedPackagePrice}}">¥{{selectedPackagePrice}}</view>
       </view>
+      <view class="package-desc" wx:if="{{selectedPackageDescription}}">{{selectedPackageDescription}}</view>
 
-      <view class="input-group">
-        <view class="input-label">服务时间</view>
-        <picker
-          mode="date"
-          value="{{formData.serviceTime}}"
-          bindchange="onServiceTimeChange"
-          start="{{formData.serviceTime}}"
-        >
-          <view class="filled-input picker-trigger">
-            <text class="{{formData.serviceTime ? 'text-value' : 'text-placeholder'}}">{{formData.serviceTime || '请选择服务日期'}}</text>
-            <text class="picker-inline-mark">日</text>
-          </view>
-        </picker>
-      </view>
-
-      <view class="input-group">
-        <view class="input-label">服务地址</view>
-        <t-textarea
-          placeholder="请输入详细服务地址"
-          value="{{formData.address}}"
-          bind:change="onInputChange"
-          data-field="address"
-          autosize
-          borderless="{{true}}"
-          class="filled-input textarea-input"
-          placeholder-class="placeholder-style"
-        />
-      </view>
-
-      <view class="input-group">
-        <view class="input-label">订单备注</view>
-        <t-textarea
-          placeholder="可选填备注信息"
-          value="{{formData.remark}}"
-          bind:change="onInputChange"
-          data-field="remark"
-          autosize
-          borderless="{{true}}"
-          class="filled-input textarea-input"
-          placeholder-class="placeholder-style"
-        />
+      <view class="package-selected" wx:if="{{selectedPackageName}}">
+        <text>已导入：{{selectedPackageName}}</text>
       </view>
     </view>
-    
-    <!-- 产品信息卡片 -->
+
+    <!-- 服务内容卡片 -->
     <view class="form-card">
         <view class="card-header">
-          <view class="card-title" style="margin-bottom: 0;">产品信息</view>
-          <view class="add-product-btn" bindtap="openProductSelector">
+          <view class="card-title" style="margin-bottom: 0;">服务内容</view>
+        <view class="add-product-btn" wx:if="{{createMode === 'free' || selectedPackageId}}" bindtap="openProductSelector">
           <text class="inline-plus">+</text>
-          <text>添加产品</text>
+          <text>添加服务内容</text>
         </view>
       </view>
       
@@ -114,18 +62,77 @@
           </view>
         </view>
         
-        <view class="total-section">
-          <text class="total-label">合计金额</text>
-          <text class="total-price">¥{{totalAmount}}</text>
-        </view>
       </block>
-      
-      <view class="empty-state" wx:else bindtap="openProductSelector">
+
+      <view class="empty-state" wx:else>
         <view class="empty-icon-wrapper">
           <text class="empty-state-symbol">＋</text>
         </view>
-        <text>点击添加服务产品</text>
+        <text wx:if="{{createMode === 'package'}}">套餐内暂无服务内容，可点击添加</text>
+        <text wx:elif="{{createMode === 'free'}}">尚未添加服务内容</text>
       </view>
+    </view>
+
+    <!-- 联系人与服务信息卡片 -->
+    <view class="form-card">
+      <view class="card-title">联系人与服务安排</view>
+      
+      <view class="input-group">
+        <view class="input-label">服务时间 <text class="label-required">（必填）</text></view>
+        <picker
+          mode="date"
+          value="{{formData.serviceTime}}"
+          bindchange="onServiceTimeChange"
+          start="{{formData.serviceTime}}"
+        >
+          <view class="filled-input picker-trigger">
+            <text class="{{formData.serviceTime ? 'text-value' : 'text-placeholder'}}">{{formData.serviceTime || '请选择服务日期'}}</text>
+            <text class="picker-inline-mark">日</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">联系人 <text class="label-optional">（选填）</text></view>
+        <t-input
+          placeholder="请输入联系人姓名"
+          value="{{formData.contactName}}"
+          bind:change="onInputChange"
+          data-field="contactName"
+          borderless="{{true}}"
+          class="filled-input"
+          placeholder-class="placeholder-style"
+        />
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">联系电话 <text class="label-optional">（选填）</text></view>
+        <t-input
+          type="number"
+          placeholder="请输入手机号码"
+          value="{{formData.contactPhone}}"
+          bind:change="onInputChange"
+          data-field="contactPhone"
+          borderless="{{true}}"
+          class="filled-input"
+          placeholder-class="placeholder-style"
+        />
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">服务地址 <text class="label-optional">（选填）</text></view>
+        <t-textarea
+          placeholder="请输入详细服务地址"
+          value="{{formData.address}}"
+          bind:change="onInputChange"
+          data-field="address"
+          autosize
+          borderless="{{true}}"
+          class="filled-input textarea-input"
+          placeholder-class="placeholder-style"
+        />
+      </view>
+
     </view>
   </view>
   
@@ -146,7 +153,7 @@
         bindtap="submitOrder"
         disabled="{{isSubmitting}}"
       >
-        立即创建
+        创建服务记录
       </t-button>
     </view>
   </view>
@@ -154,7 +161,7 @@
   <!-- 产品选择弹窗 -->
   <product-selector
     visible="{{showProductSelector}}"
-    title="选择产品"
+    title="选择服务内容"
     categories="{{categories}}"
     currentCategoryIndex="{{currentCategoryIndex}}"
     products="{{filteredProducts}}"

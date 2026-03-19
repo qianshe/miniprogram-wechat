@@ -101,6 +101,13 @@ const CollectionPermissions = {
       userId: { access: FieldAccess.ADMIN },
       waitForBind: { access: FieldAccess.ADMIN },
       adminNote: { access: FieldAccess.ADMIN },
+      sourcePackageId: { access: FieldAccess.ADMIN },
+      sourcePackageName: { access: FieldAccess.ADMIN },
+      qrCodeKey: { access: FieldAccess.ADMIN },
+      qrCodeStatus: { access: FieldAccess.ADMIN },
+      qrCodeExpiresAt: { access: FieldAccess.ADMIN },
+      qrCodeUsedAt: { access: FieldAccess.ADMIN },
+      qrCodeUsedByOpenid: { access: FieldAccess.ADMIN, mask: true, maskType: MaskType.OPENID },
       
       // 隐藏字段 - 不返回
       _openid: { access: FieldAccess.HIDDEN }

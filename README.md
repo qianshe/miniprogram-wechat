@@ -20,11 +20,11 @@
 
 | 模块 | 功能描述 |
 |------|----------|
-| **白事服务** | 殡葬流程步骤指导、服务轮播图展示、治丧清单管理 |
-| **商品系统** | 商品分类浏览、商品详情、意向清单管理 |
-| **套餐系统** | 服务套餐展示、套餐详情、意向登记 |
-| **用户中心** | 用户信息、收货地址、意向单查询、意见反馈 |
-| **管理后台** | 商品/分类/意向单/套餐的增删改查管理，线下收款状态记录 |
+| **白事服务** | 殡葬流程步骤指导、服务轮播图展示、服务内容参考 |
+| **商品系统** | 商品分类浏览、商品详情、服务咨询引导 |
+| **套餐系统** | 服务套餐展示、套餐详情、线下咨询引导 |
+| **用户中心** | 用户信息、收货地址、服务记录查询、意见反馈 |
+| **管理后台** | 商品/分类/服务记录/套餐的增删改查管理，线下收款状态记录 |
 
 ## 快速开始
 
@@ -87,7 +87,7 @@ miniprogram1/
 ├── cloudfunctions/               # 云函数
 │   ├── _shared/                  # 云函数共享模块
 │   ├── login/                    # 管理员登录认证
-│   ├── orderManagement/          # 订单管理
+│   ├── orderManagement/          # 服务记录/订单兼容管理
 │   ├── productManagement/        # 商品管理
 │   ├── categoryManagement/       # 分类管理
 │   ├── processManagement/        # 流程管理
@@ -108,9 +108,8 @@ miniprogram1/
 │   ├── index_home/               # 启动页
 │   ├── index/                    # 首页
 │   ├── goods/                    # 商品（分类、详情）
-│   ├── cart/                     # 购物车（治丧清单）
-│   ├── order/                    # 订单（列表、详情、创建、确认）
-│   ├── package/                  # 套餐（列表、详情、确认）
+│   ├── order/                    # 服务记录分包（列表、详情、认领、管理员创建）
+│   ├── package/                  # 套餐（列表、详情、联系服务人员）
 │   ├── process/                  # 流程（列表、详情）
 │   ├── user/                     # 用户中心
 │   ├── address/                  # 地址管理
@@ -135,21 +134,25 @@ miniprogram1/
 | `pages/index` | 首页（服务入口、轮播图） |
 | `pages/goods/category` | 商品分类列表 |
 | `pages/goods/detail` | 商品详情 |
-| `pages/cart` | 购物车（治丧清单） |
-| `pages/order/list` | 订单列表 |
-| `pages/order/detail` | 订单详情 |
-| `pages/order/confirm` | 订单确认 |
-| `pages/order/create` | 创建订单 |
 | `pages/package/list` | 套餐列表 |
 | `pages/package/detail` | 套餐详情 |
-| `pages/package/confirm` | 套餐确认 |
+| `pages/package/confirm` | 服务确认信息页（仅展示与联系引导） |
 | `pages/process/list` | 流程列表 |
 | `pages/process/detail` | 流程详情 |
 | `pages/user` | 用户中心 |
 | `pages/address` | 地址管理 |
 | `pages/feedback` | 意见反馈 |
 | `pages/scan-result` | 扫码结果 |
-| `pages/order/append-items` | 订单追加商品 |
+
+### 服务记录分包（pages/order）
+
+| 页面路径 | 说明 |
+|----------|------|
+| `pages/order/list` | 我的服务记录 |
+| `pages/order/detail` | 服务记录详情 |
+| `pages/order/confirm` | 管理员确认页（普通用户不走在线提交流程） |
+| `pages/order/create` | 管理员创建服务记录 |
+| `pages/order/user-confirm` | 用户认领后补充/确认服务信息 |
 
 ### 管理后台分包（pages/admin）
 
@@ -204,11 +207,10 @@ miniprogram1/
 
 | 文件 | 说明 |
 |------|------|
-| `order.js` | 订单相关 API |
+| `order.js` | 服务记录/订单兼容 API |
 | `product.js` | 商品相关 API |
 | `process.js` | 流程相关 API |
 | `package.js` | 套餐相关 API |
-| `cart.js` | 购物车相关 API |
 | `address.js` | 地址相关 API |
 
 ## 云函数说明
@@ -224,7 +226,7 @@ miniprogram1/
 | `processManagement` | 流程步骤管理 |
 | `packageManagement` | 套餐管理 |
 | `userManagement` | 用户管理（管理员端） |
-| `userDataManagement` | 用户数据管理（地址、购物车） |
+| `userDataManagement` | 用户数据管理（地址、地理编码等） |
 
 > **注意**：旧版 `wxpaycommon` 目录已清理（未完成的支付预留模块，无功能代码）。
 
@@ -249,7 +251,6 @@ miniprogram1/
 | `packages` | 套餐数据 |
 | `processSteps` | 流程步骤 |
 | `addresses` | 收货地址 |
-| `carts` | 购物车 |
 | `feedback` | 用户反馈 |
 | `admins` | 管理员信息 |
 

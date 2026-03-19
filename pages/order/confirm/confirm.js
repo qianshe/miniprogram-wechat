@@ -3,8 +3,6 @@ const auth = require('../../../utils/auth.js');
 const validation = require('../utils/validation.js');
 const { loadSelectableAddresses, pickDefaultAddress } = require('../../../utils/addressSelection.js');
 
-const PENDING_CART_CLEANUP_KEY = 'pendingCartCleanupOrders';
-
 function getAddressId(address) {
   if (!address) {
     return '';
@@ -79,31 +77,6 @@ function buildOrderPriceSummaryRows(totalAmount) {
     }
   ];
 }
-
-function getPendingCartCleanupOrders() {
-  const orders = wx.getStorageSync(PENDING_CART_CLEANUP_KEY);
-  return Array.isArray(orders) ? orders : [];
-}
-
-function savePendingCartCleanupOrders(orders = []) {
-  wx.setStorageSync(PENDING_CART_CLEANUP_KEY, orders);
-}
-
-function appendPendingCartCleanupOrder(orderNo, orderItems = []) {
-  if (!orderNo) {
-    return;
-  }
-
-  const itemIds = [...new Set((orderItems || []).map(item => item && item.id).filter(Boolean))];
-  if (itemIds.length === 0) {
-    return;
-  }
-
-  const existingOrders = getPendingCartCleanupOrders().filter(item => item && item.orderNo !== orderNo);
-  existingOrders.push({ orderNo, itemIds });
-  savePendingCartCleanupOrders(existingOrders);
-}
-
 
 Page({
   data: {

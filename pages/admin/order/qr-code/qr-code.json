@@ -1,5 +1,6 @@
 {
-  "navigationBarTitleText": "订单二维码",
+  "navigationBarTitleText": "服务记录二维码",
+  "enableShareAppMessage": true,
   "usingComponents": {
     "t-button": "tdesign-miniprogram/button/button"
   }

@@ -1,28 +1,30 @@
 <view class="qr-container">
   <view class="page-header">
-    <view class="page-title">订单二维码</view>
-    <view class="order-no">订单号：{{orderNo}}</view>
+    <view class="page-title">服务记录二维码</view>
+    <view class="order-no">记录编号：{{orderNo}}</view>
   </view>
   
   <view class="qr-section">
     <view class="qr-code-container">
-      <image class="qr-code" src="{{qrCodeUrl}}" mode="aspectFit" show-menu-by-longpress></image>
+      <image wx:if="{{qrCodeUrl}}" class="qr-code" src="{{qrCodeUrl}}" mode="aspectFit" show-menu-by-longpress></image>
+      <view wx:else class="qr-placeholder">二维码暂不可用</view>
     </view>
-    <view class="tips">长按二维码可保存图片</view>
+    <view class="tips">{{qrCodeUrl ? (orderInfo.qrCodeMode === 'fallback' ? '当前为备用二维码，请让用户先打开小程序，再使用“扫一扫认领服务记录”进行扫描' : '长按二维码可保存图片') : '二维码生成失败，请检查云函数权限后重新创建记录'}} </view>
     <view class="description">
-      <text>请保存此二维码并提供给用户</text>
-      <text>用户扫描后可绑定此订单</text>
+      <text>请保存此二维码并提供给用户认领</text>
+      <text wx:if="{{orderInfo.qrCodeMode === 'fallback'}}">备用二维码仅支持在小程序内扫码认领，微信外部直接扫码不会自动打开小程序</text>
+      <text wx:else>用户扫描后将绑定当前服务记录（待认领状态）</text>
     </view>
   </view>
   
   <view class="action-buttons">
     <t-button theme="primary" bindtap="saveQrCode">保存到相册</t-button>
-    <t-button theme="default" bindtap="shareOrder">分享订单</t-button>
+    <button class="action-btn secondary" open-type="share">分享记录</button>
     <t-button theme="light" bindtap="backToList">返回列表</t-button>
   </view>
   
   <view class="order-detail-section">
-    <view class="section-title">订单信息</view>
+    <view class="section-title">服务记录信息</view>
     
     <view class="info-item">
       <text class="label">联系人：</text>
@@ -40,13 +42,33 @@
     </view>
     
     <view class="info-item">
-      <text class="label">总金额：</text>
+      <text class="label">服务金额：</text>
       <text class="value amount">¥{{orderInfo.totalAmount}}</text>
     </view>
     
     <view class="info-item" wx:if="{{orderInfo.remark}}">
-      <text class="label">备注：</text>
+      <text class="label">记录备注：</text>
       <text class="value">{{orderInfo.remark}}</text>
     </view>
   </view>
-</view> 
+
+  <view class="order-detail-section" wx:if="{{orderInfo.items && orderInfo.items.length}}">
+    <view class="section-title">服务内容</view>
+    <view class="goods-list">
+      <view class="goods-item" wx:for="{{orderInfo.items}}" wx:key="productId">
+        <block wx:if="{{item.displayImage}}">
+          <image class="goods-image" src="{{item.displayImage}}" mode="aspectFill"></image>
+        </block>
+        <view wx:else class="goods-image placeholder">暂无图片</view>
+        <view class="goods-info">
+          <text class="goods-name">{{item.productName}}</text>
+          <view class="goods-meta">
+            <text class="goods-price">¥{{item.productPrice}}</text>
+            <text class="goods-quantity">×{{item.quantity}}</text>
+          </view>
+        </view>
+        <text class="goods-subtotal">¥{{item.subtotal}}</text>
+      </view>
+    </view>
+  </view>
+</view>

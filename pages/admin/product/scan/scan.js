@@ -167,7 +167,7 @@ Page({
     // 实际应用中可能需要跳转到订单确认页或者添加到本地购物车
     setTimeout(() => {
       wx.navigateTo({
-        url: '/pages/admin/order/create/create'
+        url: '/pages/admin/order/create-entry/create-entry'
       });
     }, 1500);
   },

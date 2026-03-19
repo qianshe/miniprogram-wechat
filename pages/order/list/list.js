@@ -308,18 +308,18 @@ Page({
 
   formatOrderNoForDisplay(orderNo) {
     if (!orderNo) return orderNo;
-    const match = orderNo.match(/^order_(\d{8})_(\d{3})$/);
+    const match = orderNo.match(/^(?:order|record)_(\d{8})_(\d{3})$/);
     if (match) {
-      return `ORD${match[1]}${match[2]}`;
+      return `REC${match[1]}${match[2]}`;
     }
     return orderNo;
   },
 
   formatOrderNoForQuery(displayOrderNo) {
     if (!displayOrderNo) return displayOrderNo;
-    const match = displayOrderNo.match(/^ORD(\d{8})(\d{3})$/);
+    const match = displayOrderNo.match(/^REC(\d{8})(\d{3})$/);
     if (match) {
-      return `order_${match[1]}_${match[2]}`;
+      return `record_${match[1]}_${match[2]}`;
     }
     return displayOrderNo;
   },

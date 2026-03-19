@@ -44,7 +44,6 @@ const PAGE_PERMISSIONS = {
 const TAB_BAR_PAGES = [
   '/pages/index/index',
   '/pages/goods/category/category',
-  '/pages/cart/cart',
   '/pages/user/user'
 ]
 

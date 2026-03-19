@@ -304,7 +304,7 @@ const pageConfig = {
         itemsDraft: normalized.itemsDraft
       })
     } catch (error) {
-      const message = (error && error.message) || '获取订单详情失败'
+      const message = (error && error.message) || '获取服务记录详情失败'
       this.setData({
         orderInfo: null,
         formData: getInitialFormData(),
@@ -554,7 +554,7 @@ const pageConfig = {
     }
 
     if (this.data.itemsDraft.length <= 1) {
-      wx.showToast({ title: '订单至少保留一个商品', icon: 'none' })
+      wx.showToast({ title: '服务记录至少保留一个服务项', icon: 'none' })
       return
     }
 
@@ -703,7 +703,7 @@ const pageConfig = {
 
     const payload = this.buildUpdatePayload()
     if (!payload.orderId) {
-      wx.showToast({ title: '订单信息未就绪', icon: 'none' })
+      wx.showToast({ title: '服务记录信息未就绪', icon: 'none' })
       return
     }
 

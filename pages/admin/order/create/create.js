@@ -1,6 +1,8 @@
 const { adminApi, api } = require('../../../../utils/api.js');
 const validation = require('../../utils/validation.js');
 const { checkAdminAccess } = require('../../common/adminGuard.js');
+const packageApi = require('../../../../api/package.js');
+const { normalizePrice } = require('../../../../utils/util.js');
 
 Page({
   /**
@@ -11,6 +13,16 @@ Page({
     productList: [],
     selectedProducts: [],
     showProductSelector: false,
+
+    // 套餐数据
+    packageList: [],
+    packageLoading: false,
+    selectedPackageId: '',
+    selectedPackageName: '',
+    selectedPackagePrice: 0,
+    selectedPackageDescription: '',
+    packageImporting: false,
+    createMode: '',
     
     // 分类和分页数据
     categories: [],
@@ -24,13 +36,12 @@ Page({
       hasMore: true
     },
 
-    // 订单数据
+    // 服务记录数据
     formData: {
       contactName: '',
       contactPhone: '',
       serviceTime: '',
-      address: '',
-      remark: ''
+      address: null
     },
 
     // 计算数据
@@ -47,10 +58,50 @@ Page({
    */
   onLoad(options) {
     if (!checkAdminAccess()) return
+    const mode = (options.mode || '').toLowerCase();
+    if (mode !== 'package' && mode !== 'free') {
+      this.redirectToEntry('请先选择创建方式');
+      return;
+    }
+
+    if (mode === 'package') {
+      const packageId = options.packageId;
+      if (!packageId) {
+        this.redirectToEntry('请选择服务套餐');
+        return;
+      }
+      this.setData({
+        createMode: 'package',
+        selectedPackageId: packageId
+      });
+    } else {
+      this.setData({
+        createMode: 'free',
+        selectedPackageId: '',
+        selectedPackageName: '',
+        selectedPackagePrice: 0,
+        selectedPackageDescription: ''
+      });
+    }
     // 设置默认服务时间（明天）
     this.setDefaultServiceTime();
     // 加载分类列表
     this.loadCategories();
+
+    if (mode === 'package') {
+      this.importPackageById(options.packageId);
+    }
+  },
+
+  redirectToEntry(message) {
+    if (message) {
+      wx.showToast({ title: message, icon: 'none', duration: 1500 });
+      setTimeout(() => {
+        wx.redirectTo({ url: '/pages/admin/order/create-entry/create-entry' });
+      }, 600);
+      return;
+    }
+    wx.redirectTo({ url: '/pages/admin/order/create-entry/create-entry' });
   },
 
   /**
@@ -140,9 +191,189 @@ Page({
   },
 
   /**
+   * 加载套餐列表
+   */
+  async loadPackages() {
+    this.setData({ packageLoading: true });
+
+    try {
+      const result = await packageApi.adminGetList({
+        page: 1,
+        size: 50,
+        type: 'white',
+        status: 1
+      }, { showLoading: false });
+
+      const records = result?.records || result?.list || [];
+      const packageList = records.map(pkg => ({
+        ...pkg,
+        id: pkg._id || pkg.id,
+        name: pkg.name || '未命名套餐',
+        description: pkg.description || '',
+        price: normalizePrice(pkg.price) || 0,
+        imageUrl: pkg.imageUrl || ''
+      }));
+
+      this.setData({ packageList, packageLoading: false });
+    } catch (err) {
+      console.error('加载套餐失败:', err);
+      this.setData({ packageList: [], packageLoading: false });
+    }
+  },
+
+  /**
+   * 选择套餐并导入模板
+   */
+  onSelectPackage(e) {
+    const { id } = e.currentTarget.dataset;
+    if (!id) return;
+
+    const doImport = () => {
+      this.importPackageById(id);
+    };
+
+    if (this.data.selectedProducts.length > 0) {
+      wx.showModal({
+        title: '确认导入',
+        content: '导入套餐将覆盖当前已编辑的服务内容，是否继续？',
+        confirmText: '继续导入',
+        cancelText: '暂不导入',
+        success: (res) => {
+          if (res.confirm) {
+            doImport();
+          }
+        }
+      });
+      return;
+    }
+
+    doImport();
+  },
+
+  /**
+   * 导入套餐模板
+   */
+  async importPackageById(packageId) {
+    if (this.data.packageImporting) return;
+
+    this.setData({ packageImporting: true });
+
+    try {
+      const packageInfo = await packageApi.adminGetDetail({ id: packageId }, { showLoading: true, loadingText: '导入中...' });
+      const normalizedTemplate = this.normalizePackageTemplate(packageInfo?.template || []);
+      const selectedProducts = this.flattenTemplateProducts(normalizedTemplate);
+      const selectedPackagePrice = normalizePrice(packageInfo?.price) || 0;
+      const selectedPackageDescription = packageInfo?.description || '';
+
+      if (!selectedProducts.length) {
+        wx.showToast({ title: '套餐内暂无服务内容', icon: 'none' });
+      }
+
+      const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, selectedProducts);
+
+      this.setData({
+        selectedPackageId: packageId,
+        selectedPackageName: packageInfo?.name || '',
+        selectedPackagePrice,
+        selectedPackageDescription,
+        selectedProducts,
+        filteredProducts
+      });
+      this.calculateTotal();
+
+      wx.showToast({ title: '已导入套餐', icon: 'success', duration: 1200 });
+    } catch (err) {
+      console.error('导入套餐失败:', err);
+      wx.showToast({ title: err.message || '导入套餐失败', icon: 'none' });
+    } finally {
+      this.setData({ packageImporting: false });
+    }
+  },
+
+  /**
+   * 标准化套餐模板，兼容新旧格式
+   */
+  normalizePackageTemplate(template) {
+    if (!template || !Array.isArray(template)) return [];
+
+    return template.map(item => {
+      if (item.products && Array.isArray(item.products)) {
+        return {
+          categoryId: item.categoryId,
+          categoryName: item.categoryName,
+          products: item.products.map(product => ({
+            productId: product.productId,
+            productName: product.productName || product.name || '',
+            price: product.price || 0,
+            quantity: product.quantity || 1,
+            imageUrl: product.imageUrl || product.thumb || ''
+          }))
+        };
+      }
+
+      const products = [];
+      if (item.defaultProductId || item.selectedProduct) {
+        const selectedProduct = item.selectedProduct || {};
+        products.push({
+          productId: item.defaultProductId || selectedProduct._id || selectedProduct.id || '',
+          productName: selectedProduct.name || item.defaultProductName || '',
+          price: selectedProduct.price || 0,
+          quantity: item.quantity || 1,
+          imageUrl: selectedProduct.imageUrl || selectedProduct.thumb || ''
+        });
+      }
+
+      return {
+        categoryId: item.categoryId,
+        categoryName: item.categoryName,
+        products
+      };
+    });
+  },
+
+  /**
+   * 扁平化模板商品为可编辑快照
+   */
+  flattenTemplateProducts(templateItems) {
+    const productMap = new Map();
+
+    (templateItems || []).forEach(category => {
+      (category.products || []).forEach(product => {
+        const productId = product.productId || product._id || product.id;
+        if (!productId) return;
+
+        const quantity = Math.max(1, Number(product.quantity) || 1);
+        const price = normalizePrice(product.price) || 0;
+        const existing = productMap.get(productId);
+
+        if (existing) {
+          existing.quantity += quantity;
+          return;
+        }
+
+        productMap.set(productId, {
+          id: productId,
+          productId,
+          name: product.productName || product.name || '',
+          price,
+          quantity,
+          thumb: product.imageUrl || product.thumb || ''
+        });
+      });
+    });
+
+    return Array.from(productMap.values());
+  },
+
+  /**
    * 打开产品选择器
    */
   openProductSelector() {
+    if (this.data.createMode === 'package' && !this.data.selectedPackageId) {
+      wx.showToast({ title: '请先选择服务套餐', icon: 'none' });
+      return;
+    }
+
     const filteredProducts = this.updateFilteredProductsSelection(this.data.filteredProducts, this.data.selectedProducts);
     this.setData({
       showProductSelector: true,
@@ -186,14 +417,14 @@ Page({
   },
 
   /**
-   * 选择产品（来自组件事件）
+   * 选择服务内容（来自组件事件）
    */
   onProductSelect(e) {
     const product = e.detail.product;
     const productId = product.id;
 
     if (!productId) {
-      wx.showToast({ title: '商品数据异常', icon: 'none' });
+      wx.showToast({ title: '服务内容数据异常', icon: 'none' });
       return;
     }
 
@@ -343,37 +574,46 @@ Page({
     const { formData, selectedProducts } = this.data;
 
     const validationRules = {
-      contactName: {
+      serviceTime: {
         required: true,
+        label: '服务时间'
+      }
+    };
+
+    if (formData.contactName) {
+      validationRules.contactName = {
+        required: false,
         label: '联系人姓名',
         type: 'string',
         minLength: 2,
         maxLength: 20
-      },
-      contactPhone: {
-        required: true,
+      };
+    }
+
+    if (formData.contactPhone) {
+      validationRules.contactPhone = {
+        required: false,
         label: '联系电话',
         type: 'phone'
-      },
-      serviceTime: {
-        required: true,
-        label: '服务时间'
-      },
-      address: {
-        required: true,
+      };
+    }
+
+    if (formData.address) {
+      validationRules.address = {
+        required: false,
         label: '服务地址',
         type: 'string',
         minLength: 5,
         maxLength: 200
-      }
-    };
+      };
+    }
 
     const formValidation = validation.validateForm(formData, validationRules);
     const errors = formValidation.errors;
 
     // 验证商品列表
     if (selectedProducts.length === 0) {
-      errors.products = '请至少选择一个产品';
+      errors.products = '请至少选择一项服务内容';
     }
 
     this.setData({ errors });
@@ -381,13 +621,13 @@ Page({
     return Object.keys(errors).length === 0;
   },
 
-  /**
-   * 提交订单
-   */
+   /**
+    * 创建服务记录
+    */
   submitOrder() {
     if (!this.validateForm()) {
       wx.showToast({
-        title: '请完善订单信息',
+        title: '请完善服务记录信息',
         icon: 'none',
         duration: 3000
       });
@@ -400,28 +640,34 @@ Page({
       isSubmitting: true
     });
 
-    const { formData, selectedProducts, totalAmount } = this.data;
+    const { formData, selectedProducts, totalAmount, createMode, selectedPackageId, selectedPackageName } = this.data;
 
-    // 构建订单数据
+    // 构建服务记录数据
     const orderData = {
       contactName: formData.contactName,
       contactPhone: formData.contactPhone,
       serviceTime: formData.serviceTime,
-      address: formData.address,
-      remark: formData.remark || '',
+      address: formData.address || null,
+      remark: '',
       totalAmount,
       items: selectedProducts.map(product => ({
         productId: product.id,
         productName: product.name,
         price: product.price,
         quantity: product.quantity,
-        subtotal: product.price * product.quantity
+        subtotal: product.price * product.quantity,
+        productImage: product.productImage || product.coverImage || product.thumb || product.imageUrl || product.image || ''
       })),
       // 标记为管理员创建，等待用户绑定
       waitForBind: true
     };
 
-    // 使用统一的订单验证
+    if (createMode === 'package' && selectedPackageId && selectedPackageName) {
+      orderData.sourcePackageId = selectedPackageId;
+      orderData.sourcePackageName = selectedPackageName;
+    }
+
+    // 使用统一的服务记录校验
     const orderValidation = validation.validateOrderData(orderData);
     if (!orderValidation.valid) {
       this.setData({ isSubmitting: false });
@@ -433,21 +679,21 @@ Page({
       return;
     }
 
-    // 调用云函数创建订单
+    // 调用云函数创建服务记录
     wx.showLoading({
-      title: '创建订单中...'
+      title: '创建服务记录中...'
     });
 
-    // 调用统一API创建订单
+    // 调用统一API创建服务记录
     adminApi.createOrder(orderData)
       .then(data => {
         wx.hideLoading();
 
-        const { orderNo, qrCodeUrl } = data;
+        const { orderNo } = data;
 
         // 成功反馈
         wx.showToast({
-          title: '订单创建成功',
+          title: '服务记录创建成功',
           icon: 'success',
           duration: 2000
         });
@@ -456,14 +702,14 @@ Page({
         setTimeout(() => {
           // 跳转到二维码展示页面
           wx.navigateTo({
-            url: `/pages/admin/order/qr-code/qr-code?orderNo=${orderNo}&qrCodeUrl=${encodeURIComponent(qrCodeUrl)}`
+            url: `/pages/admin/order/qr-code/qr-code?orderNo=${orderNo}`
           });
         }, 1000);
       })
       .catch(err => {
         wx.hideLoading();
         wx.showToast({
-          title: err.message || '创建订单失败',
+          title: err.message || '创建服务记录失败',
           icon: 'none',
           duration: 3000
         });

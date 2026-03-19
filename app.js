@@ -203,10 +203,6 @@ App({
       wx.removeStorageSync('token');
       wx.removeStorageSync('isAdmin');
 
-      // 清理清单
-      wx.removeStorageSync('cartList');
-      wx.removeStorageSync('cartListLocal');
-
       // 清除错误日志
       wx.removeStorageSync('errorLogs');
 

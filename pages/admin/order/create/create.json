@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "创建订单",
+  "navigationBarTitleText": "创建服务记录",
   "usingComponents": {
     "t-input": "tdesign-miniprogram/input/input",
     "t-textarea": "tdesign-miniprogram/textarea/textarea",

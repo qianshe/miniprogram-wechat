@@ -4,6 +4,7 @@
   "description": "订单管理云函数 - 支持订单创建、查询、状态更新等功能",
   "main": "index.js",
   "dependencies": {
+    "qrcode": "^1.5.4",
     "wx-server-sdk": "~2.6.3"
   },
   "scripts": {

@@ -1,7 +1,9 @@
 const { api } = require('../../utils/api.js');
 const auth = require('../../utils/auth.js');
+const { buildThumbUrl } = require('../../utils/imageThumb.js');
 
 const PENDING_SCAN_KEY = 'pendingScanOrderNo';
+const FALLBACK_EXIT_TAB = '/pages/index/index';
 
 Page({
   data: {
@@ -13,6 +15,7 @@ Page({
   },
 
   onLoad(options) {
+    this._blockedPromptShown = false;
     let orderNo = '';
 
     if (options.orderNo) {
@@ -56,19 +59,45 @@ Page({
     this.loadOrderPreview(orderNo);
   },
 
+  _exitAfterBlockedQr() {
+    wx.navigateBack({
+      delta: 1,
+      fail: () => {
+        wx.switchTab({ url: FALLBACK_EXIT_TAB });
+      }
+    });
+  },
+
+  _showBlockedQrModal(message) {
+    if (this._blockedPromptShown) return;
+    this._blockedPromptShown = true;
+    wx.showModal({
+      title: '提示',
+      content: message || '当前二维码不可用',
+      showCancel: false,
+      success: () => {
+        this._exitAfterBlockedQr();
+      },
+      fail: () => {
+        this._exitAfterBlockedQr();
+      }
+    });
+  },
+
   /**
    * 使用 getOrderPreview 加载订单预览（认领前无需登录）
    */
   loadOrderPreview(orderNo) {
-    this.setData({ loading: true, errorMessage: '' });
+    this.setData({ loading: true, errorMessage: '', orderInfo: null });
 
     api.getOrderPreview(orderNo)
       .then(data => {
-        // 如果已登录且订单已被绑定，直接跳到确认页
-        if (this.data.isLoggedIn && data.isBound) {
-          wx.redirectTo({
-            url: `/pages/order/user-confirm/user-confirm?orderNo=${orderNo}`
+        if (data.canBind === false) {
+          this.setData({
+            loading: false,
+            orderInfo: null
           });
+          this._showBlockedQrModal(data.bindBlockedReason || '当前二维码不可用');
           return;
         }
 
@@ -79,7 +108,8 @@ Page({
             items: (data.items || []).map(item => ({
               ...item,
               price: Number(item.price).toFixed(2),
-              subtotal: Number(item.subtotal).toFixed(2)
+              subtotal: Number(item.subtotal).toFixed(2),
+              thumbUrl: buildThumbUrl(item.productImage || item.thumb || item.coverImage, { size: 160 }) || ''
             }))
           },
           loading: false
@@ -111,6 +141,11 @@ Page({
       return;
     }
 
+    if (this.data.orderInfo && this.data.orderInfo.canBind === false) {
+      wx.showToast({ title: this.data.orderInfo.bindBlockedReason || '当前二维码不可用', icon: 'none' });
+      return;
+    }
+
     wx.showLoading({ title: '正在认领...' });
 
     const userInfo = auth.getUserInfo();
@@ -119,7 +154,7 @@ Page({
     api.bindOrder(this.data.orderNo, userId)
       .then(() => {
         wx.hideLoading();
-        // 认领成功 → 跳转到确认信息页
+        // 首次认领成功 → 跳转到确认信息页
         wx.redirectTo({
           url: `/pages/order/user-confirm/user-confirm?orderNo=${this.data.orderNo}`
         });

@@ -68,6 +68,15 @@
         </view>
         <view class="item-arrow">></view>
       </view>
+      <view class="list-item" bindtap="scanServiceRecord">
+        <view class="item-left">
+          <view class="item-icon">
+            <text class="icon-text">扫</text>
+          </view>
+          <view class="item-title">扫一扫认领服务记录</view>
+        </view>
+        <view class="item-arrow">></view>
+      </view>
       <view class="list-item" bindtap="toAddress">
         <view class="item-left">
           <view class="item-icon">
@@ -116,6 +125,15 @@
     </view>
 
     <view class="card-list" wx:if="{{!hasUserInfo}}">
+      <view class="list-item" bindtap="scanServiceRecord">
+        <view class="item-left">
+          <view class="item-icon">
+            <text class="icon-text">扫</text>
+          </view>
+          <view class="item-title">扫一扫认领服务记录</view>
+        </view>
+        <view class="item-arrow">></view>
+      </view>
       <view class="list-item" bindtap="toIndexHome">
         <view class="item-left">
           <view class="item-icon">

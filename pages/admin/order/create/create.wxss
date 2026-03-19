@@ -54,6 +54,116 @@
   line-height: 1;
 }
 
+.package-card {
+  position: relative;
+}
+
+.package-subtitle {
+  font-size: 24rpx;
+  color: #8c8c8c;
+  margin-bottom: 24rpx;
+}
+
+.package-source {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 20rpx;
+  background-color: #f7f8fa;
+  border-radius: 16rpx;
+  border: 2rpx solid #f7f8fa;
+  margin-bottom: 16rpx;
+}
+
+.package-status {
+  font-size: 24rpx;
+  color: #8c8c8c;
+  padding: 8rpx 16rpx;
+  background-color: #f7f8fa;
+  border-radius: 20rpx;
+}
+
+.package-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.package-item {
+  background-color: #f7f8fa;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  border: 2rpx solid transparent;
+  position: relative;
+}
+
+.package-item.active {
+  background-color: #fff;
+  border-color: var(--primary-color);
+}
+
+.package-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.package-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.package-price {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.package-desc {
+  font-size: 24rpx;
+  color: #8c8c8c;
+  margin-top: 8rpx;
+}
+
+.package-tag {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  font-size: 22rpx;
+  color: var(--primary-color);
+  background-color: rgba(var(--primary-color-rgb), 0.12);
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+}
+
+.package-selected {
+  margin-top: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24rpx;
+  color: #8c8c8c;
+}
+
+.package-loading,
+.package-empty {
+  padding: 24rpx 0;
+  font-size: 24rpx;
+  color: #8c8c8c;
+  text-align: center;
+}
+
+.label-optional {
+  font-size: 24rpx;
+  color: #8c8c8c;
+}
+
+.label-required {
+  font-size: 24rpx;
+  color: #e53935;
+}
+
 /* 输入框组 */
 .input-group {
   margin-bottom: 32rpx;
@@ -87,11 +197,6 @@
 
 .placeholder-style {
   color: #bbb;
-}
-
-.textarea-input {
-  min-height: 160rpx;
-  width: auto !important;
 }
 
 /* 选择器触发器 */
@@ -247,27 +352,6 @@
   font-size: 24rpx;
   color: #e53935;
   font-weight: 500;
-}
-
-/* 总计区域 */
-.total-section {
-  display: flex;
-  justify-content: flex-end;
-  align-items: baseline;
-  padding-top: 24rpx;
-  border-top: 2rpx dashed #eee;
-}
-
-.total-label {
-  font-size: 26rpx;
-  color: var(--text-sub);
-  margin-right: 12rpx;
-}
-
-.total-price {
-  font-size: 40rpx;
-  font-weight: 800;
-  color: var(--text-main);
 }
 
 /* 空状态 */

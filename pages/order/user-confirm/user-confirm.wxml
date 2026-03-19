@@ -1,4 +1,4 @@
-<view class="page-container">
+<view class="container">
   <!-- 加载中 -->
   <view class="loading-container" wx:if="{{loading}}">
     <view class="loading-spinner"></view>
@@ -13,72 +13,94 @@
         <text class="info-label">记录编号</text>
         <text class="info-value">{{orderInfo.orderNo}}</text>
       </view>
-      <view class="info-row">
-        <text class="info-label">联系人</text>
-        <text class="info-value">{{orderInfo.contactName || '—'}}</text>
-      </view>
     </view>
 
     <!-- 服务内容（只读） -->
     <view class="section">
       <view class="section-title">服务内容</view>
-      <view class="item-row" wx:for="{{orderInfo.items}}" wx:key="index">
-        <view class="item-name">{{item.productName}}</view>
-        <view class="item-right">
-          <text class="item-qty">x{{item.quantity}}</text>
-          <text class="item-price">¥{{item.subtotal}}</text>
+      <view class="goods-list">
+        <view class="goods-item" wx:for="{{orderInfo.items}}" wx:key="index">
+          <image wx:if="{{item.thumbUrl}}" class="goods-thumb" src="{{item.thumbUrl}}" mode="aspectFill"></image>
+          <view wx:else class="goods-thumb placeholder-thumb">暂无图片</view>
+          <view class="goods-content">
+            <view class="goods-name">{{item.productName}}</view>
+            <view class="goods-price-row">
+              <text class="goods-qty">x{{item.quantity}}</text>
+              <text class="goods-subtotal">¥{{item.subtotal}}</text>
+            </view>
+          </view>
         </view>
       </view>
       <view class="total-row">
-        <text class="total-label">合计</text>
+        <text class="total-label">合计金额</text>
         <text class="total-amount">¥{{orderInfo.totalAmount}}</text>
       </view>
     </view>
 
     <!-- 可编辑信息 -->
     <view class="section">
-      <view class="section-title">{{isReadOnly ? '服务信息' : '确认服务信息'}}</view>
+      <view class="section-title">{{isReadOnly ? '最终服务信息' : '确认服务信息'}}</view>
 
-      <!-- 服务时间（必填） -->
+      <!-- 服务地址 (置前) -->
+      <view class="form-row" bindtap="{{isReadOnly ? '' : 'onSelectAddress'}}">
+        <text class="form-label required">服务地址</text>
+        <view class="form-address" wx:if="{{!isReadOnly}}">
+          <view class="address-copy">
+            <text class="{{addressText ? 'address-text' : 'address-placeholder'}}">{{addressText || '选择地址自动填入联系人与电话'}}</text>
+            <text wx:if="{{addressText}}" class="address-import-tip">已同步联系人与电话</text>
+          </view>
+          <text class="address-arrow">›</text>
+        </view>
+        <text wx:else class="form-value">{{addressText || '—'}}</text>
+      </view>
+
+      <!-- 联系人（必填） -->
       <view class="form-row">
-        <text class="form-label required">服务时间</text>
+        <text class="form-label required">联系人</text>
         <input
           wx:if="{{!isReadOnly}}"
           class="form-input"
-          placeholder="请填写服务时间"
-          value="{{serviceTime}}"
-          bindinput="onServiceTimeInput"
+          placeholder="请填写联系人"
+          value="{{contactName}}"
+          bindinput="onNameInput"
         />
-        <text wx:else class="form-value">{{serviceTime || '—'}}</text>
+        <text wx:else class="form-value">{{contactName || '—'}}</text>
       </view>
 
-      <!-- 联系电话 -->
+      <!-- 联系电话（必填） -->
       <view class="form-row">
-        <text class="form-label">联系电话</text>
+        <text class="form-label required">联系电话</text>
         <input
           wx:if="{{!isReadOnly}}"
           class="form-input"
           type="number"
-          placeholder="请填写联系电话（选填）"
+          placeholder="请填写联系电话"
           value="{{contactPhone}}"
           bindinput="onPhoneInput"
         />
         <text wx:else class="form-value">{{contactPhone || '—'}}</text>
       </view>
 
-      <!-- 服务地址 -->
-      <view class="form-row" bindtap="{{isReadOnly ? '' : 'onSelectAddress'}}">
-        <text class="form-label">服务地址</text>
-        <view class="form-address" wx:if="{{!isReadOnly}}">
-          <text class="{{addressText ? 'address-text' : 'address-placeholder'}}">{{addressText || '请选择服务地址（选填）'}}</text>
-          <text class="address-arrow">›</text>
-        </view>
-        <text wx:else class="form-value">{{addressText || '—'}}</text>
+      <!-- 服务时间（必填）使用picker -->
+      <view class="form-row">
+        <text class="form-label required">服务时间</text>
+        <picker
+          wx:if="{{!isReadOnly}}"
+          class="form-picker form-input"
+          mode="date"
+          value="{{serviceTime}}"
+          bindchange="onServiceTimeInput"
+        >
+          <view class="{{serviceTime ? '' : 'placeholder-text'}}">
+            {{serviceTime || '请选择服务时间'}}
+          </view>
+        </picker>
+        <text wx:else class="form-value">{{serviceTime || '—'}}</text>
       </view>
 
       <!-- 备注（选填） -->
       <view class="form-row form-row-textarea">
-        <text class="form-label">备注</text>
+        <text class="form-label">备注说明</text>
         <textarea
           wx:if="{{!isReadOnly}}"
           class="form-textarea"
@@ -100,13 +122,13 @@
     <view class="action-bar">
       <button
         wx:if="{{!isReadOnly}}"
-        class="btn-confirm {{submitting ? 'btn-disabled' : ''}}"
+        class="submit-btn {{submitting ? 'disabled' : ''}}"
         bindtap="onSubmit"
         disabled="{{submitting}}"
-      >{{submitting ? '提交中...' : '确认信息'}}</button>
+      >{{submitting ? '提交中...' : '确认并提交'}}</button>
       <button
         wx:else
-        class="btn-detail"
+        class="submit-btn outline"
         bindtap="onViewDetail"
       >查看服务详情</button>
     </view>
@@ -125,7 +147,7 @@
     bindtap="onAddressPick"
     data-address="{{item}}"
   >
-    <view class="address-item-name">{{item.name}} {{item.phone}}</view>
+    <view class="address-item-name">{{item.userName || item.name}} {{item.telNumber || item.phone}}</view>
     <view class="address-item-detail">{{item.provinceName}}{{item.cityName}}{{item.countyName}} {{item.detailInfo}}</view>
   </view>
 </view>

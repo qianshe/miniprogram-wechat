@@ -556,6 +556,10 @@
   min-width: 160rpx;
 }
 
+.btn-secondary {
+  min-width: 160rpx;
+}
+
 .btn-success {
   background: #388e3c !important;
   color: #fff !important;

@@ -4,7 +4,6 @@
  */
 
 const { call } = require('./cloudFunction.js')
-const cartApi = require('../api/cart.js')
 
 const priceToYuan = (price) => {
   return (parseFloat(price || 0) / 100).toFixed(2)
@@ -92,15 +91,6 @@ const api = {
     }
   },
 
-  // ============ 购物车（代理到 api/cart.js 云端版） ============
-  getCartList: () => cartApi.getList(),
-
-  addToCart: (data) => cartApi.add(data),
-
-  updateCart: (data) => cartApi.update(data),
-
-  removeFromCart: (productId) => cartApi.remove({ productId }),
-
   // ============ 订单 ============
   createOrder: (data) => {
     return call('orderManagement', 'createOrder', data, { showLoading: true, loadingText: '提交中...' })
@@ -175,8 +165,8 @@ const api = {
   },
 
   // ============ 用户确认订单信息 ============
-  updateOrderUserInfo: (orderNo, { contactPhone, serviceTime, address, remarks } = {}) => {
-    return call('orderManagement', 'updateOrderUserInfo', { orderNo, contactPhone, serviceTime, address, remarks })
+  updateOrderUserInfo: (orderNo, { contactName, contactPhone, serviceTime, address, remarks } = {}) => {
+    return call('orderManagement', 'updateOrderUserInfo', { orderNo, contactName, contactPhone, serviceTime, address, remarks })
   },
 
   // ============ 登录 ============
@@ -351,6 +341,10 @@ const adminApi = {
   },
 
   // ============ 订单管理 ============
+  createOrder: (data) => {
+    return call('orderManagement', 'createOrder', data, { showLoading: true, loadingText: '创建中...' })
+  },
+
   getOrders: (params) => {
     return call('orderManagement', 'getOrders', { ...params })
   },
