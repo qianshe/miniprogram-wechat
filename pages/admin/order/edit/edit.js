@@ -1,6 +1,8 @@
 const { checkAdminAccess } = require('../../common/adminGuard.js')
 const { adminApi, api } = require('../../../../utils/api.js')
 const validation = require('../../utils/validation.js')
+const { mapLegacyStatusToNew } = require('../../../../config/constants.js')
+const { getAdminEditOrderState } = require('../../../order/detail/order-edit-state.helper.js')
 const {
   EDITABLE_ORDER_V1_FIELDS,
   normalizeCoordinate,
@@ -21,6 +23,43 @@ function getInitialPagination() {
     page: 1,
     size: 20,
     hasMore: true
+  }
+}
+
+function buildItemMutationUiState({ duplicatePriceProductIds = [], adminEditState = null } = {}) {
+  const blockedBySplitItems = Array.isArray(duplicatePriceProductIds) && duplicatePriceProductIds.length > 0
+  const blockedByWorkflow = !blockedBySplitItems && (!adminEditState || !adminEditState.showAppendItemsEntry)
+  const itemMutationBlocked = blockedBySplitItems || blockedByWorkflow
+
+  if (blockedBySplitItems) {
+    return {
+      itemMutationBlocked: true,
+      itemMutationReason: 'split-items',
+      itemSectionTip: '当前记录商品清单为历史快照，暂不支持直接改商品内容',
+      itemMutationNotice: '当前记录存在历史拆分商品行，商品内容仅支持查看；如需调整，请通过新增服务记录处理。',
+      itemMutationBadgeText: '商品只读',
+      draftSummaryLabel: '当前记录金额'
+    }
+  }
+
+  if (blockedByWorkflow) {
+    return {
+      itemMutationBlocked: true,
+      itemMutationReason: 'workflow-locked',
+      itemSectionTip: '当前阶段仅支持修改服务时间与备注，商品清单按记录快照只读展示',
+      itemMutationNotice: '服务开始前不支持增删改商品内容；如需修改商品，请先进入可追加商品的处理阶段。',
+      itemMutationBadgeText: '清单只读',
+      draftSummaryLabel: '当前记录金额'
+    }
+  }
+
+  return {
+    itemMutationBlocked: false,
+    itemMutationReason: '',
+    itemSectionTip: '支持新增/调整/删除服务项，保存后仅更新本记录',
+    itemMutationNotice: '',
+    itemMutationBadgeText: '',
+    draftSummaryLabel: '暂存记录金额'
   }
 }
 
@@ -202,6 +241,7 @@ const pageConfig = {
     itemsDraft: [],
     expectedUpdateTime: null,
     orderInfo: null,
+    adminEditState: null,
     loading: false,
     saving: false,
     canSave: false,
@@ -219,7 +259,12 @@ const pageConfig = {
     productsPagination: getInitialPagination(),
     draftTotalAmount: '0.00',
     duplicatePriceProductIds: [],
-    itemMutationBlocked: false
+    itemMutationBlocked: false,
+    itemMutationReason: '',
+    itemSectionTip: '支持新增/调整/删除服务项，保存后仅更新本记录',
+    itemMutationNotice: '',
+    itemMutationBadgeText: '',
+    draftSummaryLabel: '暂存记录金额'
   },
 
   updateDerivedState(nextPartialData = {}) {
@@ -233,7 +278,8 @@ const pageConfig = {
     const hasValidationErrors = Object.keys(fieldErrors).length > 0 || Object.keys(errors).length > 0
     const hasItems = Array.isArray(mergedData.itemsDraft) && mergedData.itemsDraft.length > 0
     const hasRequiredFields = hasRequiredEditableFields(mergedData.formData)
-    const canSave = hasItems && canSubmitEditableOrderForm(
+    const editAllowed = !mergedData.adminEditState || mergedData.adminEditState.showEditOrderEntry
+    const canSave = editAllowed && hasItems && canSubmitEditableOrderForm(
       mergedData.initialFormData,
       mergedData.formData,
       mergedData.initialItems,
@@ -282,7 +328,26 @@ const pageConfig = {
     try {
       const orderData = await adminApi.getOrderDetail(this.data.orderNo, true)
       const normalized = normalizeOrderDetailForEdit(orderData || {})
-      const itemMutationBlocked = normalized.duplicatePriceProductIds.length > 0
+      const resolvedStatuses = normalized.orderInfo.orderStatus !== undefined && normalized.orderInfo.orderStatus !== null
+        ? {
+            orderStatus: normalized.orderInfo.orderStatus,
+            paymentStatus: normalized.orderInfo.paymentStatus
+          }
+        : mapLegacyStatusToNew(normalized.orderInfo.status, normalized.orderInfo.payTime)
+      const adminEditState = getAdminEditOrderState({
+        isAdmin: true,
+        orderStatus: resolvedStatuses.orderStatus,
+        paymentStatus: resolvedStatuses.paymentStatus,
+        waitForBind: normalized.orderInfo.waitForBind,
+        contentConfirmedAt: normalized.orderInfo.contentConfirmedAt,
+        workflowMilestone: normalized.orderInfo.workflowMilestone,
+        isSharedView: false
+      })
+      const itemMutationUiState = buildItemMutationUiState({
+        duplicatePriceProductIds: normalized.duplicatePriceProductIds,
+        adminEditState
+      })
+      const blockedError = adminEditState.showEditOrderEntry ? '' : '当前服务记录状态不允许编辑'
 
       this.setData({
         orderInfo: normalized.orderInfo,
@@ -293,15 +358,17 @@ const pageConfig = {
         expectedUpdateTime: normalized.expectedUpdateTime,
         draftTotalAmount: getDraftTotalAmount(normalized.itemsDraft).toFixed(2),
         duplicatePriceProductIds: normalized.duplicatePriceProductIds,
-        itemMutationBlocked,
+        ...itemMutationUiState,
+        adminEditState,
         loading: false,
         errors: {},
         fieldErrors: {},
-        error: ''
+        error: blockedError
       })
       this.updateDerivedState({
         initialItems: normalized.initialItems,
-        itemsDraft: normalized.itemsDraft
+        itemsDraft: normalized.itemsDraft,
+        adminEditState
       })
     } catch (error) {
       const message = (error && error.message) || '获取服务记录详情失败'
@@ -314,13 +381,19 @@ const pageConfig = {
         expectedUpdateTime: null,
         duplicatePriceProductIds: [],
         itemMutationBlocked: false,
+        itemMutationReason: '',
+        itemSectionTip: '支持新增/调整/删除服务项，保存后仅更新本记录',
+        itemMutationNotice: '',
+        itemMutationBadgeText: '',
+        draftSummaryLabel: '暂存记录金额',
+        adminEditState: null,
         draftTotalAmount: '0.00',
         loading: false,
         errors: {},
         fieldErrors: {},
-      error: message
-    })
-      this.updateDerivedState({ initialItems: [], itemsDraft: [] })
+        error: message
+      })
+      this.updateDerivedState({ initialItems: [], itemsDraft: [], adminEditState: null })
 
       wx.showToast({
         title: message,
@@ -406,12 +479,20 @@ const pageConfig = {
   },
 
   ensureCanMutateItems() {
+    if (this.data.itemMutationReason === 'workflow-locked') {
+      wx.showToast({
+        title: '当前阶段仅支持修改时间与备注',
+        icon: 'none'
+      })
+      return false
+    }
+
     if (!this.data.itemMutationBlocked) {
       return true
     }
 
     wx.showToast({
-      title: '该订单存在历史拆分商品行，暂不支持直接编辑商品',
+      title: '该记录商品清单当前只读',
       icon: 'none'
     })
     return false
@@ -661,6 +742,11 @@ const pageConfig = {
 
   async submitEdit() {
     if (this.data.saving) {
+      return
+    }
+
+    if (this.data.adminEditState && !this.data.adminEditState.showEditOrderEntry) {
+      wx.showToast({ title: '当前服务记录状态不允许编辑', icon: 'none' })
       return
     }
 

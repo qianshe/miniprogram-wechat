@@ -10,8 +10,10 @@
         placeholder="请输入管理员账号"
         value="{{adminAccount}}"
         bind:change="onAccountInput"
-        clearable
       />
+      <view wx:if="{{adminAccount}}" class="input-clear-btn" catchtap="clearAccountInput" aria-role="button" aria-label="清空账号">
+        <view class="input-clear-btn__icon" aria-hidden="true"></view>
+      </view>
     </view>
 
     <view class="form-item">
@@ -20,8 +22,10 @@
         value="{{password}}"
         type="password"
         bind:change="onPasswordInput"
-        clearable
       />
+      <view wx:if="{{password}}" class="input-clear-btn" catchtap="clearPasswordInput" aria-role="button" aria-label="清空密码">
+        <view class="input-clear-btn__icon" aria-hidden="true"></view>
+      </view>
     </view>
 
     <view class="error-message" wx:if="{{errorMessage}}">

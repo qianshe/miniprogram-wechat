@@ -3,6 +3,8 @@ const {
   getOrderStatusInfo,
   ORDER_FLOW_STATUS,
   PAYMENT_STATUS,
+  WORKFLOW_MILESTONE,
+  getAdminWorkflowSummary,
   getOrderFlowText,
   getPaymentStatusDisplayText,
   shouldShowPaymentStatusTag,
@@ -31,6 +33,7 @@ Page({
     hasValidCoordinates: false,
     // 用户端按钮显示控制（双字段系统）
     showPayBtn: false,
+    showUserConfirmBtn: false,
     showUserCancelBtn: false,
     showUserNoActionTip: false
   },
@@ -139,22 +142,52 @@ Page({
         paymentStatus = mapped.paymentStatus;
       }
       
+      const adminWorkflowSummary = getAdminWorkflowSummary({
+        ...orderData,
+        orderStatus,
+        paymentStatus
+      });
+      const {
+        workflowMilestone,
+        workflowMilestoneText,
+        canStartService: canStartServiceFlag,
+        adminMainStatusBucket
+      } = adminWorkflowSummary;
+
+      const isCreatedOrderStatus = orderStatus === ORDER_FLOW_STATUS.CREATED;
+      const isWorkflowUnclaimed = workflowMilestone === WORKFLOW_MILESTONE.UNCLAIMED;
+      const isWorkflowClaimedUnconfirmed = workflowMilestone === WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED;
+      const isWorkflowConfirmedReady = workflowMilestone === WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE;
+      const isWorkflowProcessing = workflowMilestone === WORKFLOW_MILESTONE.PROCESSING;
+      const isWorkflowServiceDone = workflowMilestone === WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID;
+      const isWorkflowCompleted = workflowMilestone === WORKFLOW_MILESTONE.COMPLETED;
+      const isWorkflowCancelled = workflowMilestone === WORKFLOW_MILESTONE.CANCELLED;
+
       // 获取双字段状态文本
-      const orderStatusText = getOrderFlowText(orderStatus);
+      const orderStatusText = isCreatedOrderStatus ? workflowMilestoneText : getOrderFlowText(orderStatus);
       const paymentStatusText = getPaymentStatusDisplayText(orderStatus, paymentStatus, this.data.isAdmin);
       const showPaymentStatusTag = shouldShowPaymentStatusTag(orderStatus);
       
       // 根据角色生成状态栏主标题
-      const getDisplayStatusText = (os, ps, admin) => {
+      const getDisplayStatusText = (os, ps, admin, milestone) => {
         if (os === ORDER_FLOW_STATUS.CANCELLED) return '已取消';
         if (os === ORDER_FLOW_STATUS.COMPLETED) return '已完成';
         if (os === ORDER_FLOW_STATUS.SERVICE_DONE && ps === PAYMENT_STATUS.UNPAID) {
           return admin ? '待收款' : '待付款';
         }
+        if (os === ORDER_FLOW_STATUS.CREATED) {
+          if (milestone === WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE) {
+            return '待服务';
+          }
+          if (milestone === WORKFLOW_MILESTONE.UNCLAIMED) {
+            return workflowMilestoneText;
+          }
+          return '待确认';
+        }
         if (ps === PAYMENT_STATUS.UNPAID) return '待付款';
         return getOrderFlowText(os);
       };
-      const displayStatusText = getDisplayStatusText(orderStatus, paymentStatus, this.data.isAdmin);
+      const displayStatusText = getDisplayStatusText(orderStatus, paymentStatus, this.data.isAdmin, workflowMilestone);
       
       // 处理status=5的状态描述（兼容旧系统）
       let customStatusDesc = statusInfo.desc;
@@ -168,7 +201,15 @@ Page({
       // 根据双字段系统生成状态描述
       let flowStatusDesc = '';
       if (orderStatus === ORDER_FLOW_STATUS.CREATED) {
-        flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '已确认收款，等待服务开始' : '等待服务开始，可在服务前或服务后线下付款';
+        if (workflowMilestone === WORKFLOW_MILESTONE.UNCLAIMED) {
+          flowStatusDesc = '等待客户扫码认领服务记录';
+        } else if (workflowMilestone === WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED) {
+          flowStatusDesc = '已认领，等待用户确认服务信息';
+        } else if (workflowMilestone === WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE) {
+          flowStatusDesc = '用户已确认服务信息，等待安排服务';
+        } else {
+          flowStatusDesc = '等待服务确认';
+        }
       } else if (orderStatus === ORDER_FLOW_STATUS.PROCESSING) {
         flowStatusDesc = paymentStatus === PAYMENT_STATUS.PAID ? '服务进行中，已确认收款' : '服务进行中，可线下付款，待管理员确认收款';
       } else if (orderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
@@ -201,6 +242,18 @@ Page({
         orderStatus: orderStatus,
         paymentStatus: paymentStatus,
         orderStatusText: orderStatusText,
+        workflowMilestone: workflowMilestone,
+        workflowMilestoneText: workflowMilestoneText,
+        adminMainStatusBucket: adminMainStatusBucket,
+        canStartService: canStartServiceFlag,
+        isWorkflowUnclaimed,
+        isWorkflowClaimedUnconfirmed,
+        isWorkflowConfirmedReady,
+        isWorkflowProcessing,
+        isWorkflowServiceDone,
+        isWorkflowCompleted,
+        isWorkflowCancelled,
+        isWorkflowCreated: isWorkflowUnclaimed || isWorkflowClaimedUnconfirmed || isWorkflowConfirmedReady,
         paymentStatusText: paymentStatusText,
         showPaymentStatusTag: showPaymentStatusTag,
         flowStatusDesc: flowStatusDesc,
@@ -212,6 +265,7 @@ Page({
         // 时间线专用的短格式时间 (MM-DD)
         timelineCreatedTime: this.formatShortDate(orderData.createTime),
         timelinePayTime: orderData.payTime ? this.formatShortDate(orderData.payTime) : '',
+        timelineConfirmTime: orderData.contentConfirmedAt ? this.formatShortDate(orderData.contentConfirmedAt) : '',
         timelineProcessTime: orderData.processTime ? this.formatShortDate(orderData.processTime) : '',
         timelineCompleteTime: orderData.completeTime ? this.formatShortDate(orderData.completeTime) : '',
         totalAmount: totalAmount.toFixed(2), // 云函数已转换为元
@@ -238,10 +292,14 @@ Page({
       let btnStates = {};
       if (this.data.isAdmin) {
         // 管理员按钮状态
-        btnStates = this.calculateAdminButtonStates(orderStatus, paymentStatus);
+        btnStates = this.calculateAdminButtonStates(orderStatus, paymentStatus, orderData, adminWorkflowSummary);
       } else {
         // 用户端按钮状态
-        btnStates = this.calculateUserButtonStates({ orderStatus, paymentStatus });
+        btnStates = this.calculateUserButtonStates({
+          orderStatus,
+          paymentStatus,
+          workflowMilestone
+        });
       }
 
       const showAdminQrEntry = this.getAdminQrEntryState({
@@ -332,10 +390,13 @@ Page({
   calculateUserButtonStates(order) {
     const orderStatus = order.orderStatus !== undefined ? order.orderStatus : 0;
     const paymentStatus = order.paymentStatus !== undefined ? order.paymentStatus : 0;
+    const workflowMilestone = order.workflowMilestone || '';
     
     return {
       // 用户端不再显示“提交线下结算确认”按钮，统一改为提示线下付款
       showPayBtn: false,
+      // 显示"确认服务"按钮：仅在已认领待确认里程碑时显示
+      showUserConfirmBtn: workflowMilestone === WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED,
       // 显示"取消订单"按钮: 仅在 CREATED 状态且未支付时
       showUserCancelBtn: orderStatus === ORDER_FLOW_STATUS.CREATED && paymentStatus === PAYMENT_STATUS.UNPAID,
       // 显示"无操作"提示: 已完成/已取消 或 已支付但订单未完成
@@ -365,20 +426,30 @@ Page({
    * | COMPLETED(3) | - | 无操作按钮 |
    * | CANCELLED(4) | - | 无操作按钮 |
    */
-  calculateAdminButtonStates(orderStatus, paymentStatus) {
+  calculateAdminButtonStates(orderStatus, paymentStatus, orderInfo = {}, workflowSummary) {
     const adminEditState = getAdminEditOrderState({
       isAdmin: true,
       orderStatus,
       isSharedView: false
     });
 
+    const summary = workflowSummary || getAdminWorkflowSummary({
+      ...orderInfo,
+      orderStatus,
+      paymentStatus
+    });
+    const allowStartService = summary.canStartService;
+    const workflowMilestone = summary.workflowMilestone;
+    const canConfirmPayment = workflowMilestone === WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID
+      && paymentStatus === PAYMENT_STATUS.UNPAID;
+
     return {
-      // 开始处理：仅 CREATED 状态可用
-      showStartProcessingBtn: orderStatus === ORDER_FLOW_STATUS.CREATED,
+      // 开始处理：仅已确认待服务可用
+      showStartProcessingBtn: allowStartService,
       // 标记服务完成：仅 PROCESSING 状态可用
       showMarkServiceDoneBtn: orderStatus === ORDER_FLOW_STATUS.PROCESSING,
       // 确认收款：未支付且订单未完成/未取消时可用
-      showConfirmPaymentBtn: paymentStatus === PAYMENT_STATUS.UNPAID && orderStatus < ORDER_FLOW_STATUS.COMPLETED,
+      showConfirmPaymentBtn: canConfirmPayment,
       // 取消订单：仅 CREATED 或 PROCESSING 状态可用
       showCancelBtn: orderStatus <= ORDER_FLOW_STATUS.PROCESSING,
       // 编辑订单：仅管理员且订单仍可编辑时展示
@@ -694,6 +765,81 @@ Page({
             console.error('取消订单失败:', err);
             wx.showToast({ title: err.message || '取消失败', icon: 'none' });
           }
+        }
+      }
+    });
+  },
+
+  handleUserConfirmInfo() {
+    const orderNo = this.data.orderNo || (this.data.orderInfo && this.data.orderInfo.orderNo);
+    if (!orderNo) {
+      wx.showToast({
+        title: '缺少服务记录编号',
+        icon: 'none'
+      });
+      return;
+    }
+
+    wx.showModal({
+      title: '确认服务',
+      content: '确认后管理员即可开始服务，是否继续？',
+      confirmText: '确认服务',
+      cancelText: '再看看',
+      success: async (res) => {
+        if (!res.confirm) {
+          return;
+        }
+
+        try {
+          wx.showLoading({ title: '确认中...' });
+          const result = await api.updateOrderUserInfo(orderNo, {});
+          const confirmedAt = (result && result.contentConfirmedAt) || new Date().toISOString();
+          const currentOrderInfo = this.data.orderInfo || {};
+          const nextOrderInfo = {
+            ...currentOrderInfo,
+            contentConfirmedAt: confirmedAt,
+            workflowMilestone: WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE,
+            workflowMilestoneText: '待服务',
+            displayStatusText: '待服务',
+            orderStatusText: '待服务',
+            flowStatusDesc: '用户已确认服务信息，等待安排服务',
+            isWorkflowUnclaimed: false,
+            isWorkflowClaimedUnconfirmed: false,
+            isWorkflowConfirmedReady: true,
+            isWorkflowProcessing: false,
+            isWorkflowServiceDone: false,
+            isWorkflowCompleted: false,
+            isWorkflowCancelled: false,
+            isWorkflowCreated: true,
+            timelineConfirmTime: this.formatShortDate(confirmedAt)
+          };
+          const nextBtnStates = this.calculateUserButtonStates({
+            orderStatus: nextOrderInfo.orderStatus,
+            paymentStatus: nextOrderInfo.paymentStatus,
+            workflowMilestone: nextOrderInfo.workflowMilestone
+          });
+          wx.hideLoading();
+          this.setData({
+            orderInfo: nextOrderInfo,
+            showUserConfirmBtn: false,
+            ...nextBtnStates
+          });
+          wx.showToast({
+            title: '已确认，请等待工作人员安排服务',
+            icon: 'none',
+            duration: 2200
+          });
+          this.refreshPrevOrderList();
+          setTimeout(() => {
+            this.loadOrderDetail();
+          }, 1200);
+        } catch (err) {
+          wx.hideLoading();
+          console.error('确认服务失败:', err);
+          wx.showToast({
+            title: err.message || '确认失败',
+            icon: 'none'
+          });
         }
       }
     });

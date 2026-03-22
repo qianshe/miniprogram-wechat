@@ -1,7 +1,9 @@
 const { api } = require('../../../utils/api.js');
 const {
   ORDER_FLOW_STATUS,
-  PAYMENT_STATUS,
+  WORKFLOW_MILESTONE,
+  getWorkflowMilestone,
+  getWorkflowMilestoneText,
   mapLegacyStatusToNew
 } = require('../../../config/constants.js');
 const { formatDate } = require('../../../utils/util.js');
@@ -20,10 +22,11 @@ Page({
     // 用户端标签页：服务记录语义
     statusTabs: [
       { value: '0', label: '全部', filter: 'all' },
-      { value: '1', label: '待确认', filter: 'pending' },
-      { value: '2', label: '服务中', filter: 'processing' },
-      { value: '3', label: '已完成', filter: 'completed' },
-      { value: '4', label: '已取消', filter: 'cancelled' }
+      { value: '1', label: '待确认', filter: 'claimed-unconfirmed' },
+      { value: '2', label: '待服务', filter: 'confirmed-ready' },
+      { value: '3', label: '服务中', filter: 'processing' },
+      { value: '4', label: '待付款', filter: 'pending-payment' },
+      { value: '5', label: '已完成', filter: 'completed' }
     ],
     searchKeyword: '',
     showFilterPanel: false,
@@ -158,21 +161,29 @@ Page({
     }
   },
 
-  getUserFacingStatusText(orderStatus, paymentStatus) {
-    const normalizedOrderStatus = Number(orderStatus);
-    const normalizedPaymentStatus = Number(paymentStatus);
-
+  getUserFacingStatusText(order) {
+    const normalizedOrderStatus = Number(order.orderStatus);
     if (normalizedOrderStatus === ORDER_FLOW_STATUS.CANCELLED) {
-      return '已取消';
+      return '已完成';
     }
     if (normalizedOrderStatus === ORDER_FLOW_STATUS.COMPLETED) {
       return '已完成';
     }
-    if (normalizedOrderStatus === ORDER_FLOW_STATUS.PROCESSING || normalizedOrderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
+    if (normalizedOrderStatus === ORDER_FLOW_STATUS.PROCESSING) {
       return '服务中';
     }
+    if (normalizedOrderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
+      return '待付款';
+    }
     if (normalizedOrderStatus === ORDER_FLOW_STATUS.CREATED) {
-      return normalizedPaymentStatus === PAYMENT_STATUS.PAID ? '待安排' : '待确认';
+      const milestone = getWorkflowMilestone(order);
+      if (milestone === WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE) {
+        return '待服务';
+      }
+      if (milestone === WORKFLOW_MILESTONE.UNCLAIMED) {
+        return getWorkflowMilestoneText(milestone);
+      }
+      return '待确认';
     }
     return '待确认';
   },
@@ -185,7 +196,8 @@ Page({
     try {
       const { page, size } = this.data.pagination;
       const tab = this.data.statusTabs.find(t => t.value === this.data.activeTab);
-      const filterParams = this.buildFilterParams(tab ? tab.filter : 'all');
+      const currentFilter = tab ? tab.filter : 'all';
+      const filterParams = this.buildFilterParams(currentFilter);
 
       const params = {
         page,
@@ -231,9 +243,13 @@ Page({
           order.paymentStatus = mapped.paymentStatus;
         }
 
+        const workflowMilestone = getWorkflowMilestone(order);
+
         return {
           ...order,
-          orderStatusText: this.getUserFacingStatusText(order.orderStatus, order.paymentStatus),
+          workflowMilestone,
+          workflowMilestoneText: getWorkflowMilestoneText(workflowMilestone),
+          orderStatusText: this.getUserFacingStatusText(order),
           showPaymentStatusTag: false,
           createdTime: formatDate(order.createTime),
           serviceTime: formatDate(order.serviceTime) || '未指定',
@@ -241,8 +257,10 @@ Page({
         };
       });
 
+      const filteredOrders = this.filterOrdersByMilestone(formattedOrders, currentFilter);
+
       this.setData({
-        orders: isLoadMore ? [...this.data.orders, ...formattedOrders] : formattedOrders,
+        orders: isLoadMore ? [...this.data.orders, ...filteredOrders] : filteredOrders,
         'pagination.total': total,
         hasMore: page * size < total,
         loading: false
@@ -267,26 +285,38 @@ Page({
    */
   buildFilterParams(filter) {
     switch (filter) {
-      case 'pending':
+      case 'claimed-unconfirmed':
+      case 'confirmed-ready':
         return {
           orderStatusList: [ORDER_FLOW_STATUS.CREATED]
         };
       case 'processing':
         return {
-          orderStatusList: [ORDER_FLOW_STATUS.PROCESSING, ORDER_FLOW_STATUS.SERVICE_DONE]
+          orderStatusList: [ORDER_FLOW_STATUS.PROCESSING]
+        };
+      case 'pending-payment':
+        return {
+          orderStatusList: [ORDER_FLOW_STATUS.SERVICE_DONE]
         };
       case 'completed':
         return {
-          orderStatusList: [ORDER_FLOW_STATUS.COMPLETED]
-        };
-      case 'cancelled':
-        return {
-          orderStatusList: [ORDER_FLOW_STATUS.CANCELLED]
+          orderStatusList: [ORDER_FLOW_STATUS.COMPLETED, ORDER_FLOW_STATUS.CANCELLED]
         };
       case 'all':
       default:
         return {};
     }
+  },
+
+  filterOrdersByMilestone(orders, filter) {
+    if (!Array.isArray(orders) || !orders.length) return orders;
+    if (filter === 'claimed-unconfirmed') {
+      return orders.filter(order => order.workflowMilestone === WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED);
+    }
+    if (filter === 'confirmed-ready') {
+      return orders.filter(order => order.workflowMilestone === WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE);
+    }
+    return orders;
   },
 
   onPullDownRefresh() {

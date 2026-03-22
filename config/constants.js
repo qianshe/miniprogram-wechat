@@ -3,6 +3,7 @@
  * 统一管理项目中的常量定义，避免重复定义
  */
 
+
 // ============ 订单状态 ============
 
 /**
@@ -175,6 +176,209 @@ const ORDER_FLOW_STATUS = {
 };
 
 /**
+ * 工作流里程碑枚举（Phase 1A - 确认里程碑）
+ * 
+ * 表示订单在工作流中的精确语义位置，比 ORDER_FLOW_STATUS 更细粒度。
+ * 用于区分 claimed-unconfirmed 和 confirmed-ready-for-service。
+ * 
+ * 里程碑顺序：
+ *   unclaimed → claimed-unconfirmed → confirmed-ready-for-service → processing → service-done-unpaid → completed
+ *   (cancelled 为终态，可从多个前置状态转入)
+ * 
+ * @see scripts/fixtures/order-workflow-fixtures.js for canonical definitions
+ */
+const WORKFLOW_MILESTONE = {
+  UNCLAIMED: 'unclaimed',                           // 管理员创建，待扫码认领
+  CLAIMED_UNCONFIRMED: 'claimed-unconfirmed',       // 已认领，待用户确认服务内容
+  CONFIRMED_READY_FOR_SERVICE: 'confirmed-ready-for-service', // 用户已确认内容，可开始服务
+  PROCESSING: 'processing',                         // 服务进行中
+  SERVICE_DONE_UNPAID: 'service-done-unpaid',       // 服务完成，待线下收款
+  COMPLETED: 'completed',                           // 终态：订单完成
+  CANCELLED: 'cancelled'                            // 终态：订单取消
+};
+
+/**
+ * 工作流里程碑文本映射
+ */
+const WORKFLOW_MILESTONE_TEXT = {
+  [WORKFLOW_MILESTONE.UNCLAIMED]: '待认领',
+  [WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED]: '待确认',
+  [WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE]: '待服务',
+  [WORKFLOW_MILESTONE.PROCESSING]: '服务中',
+  [WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID]: '待收款',
+  [WORKFLOW_MILESTONE.COMPLETED]: '已完成',
+  [WORKFLOW_MILESTONE.CANCELLED]: '已取消'
+};
+
+/**
+ * 根据订单字段推导工作流里程碑
+ * 
+ * 这是 Phase 1A 的核心映射函数，将订单字段转换为精确的工作流里程碑。
+ * 
+ * 推导规则（按优先级）：
+ * 1. 取消状态 → cancelled
+ * 2. 完成状态 → completed
+ * 3. 服务完成状态 → service-done-unpaid
+ * 4. 服务中状态 → processing
+ * 5. 已创建状态的细分：
+ *    a. waitForBind=true → unclaimed（待认领）
+ *    b. contentConfirmedAt 存在 → confirmed-ready-for-service（已确认待服务）
+ *    c. 其他 → claimed-unconfirmed（已认领待确认）
+ * 6. 旧版字段兜底
+ * 
+ * @param {Object} order - 订单对象
+ * @param {number} [order.orderStatus] - 新系统流程状态
+ * @param {number} [order.status] - 旧系统状态（兜底用）
+ * @param {boolean} [order.waitForBind] - 是否待绑定
+ * @param {Date|string|null} [order.contentConfirmedAt] - 内容确认时间
+ * @returns {string} 工作流里程碑
+ */
+const getWorkflowMilestone = (order) => {
+  if (!order) return WORKFLOW_MILESTONE.UNCLAIMED;
+  
+  const orderStatus = order.orderStatus !== undefined ? Number(order.orderStatus) : null;
+  
+  // 1. 终态：取消
+  if (orderStatus === ORDER_FLOW_STATUS.CANCELLED) {
+    return WORKFLOW_MILESTONE.CANCELLED;
+  }
+  
+  // 2. 终态：完成
+  if (orderStatus === ORDER_FLOW_STATUS.COMPLETED) {
+    return WORKFLOW_MILESTONE.COMPLETED;
+  }
+  
+  // 3. 服务完成待收款
+  if (orderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
+    return WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID;
+  }
+  
+  // 4. 服务中
+  if (orderStatus === ORDER_FLOW_STATUS.PROCESSING) {
+    return WORKFLOW_MILESTONE.PROCESSING;
+  }
+  
+  // 5. 已创建状态的细分（Phase 1A 核心逻辑）
+  if (orderStatus === ORDER_FLOW_STATUS.CREATED) {
+    // 5a. 待认领（管理员创建，尚未被扫码认领）
+    if (order.waitForBind === true) {
+      return WORKFLOW_MILESTONE.UNCLAIMED;
+    }
+    
+    // 5b. 已确认待服务（用户已确认内容，等待开始服务）
+    // contentConfirmedAt 是确认里程碑的标记字段
+    if (order.contentConfirmedAt) {
+      return WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE;
+    }
+    
+    // 5c. 已认领待确认（用户已认领，但尚未确认服务内容）
+    return WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED;
+  }
+  
+  // 6. 旧版字段兜底（兼容无 orderStatus 的历史数据）
+  return mapLegacyStatusToMilestone(order.status, order);
+};
+
+/**
+ * 旧版 status 到工作流里程碑的映射（兜底逻辑）
+ * 
+ * @param {number} status - 旧版订单状态
+ * @param {Object} order - 订单对象（用于额外判断）
+ * @returns {string} 工作流里程碑
+ */
+const mapLegacyStatusToMilestone = (status, order = {}) => {
+  const legacyMapping = {
+    0: order.waitForBind ? WORKFLOW_MILESTONE.UNCLAIMED : WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED,
+    1: WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED, // 旧版 PAID 映射到已认领（无确认语义）
+    2: WORKFLOW_MILESTONE.PROCESSING,
+    3: WORKFLOW_MILESTONE.COMPLETED,
+    4: WORKFLOW_MILESTONE.CANCELLED,
+    5: WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID
+  };
+  
+  return legacyMapping[status] !== undefined 
+    ? legacyMapping[status] 
+    : WORKFLOW_MILESTONE.UNCLAIMED;
+};
+
+/**
+ * 检查订单是否处于可开始服务的里程碑
+ * 
+ * 在目标语义中，只有 confirmed-ready-for-service 状态才能开始服务。
+ * 这与支付状态无关。
+ * 
+ * @param {Object} order - 订单对象
+ * @returns {boolean} 是否可开始服务
+ */
+const canStartService = (order) => {
+  const milestone = getWorkflowMilestone(order);
+  return milestone === WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE;
+};
+
+/**
+ * 检查订单是否处于确认后状态（已过确认里程碑）
+ * 
+ * @param {Object} order - 订单对象
+ * @returns {boolean} 是否已过确认里程碑
+ */
+const isPastConfirmationMilestone = (order) => {
+  const milestone = getWorkflowMilestone(order);
+  const postConfirmationMilestones = [
+    WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE,
+    WORKFLOW_MILESTONE.PROCESSING,
+    WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID,
+    WORKFLOW_MILESTONE.COMPLETED
+  ];
+  return postConfirmationMilestones.includes(milestone);
+};
+
+/**
+ * 获取工作流里程碑文本
+ * 
+ * @param {Object|string} orderOrMilestone - 订单对象或里程碑字符串
+ * @returns {string} 里程碑文本
+ */
+const getWorkflowMilestoneText = (orderOrMilestone) => {
+  if (typeof orderOrMilestone === 'string') {
+    return WORKFLOW_MILESTONE_TEXT[orderOrMilestone] || '未知状态';
+  }
+  const milestone = getWorkflowMilestone(orderOrMilestone);
+  return WORKFLOW_MILESTONE_TEXT[milestone] || '未知状态';
+};
+
+/**
+ * 获取管理端工作流摘要（用于主状态展示）
+ *
+ * 说明：CREATED 阶段以里程碑为准，不再以 paymentStatus 代理确认语义。
+ * 支付与确认分离，支付状态仅用于支付标签显示。
+ *
+ * @param {Object} order - 订单对象
+ * @returns {Object} { workflowMilestone, workflowMilestoneText, canStartService, adminMainStatusBucket }
+ */
+const getAdminWorkflowSummary = (order) => {
+  const workflowMilestone = getWorkflowMilestone(order);
+  const workflowMilestoneText = getWorkflowMilestoneText(workflowMilestone);
+  const canStartServiceFlag = canStartService(order);
+
+  const milestoneToBucket = {
+    [WORKFLOW_MILESTONE.UNCLAIMED]: 'pendingPayment',
+    [WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED]: 'pendingPayment',
+    [WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE]: 'waitService',
+    [WORKFLOW_MILESTONE.PROCESSING]: 'processing',
+    [WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID]: 'serviceDone',
+    [WORKFLOW_MILESTONE.COMPLETED]: 'completed',
+    [WORKFLOW_MILESTONE.CANCELLED]: 'cancelled'
+  };
+
+  return {
+    workflowMilestone,
+    workflowMilestoneText,
+    canStartService: canStartServiceFlag,
+    adminMainStatusBucket: milestoneToBucket[workflowMilestone] || 'pendingPayment'
+  };
+};
+
+/**
  * 支付状态枚举（新系统）
  * 用于 paymentStatus 字段，表示订单的支付状态
  */
@@ -230,7 +434,7 @@ const getOrderFlowText = (orderStatus) => {
   const textMap = {
     [ORDER_FLOW_STATUS.CREATED]: '待服务',
     [ORDER_FLOW_STATUS.PROCESSING]: '服务中',
-    [ORDER_FLOW_STATUS.SERVICE_DONE]: '服务完成',
+    [ORDER_FLOW_STATUS.SERVICE_DONE]: '待收款',
     [ORDER_FLOW_STATUS.COMPLETED]: '已完成',
     [ORDER_FLOW_STATUS.CANCELLED]: '已取消'
   };
@@ -331,6 +535,16 @@ module.exports = {
   getPaymentStatusDisplayText,
   mapLegacyStatusToNew,
   mapNewStatusToLegacy,
+  // 工作流里程碑（Phase 1A - 确认里程碑）
+  // 用于更精确地表示订单在工作流中的位置，区分 claimed-unconfirmed 和 confirmed-ready-for-service
+  WORKFLOW_MILESTONE,
+  WORKFLOW_MILESTONE_TEXT,
+  getWorkflowMilestone,
+  getWorkflowMilestoneText,
+  mapLegacyStatusToMilestone,
+  canStartService,
+  isPastConfirmationMilestone,
+  getAdminWorkflowSummary,
   // 管理端订单Tab配置
   ADMIN_ORDER_TABS,
   getTabByStatusParams,

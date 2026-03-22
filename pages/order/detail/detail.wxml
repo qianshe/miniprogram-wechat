@@ -6,37 +6,29 @@
       <text class="status">{{orderInfo.displayStatusText}}</text>
       <view class="status-desc">{{orderInfo.flowStatusDesc || orderInfo.statusDesc}}</view>
     </view>
-    <!-- 双状态标签（管理端显示） -->
-    <view class="order-status-section" wx:if="{{isAdmin}}">
-      <view class="status-label">服务状态</view>
-      <view class="status-tags">
-        <view class="status-tag flow-status-{{orderInfo.orderStatus}}">{{orderInfo.orderStatusText}}</view>
-        <view wx:if="{{orderInfo.showPaymentStatusTag}}" class="status-tag payment-status-{{orderInfo.paymentStatus}}">{{orderInfo.paymentStatusText}}</view>
-      </view>
-    </view>
     <view class="timeline">
-      <view class="timeline-item {{orderInfo.orderStatus === 0 && orderInfo.paymentStatus === 0 ? 'current' : 'active'}}">
+      <view class="timeline-item {{orderInfo.isWorkflowUnclaimed || orderInfo.isWorkflowClaimedUnconfirmed ? 'current' : 'active'}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">记录创建</text>
         <text class="timeline-time">{{orderInfo.timelineCreatedTime || ''}}</text>
       </view>
-      <view class="timeline-line {{orderInfo.paymentStatus === 1 || orderInfo.orderStatus >= 1 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.paymentStatus === 1 ? (orderInfo.orderStatus === 0 ? 'current' : 'active') : ''}}">
+      <view class="timeline-line {{orderInfo.isWorkflowConfirmedReady || orderInfo.isWorkflowProcessing || orderInfo.isWorkflowServiceDone || orderInfo.isWorkflowCompleted ? 'active' : ''}}"></view>
+      <view class="timeline-item {{orderInfo.isWorkflowConfirmedReady ? 'current' : (orderInfo.isWorkflowProcessing || orderInfo.isWorkflowServiceDone || orderInfo.isWorkflowCompleted ? 'active' : '')}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">服务确认</text>
-        <text class="timeline-time">{{orderInfo.paymentStatus === 1 ? (orderInfo.timelinePayTime || '-') : ''}}</text>
+        <text class="timeline-time">{{orderInfo.timelineConfirmTime || ''}}</text>
       </view>
-      <view class="timeline-line {{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? (orderInfo.orderStatus === 1 ? 'current' : 'active') : ''}}">
+      <view class="timeline-line {{orderInfo.isWorkflowProcessing || orderInfo.isWorkflowServiceDone || orderInfo.isWorkflowCompleted ? 'active' : ''}}"></view>
+      <view class="timeline-item {{orderInfo.isWorkflowProcessing ? 'current' : (orderInfo.isWorkflowServiceDone || orderInfo.isWorkflowCompleted ? 'active' : '')}}">
         <view class="timeline-dot"></view>
-        <text class="timeline-text">{{orderInfo.orderStatus === 2 ? '服务完成' : '服务中'}}</text>
-        <text class="timeline-time">{{orderInfo.orderStatus >= 1 && orderInfo.orderStatus !== 4 ? (orderInfo.timelineProcessTime || '-') : ''}}</text>
+        <text class="timeline-text">{{orderInfo.isWorkflowServiceDone || orderInfo.isWorkflowCompleted ? '服务完成' : '服务中'}}</text>
+        <text class="timeline-time">{{orderInfo.timelineProcessTime || ''}}</text>
       </view>
-      <view class="timeline-line {{orderInfo.orderStatus >= 3 && orderInfo.orderStatus !== 4 ? 'active' : ''}}"></view>
-      <view class="timeline-item {{orderInfo.orderStatus === 3 ? 'active' : ''}}">
+      <view class="timeline-line {{orderInfo.isWorkflowCompleted ? 'active' : ''}}"></view>
+      <view class="timeline-item {{orderInfo.isWorkflowCompleted ? 'active' : ''}}">
         <view class="timeline-dot"></view>
         <text class="timeline-text">完成</text>
-        <text class="timeline-time">{{orderInfo.orderStatus === 3 ? (orderInfo.timelineCompleteTime || '-') : ''}}</text>
+        <text class="timeline-time">{{orderInfo.isWorkflowCompleted ? (orderInfo.timelineCompleteTime || '-') : ''}}</text>
       </view>
     </view>
     <view class="section">
@@ -90,10 +82,6 @@
     </view>
     <view class="section">
       <view class="section-title">服务内容</view>
-      <view class="info-item" wx:if="{{isAdmin}}">
-        <text class="label">记录说明</text>
-        <text class="value">当前服务内容为记录快照，编辑仅影响本记录。</text>
-      </view>
       <view class="goods-list" wx:if="{{orderInfo.originalItems.length > 0}}">
         <view class="goods-item" wx:for="{{orderInfo.originalItems}}" wx:key="productId">
           <block wx:if="{{item.productImage}}">
@@ -143,16 +131,21 @@
           <text class="subtotal-value">¥{{orderInfo.appendedSubtotal}}</text>
         </view>
       </view>
+      <view class="amount-summary" wx:if="{{orderInfo.totalAmount !== undefined && orderInfo.totalAmount !== null}}">
+        <view class="amount-summary__label">线下应收总额</view>
+        <view class="amount-summary__value">¥{{orderInfo.totalAmount}}</view>
+      </view>
     </view>
     <view class="section" wx:if="{{orderInfo.remark}}">
       <view class="section-title">备注</view>
       <view class="remark">{{orderInfo.remark}}</view>
     </view>
-    <view wx:if="{{!isAdmin && orderInfo.orderStatus < 3}}" class="section section-compact status-tip-section">
+    <view wx:if="{{!isAdmin && !orderInfo.isWorkflowCompleted && !orderInfo.isWorkflowCancelled}}" class="section section-compact status-tip-section">
       <view class="user-status-tip user-status-tip-inline">
-        <text wx:if="{{orderInfo.orderStatus === 0}}">服务记录已创建，请联系工作人员确认后续安排。</text>
-        <text wx:if="{{orderInfo.orderStatus === 1}}">服务进行中，请耐心等待工作人员与您沟通。</text>
-        <text wx:if="{{orderInfo.orderStatus === 2}}">服务已完成，相关记录已更新。</text>
+        <text wx:if="{{orderInfo.isWorkflowClaimedUnconfirmed}}">服务记录已认领，请补充并确认服务信息。</text>
+        <text wx:if="{{orderInfo.isWorkflowConfirmedReady}}">服务信息已确认，请等待工作人员安排服务。</text>
+        <text wx:if="{{orderInfo.isWorkflowProcessing}}">服务进行中，请耐心等待工作人员与您沟通。</text>
+        <text wx:if="{{orderInfo.isWorkflowServiceDone}}">服务已完成，待线下付款，到账后订单完成。</text>
       </view>
     </view>
     <view class="actions">
@@ -164,6 +157,9 @@
         <t-button wx:if="{{showEditOrderBtn}}" theme="default" class="btn-secondary" bindtap="handleEditOrder">编辑服务记录</t-button>
         <t-button wx:if="{{showCancelBtn}}" theme="danger" class="btn-danger" bindtap="handleCancelOrderNew">关闭服务记录</t-button>
         <view wx:if="{{showNoActionTip}}" class="no-action-tip">服务已结束，无可用操作</view>
+      </block>
+      <block wx:else>
+        <t-button wx:if="{{showUserConfirmBtn}}" theme="primary" class="btn-primary" bindtap="handleUserConfirmInfo">确认服务</t-button>
       </block>
     </view>
   </block>

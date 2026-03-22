@@ -27,32 +27,32 @@
     <view class="section-title">订单状态</view>
   </view>
   <view class="order-status-grid">
-    <view class="status-item" bindtap="onStatusTap" data-order-status="0" data-payment-status="0">
+    <view class="status-item" bindtap="onStatusTap" data-workflow-milestone="{{workflowMilestoneFilters.pendingPayment}}">
       <view class="status-count status-pending">{{mainStatus.pendingPayment}}</view>
-      <view class="status-label">待沟通</view>
-      <view class="status-hint">意向单待联系</view>
+      <view class="status-label">待确认</view>
+      <view class="status-hint">待认领/待确认</view>
     </view>
-    <view class="status-item" bindtap="onStatusTap" data-order-status="0" data-payment-status="1">
+    <view class="status-item" bindtap="onStatusTap" data-workflow-milestone="{{workflowMilestoneFilters.confirmedReady}}">
       <view class="status-count status-wait-service">{{mainStatus.waitService}}</view>
       <view class="status-label">待服务</view>
-      <view class="status-hint">已付款待安排</view>
+      <view class="status-hint">已确认待安排</view>
     </view>
-    <view class="status-item" bindtap="onStatusTap" data-order-status="1">
+    <view class="status-item" bindtap="onStatusTap" data-workflow-milestone="{{workflowMilestoneFilters.processing}}">
       <view class="status-count status-processing">{{mainStatus.processing}}</view>
       <view class="status-label">服务中</view>
       <view class="status-hint">正在执行</view>
     </view>
-    <view class="status-item" bindtap="onStatusTap" data-order-status="2" data-payment-status="0">
+    <view class="status-item" bindtap="onStatusTap" data-workflow-milestone="{{workflowMilestoneFilters.serviceDone}}">
       <view class="status-count status-served-unpaid">{{mainStatus.serviceDone}}</view>
       <view class="status-label">待尾款</view>
       <view class="status-hint">服务已完成</view>
     </view>
-    <view class="status-item" bindtap="onStatusTap" data-order-status="3">
+    <view class="status-item" bindtap="onStatusTap" data-workflow-milestone="{{workflowMilestoneFilters.completed}}">
       <view class="status-count status-completed">{{mainStatus.completed}}</view>
       <view class="status-label">已完成</view>
       <view class="status-hint">服务+付款完成</view>
     </view>
-    <view class="status-item" bindtap="onStatusTap" data-order-status="4">
+    <view class="status-item" bindtap="onStatusTap" data-workflow-milestone="{{workflowMilestoneFilters.cancelled}}">
       <view class="status-count status-cancelled">{{mainStatus.cancelled}}</view>
       <view class="status-label">已取消</view>
       <view class="status-hint">流程终止</view>

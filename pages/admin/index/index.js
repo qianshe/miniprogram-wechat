@@ -1,7 +1,7 @@
 const app = getApp()
 const { adminApi } = require('../../../utils/api')
 const { checkAdminAccess } = require('../common/adminGuard.js')
-const { ORDER_FLOW_STATUS, PAYMENT_STATUS } = require('../../../config/constants')
+const { ORDER_FLOW_STATUS, PAYMENT_STATUS, WORKFLOW_MILESTONE, getAdminWorkflowSummary } = require('../../../config/constants')
 
 Page({
   /**
@@ -94,12 +94,21 @@ Page({
     },
     // 展示用主状态分布（单一主状态）
     mainStatus: {
-      pendingPayment: 0, // 待付款（未开始服务）
-      waitService: 0,    // 待服务
+      pendingPayment: 0, // 待沟通/待确认
+      waitService: 0,    // 已确认待服务
       processing: 0,     // 服务中
       serviceDone: 0,    // 待尾款（服务已完成）
       completed: 0,      // 已完成
       cancelled: 0       // 已取消
+    },
+    workflowMilestoneFilters: {
+      pendingPayment: `${WORKFLOW_MILESTONE.UNCLAIMED},${WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED}`,
+      claimedUnconfirmed: WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED,
+      confirmedReady: WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE,
+      processing: WORKFLOW_MILESTONE.PROCESSING,
+      serviceDone: WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID,
+      completed: WORKFLOW_MILESTONE.COMPLETED,
+      cancelled: WORKFLOW_MILESTONE.CANCELLED
     },
     // 订单状态分布（旧字段，保持兼容）
     orderStatus: {
@@ -182,7 +191,13 @@ Page({
         }
         
         const { today, total, legacyStatus, orderFlowStatus, paymentStatusDist } = statsData;
-        
+        const workflowMilestoneDist = statsData.workflowMilestoneDist || statsData.workflowMilestoneStatus || {};
+        const hasMilestoneStats = workflowMilestoneDist && Object.keys(workflowMilestoneDist).length > 0;
+        const mainStatusFromMilestones = hasMilestoneStats
+          ? this.buildMainStatusFromMilestones(workflowMilestoneDist)
+          : null;
+        const resolvedMainStatus = mainStatusFromMilestones || mainStatus || {};
+
         this.setData({
           todayStats: {
             orders: today?.orders || 0,
@@ -193,12 +208,12 @@ Page({
           },
           // 展示用主状态分布（单一主状态）
           mainStatus: {
-            pendingPayment: mainStatus?.pendingPayment || 0,
-            waitService: mainStatus?.waitService || 0,
-            processing: mainStatus?.processing || 0,
-            serviceDone: mainStatus?.serviceDone || 0,
-            completed: mainStatus?.completed || 0,
-            cancelled: mainStatus?.cancelled || 0
+            pendingPayment: resolvedMainStatus.pendingPayment || 0,
+            waitService: resolvedMainStatus.waitService || 0,
+            processing: resolvedMainStatus.processing || 0,
+            serviceDone: resolvedMainStatus.serviceDone || 0,
+            completed: resolvedMainStatus.completed || 0,
+            cancelled: resolvedMainStatus.cancelled || 0
           },
           // 旧订单状态分布（兼容）
           orderStatus: {
@@ -275,8 +290,28 @@ Page({
   },
 
   onStatusTap(e) {
-    const { status, filterType, filterValue, orderStatus, paymentStatus } = e.currentTarget.dataset;
+    const {
+      status,
+      filterType,
+      filterValue,
+      orderStatus,
+      paymentStatus,
+      workflowMilestones,
+      workflowMilestone
+    } = e.currentTarget.dataset;
     let url = '/pages/admin/order/list/list';
+
+    if (workflowMilestones) {
+      url += `?workflowMilestone=${encodeURIComponent(workflowMilestones)}`;
+      wx.navigateTo({ url });
+      return;
+    }
+
+    if (workflowMilestone) {
+      url += `?workflowMilestone=${encodeURIComponent(workflowMilestone)}`;
+      wx.navigateTo({ url });
+      return;
+    }
 
     // 首页主状态卡片参数：与 ADMIN_ORDER_TABS 的 orderStatus/paymentStatus 对齐
     const params = [];
@@ -306,5 +341,72 @@ Page({
     }
     
     wx.navigateTo({ url });
+  },
+
+  buildMainStatusFromMilestones(workflowMilestoneDist = {}) {
+    const milestones = workflowMilestoneDist && typeof workflowMilestoneDist === 'object'
+      ? workflowMilestoneDist
+      : {};
+
+    if (!Object.keys(milestones).length) {
+      return null;
+    }
+
+    const bucketCounts = {
+      pendingPayment: 0,
+      waitService: 0,
+      processing: 0,
+      serviceDone: 0,
+      completed: 0,
+      cancelled: 0
+    };
+
+    const sampleOrders = {
+      [WORKFLOW_MILESTONE.UNCLAIMED]: {
+        orderStatus: ORDER_FLOW_STATUS.CREATED,
+        waitForBind: true,
+        paymentStatus: PAYMENT_STATUS.UNPAID
+      },
+      [WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED]: {
+        orderStatus: ORDER_FLOW_STATUS.CREATED,
+        paymentStatus: PAYMENT_STATUS.UNPAID
+      },
+      [WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE]: {
+        orderStatus: ORDER_FLOW_STATUS.CREATED,
+        contentConfirmedAt: '1',
+        paymentStatus: PAYMENT_STATUS.UNPAID
+      },
+      [WORKFLOW_MILESTONE.PROCESSING]: {
+        orderStatus: ORDER_FLOW_STATUS.PROCESSING,
+        paymentStatus: PAYMENT_STATUS.UNPAID
+      },
+      [WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID]: {
+        orderStatus: ORDER_FLOW_STATUS.SERVICE_DONE,
+        paymentStatus: PAYMENT_STATUS.UNPAID
+      },
+      [WORKFLOW_MILESTONE.COMPLETED]: {
+        orderStatus: ORDER_FLOW_STATUS.COMPLETED,
+        paymentStatus: PAYMENT_STATUS.PAID
+      },
+      [WORKFLOW_MILESTONE.CANCELLED]: {
+        orderStatus: ORDER_FLOW_STATUS.CANCELLED,
+        paymentStatus: PAYMENT_STATUS.UNPAID
+      }
+    };
+
+    Object.keys(milestones).forEach((milestone) => {
+      const count = milestones[milestone] || 0;
+      if (!count) return;
+
+      const sample = sampleOrders[milestone];
+      if (!sample) return;
+
+      const bucket = getAdminWorkflowSummary(sample).adminMainStatusBucket;
+      if (bucketCounts[bucket] !== undefined) {
+        bucketCounts[bucket] += count;
+      }
+    });
+
+    return bucketCounts;
   }
 })

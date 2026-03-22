@@ -8,6 +8,8 @@
     "sync-shared": "node scripts/sync-cloud-shared.js",
     "check-shared": "node scripts/sync-cloud-shared.js --check",
     "check:wording": "node scripts/verify-user-facing-wording.js",
-    "check:order-qr": "node scripts/verify-order-qr-lifecycle.js"
+    "check:order-qr": "node scripts/verify-order-qr-lifecycle.js",
+    "check:order-workflow-baseline": "node scripts/verify-order-workflow-baseline.js",
+    "check:order-workflow-target": "node scripts/verify-order-workflow-target.js"
   }
 }

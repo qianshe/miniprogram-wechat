@@ -86,7 +86,7 @@
     <view
       class="tab-item {{activeTab === '1' ? 'active' : ''}}"
       data-value="1"
-      bindtap="onTabClick">待沟通</view>
+      bindtap="onTabClick">待确认</view>
     <view
       class="tab-item {{activeTab === '2' ? 'active' : ''}}"
       data-value="2"
@@ -121,7 +121,6 @@
           <!-- 双状态标签显示 -->
           <view class="order-status-tags">
             <view class="status-tag flow-status-{{item.orderStatus !== undefined ? item.orderStatus : item.status}}">{{item.orderStatusText}}</view>
-            <view wx:if="{{item.showPaymentStatusTag}}" class="status-tag payment-status-{{item.paymentStatus !== undefined ? item.paymentStatus : (item.status === 1 || item.status === 2 || item.status === 3 ? 1 : 0)}}">{{item.paymentStatusText}}</view>
           </view>
         </view>
         <view class="order-info" bindtap="onOrderClick" data-orderno="{{item.orderNo}}">
@@ -135,7 +134,10 @@
           </view>
           <view class="info-row">
             <text class="label">服务时间：</text>
-            <text>{{item.serviceTime}}</text>
+            <view class="service-time-block">
+              <text>{{item.serviceTime}}</text>
+              <text wx:if="{{item.showServiceUrgencyHint}}" class="service-urgency service-urgency--{{item.serviceUrgencyLevel || 'normal'}}">{{item.serviceUrgencyHint}}</text>
+            </view>
           </view>
           <view class="info-row">
             <text class="label">创建时间：</text>
@@ -147,29 +149,14 @@
           </view>
         </view>
         <view class="order-actions">
-          <block wx:if="{{item.showActionCreatedUnpaid}}">
-            <t-button
-              size="small"
-              theme="success"
-              class="btn-success"
-              data-orderno="{{item.orderNo}}"
-              data-status="1"
-              bindtap="updateOrderStatus">确认收款</t-button>
+          <block wx:if="{{item.showActionStartService}}">
             <t-button
               size="small"
               theme="primary"
               class="btn-primary"
               data-orderno="{{item.orderNo}}"
+              data-orderid="{{item._id}}"
               bindtap="startService">开始服务</t-button>
-          </block>
-          <block wx:elif="{{item.showActionCreatedPaid}}">
-            <t-button
-              size="small"
-              theme="primary"
-              class="btn-primary"
-              data-orderno="{{item.orderNo}}"
-              data-status="2"
-              bindtap="updateOrderStatus">开始服务</t-button>
           </block>
           <block wx:elif="{{item.showActionProcessing}}">
             <t-button
@@ -177,8 +164,9 @@
               theme="primary"
               class="btn-primary"
               data-orderno="{{item.orderNo}}"
-              data-status="3"
-              bindtap="updateOrderStatus">服务完成</t-button>
+              data-orderid="{{item._id}}"
+              data-orderflowstatus="{{item.actionOrderFlowStatus}}"
+              bindtap="updateOrderFlow">服务完成</t-button>
           </block>
           <block wx:elif="{{item.showActionServiceDoneUnpaid}}">
             <t-button
@@ -194,8 +182,9 @@
               theme="primary"
               class="btn-primary"
               data-orderno="{{item.orderNo}}"
-              data-status="3"
-              bindtap="updateOrderStatus">完成服务记录</t-button>
+              data-orderid="{{item._id}}"
+              data-orderflowstatus="{{item.actionOrderFlowStatus}}"
+              bindtap="updateOrderFlow">完成服务记录</t-button>
           </block>
           <block wx:if="{{item.showCancelButton}}">
             <t-button
@@ -203,8 +192,9 @@
               theme="danger"
               class="btn-danger"
               data-orderno="{{item.orderNo}}"
-              data-status="4"
-              bindtap="updateOrderStatus">关闭服务记录</t-button>
+              data-orderid="{{item._id}}"
+              data-orderflowstatus="{{item.actionOrderFlowStatus}}"
+              bindtap="updateOrderFlow">关闭服务记录</t-button>
           </block>
         </view>
       </view>

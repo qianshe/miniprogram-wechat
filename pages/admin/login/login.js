@@ -36,6 +36,14 @@ Page({
     this.setData({ password: e.detail.value || '' })
   },
 
+  clearAccountInput() {
+    this.setData({ adminAccount: '', errorMessage: '' })
+  },
+
+  clearPasswordInput() {
+    this.setData({ password: '', errorMessage: '' })
+  },
+
   onRememberChange(e) {
     this.setData({ rememberAccount: !!e.detail.value })
   },

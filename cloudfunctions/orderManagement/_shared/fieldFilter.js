@@ -53,6 +53,7 @@ const CollectionPermissions = {
       _id: { access: FieldAccess.PUBLIC },
       orderNo: { access: FieldAccess.PUBLIC },
       status: { access: FieldAccess.PUBLIC },
+      orderStatus: { access: FieldAccess.PUBLIC },  // 新系统流程状态
       createTime: { access: FieldAccess.PUBLIC },
       updateTime: { access: FieldAccess.PUBLIC },
       totalAmount: { access: FieldAccess.USER },
@@ -67,10 +68,20 @@ const CollectionPermissions = {
       payTime: { access: FieldAccess.OWNER },
       completeTime: { access: FieldAccess.OWNER },
       processTime: { access: FieldAccess.OWNER },
+      // Phase 1A: 确认里程碑驱动字段
+      contentConfirmedAt: { access: FieldAccess.OWNER },  // 用户确认时间戳
+      paymentStatus: { access: FieldAccess.OWNER },       // 支付状态（新系统）
       userOpenid: { access: FieldAccess.ADMIN, mask: true, maskType: MaskType.OPENID },
       userId: { access: FieldAccess.ADMIN },
       waitForBind: { access: FieldAccess.ADMIN },
       adminNote: { access: FieldAccess.ADMIN },
+      sourcePackageId: { access: FieldAccess.ADMIN },
+      sourcePackageName: { access: FieldAccess.ADMIN },
+      qrCodeKey: { access: FieldAccess.ADMIN },
+      qrCodeStatus: { access: FieldAccess.ADMIN },
+      qrCodeExpiresAt: { access: FieldAccess.ADMIN },
+      qrCodeUsedAt: { access: FieldAccess.ADMIN },
+      qrCodeUsedByOpenid: { access: FieldAccess.ADMIN, mask: true, maskType: MaskType.OPENID },
       _openid: { access: FieldAccess.HIDDEN }
     }
   },

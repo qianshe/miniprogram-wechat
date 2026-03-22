@@ -1,12 +1,23 @@
 /**
- * 用户确认信息页面
- * 用户认领订单后，查看并补充/修改服务信息
+ * 用户确认服务信息页面
+ * 
+ * 这是用户认领订单后的明确确认步骤（confirmation milestone）：
+ * - 用户在此页面确认并补充服务信息（联系人、电话、地址、服务时间等）
+ * - 提交后，后端记录 contentConfirmedAt，订单进入"已确认待服务"里程碑
+ * - 一旦确认，此页面变为只读，用户无法再次修改
+ * 
+ * 里程碑流转：claimed-unconfirmed → confirmed-ready-for-service
+ * 
+ * @see config/constants.js - WORKFLOW_MILESTONE, isPastConfirmationMilestone
  */
 const { api } = require('../../../utils/api.js');
 const { loadSelectableAddresses } = require('../../../utils/addressSelection.js');
 const { buildThumbUrl } = require('../../../utils/imageThumb.js');
-
-const ORDER_FLOW_STATUS_CREATED = 0;
+const {
+  WORKFLOW_MILESTONE,
+  getWorkflowMilestone,
+  isPastConfirmationMilestone
+} = require('../../../config/constants.js');
 
 Page({
   data: {
@@ -25,7 +36,8 @@ Page({
     showAddressModal: false,
     addressList: [],
     // 是否只读（非 CREATED 状态）
-    isReadOnly: false
+    isReadOnly: false,
+    isContentConfirmed: false
   },
 
   onLoad(options) {
@@ -42,7 +54,12 @@ Page({
     this.setData({ loading: true });
     try {
       const data = await api.getOrderDetail(orderNo, false);
-      const isReadOnly = data.orderStatus !== ORDER_FLOW_STATUS_CREATED;
+      
+      // 使用里程碑语义判断：已过确认里程碑则为只读
+      const milestone = getWorkflowMilestone(data);
+      const isContentConfirmed = isPastConfirmationMilestone(data);
+      const isReadOnly = isContentConfirmed || milestone === WORKFLOW_MILESTONE.CANCELLED;
+      
       const normalizedAddress = data.address && typeof data.address === 'object' ? data.address : null;
 
       this.setData({
@@ -63,6 +80,7 @@ Page({
         address: normalizedAddress,
         addressText: this._formatAddress(data.address),
         isReadOnly,
+        isContentConfirmed,
         loading: false
       });
     } catch (err) {
@@ -149,6 +167,20 @@ Page({
       return;
     }
 
+    const confirmResult = await new Promise(resolve => {
+      wx.showModal({
+        title: '确认提交',
+        content: '提交后将进入待服务状态，服务信息将不可再修改。',
+        confirmText: '确认提交',
+        cancelText: '再检查一下',
+        success: res => resolve(res.confirm)
+      });
+    });
+
+    if (!confirmResult) {
+      return;
+    }
+
     this.setData({ submitting: true });
     try {
       await api.updateOrderUserInfo(orderNo, {
@@ -159,7 +191,7 @@ Page({
         remarks: remarks.trim()
       });
 
-      wx.showToast({ title: '确认成功', icon: 'success' });
+      wx.showToast({ title: '确认成功，等待服务安排', icon: 'success' });
       setTimeout(() => {
         wx.redirectTo({ url: `/pages/order/detail/detail?orderNo=${orderNo}` });
       }, 1000);

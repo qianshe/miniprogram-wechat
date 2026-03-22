@@ -102,6 +102,67 @@ function normalizeCoordinate(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function pickFirstNonEmptyText(...values) {
+  for (const value of values) {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed) {
+        return trimmed;
+      }
+    }
+  }
+  return '';
+}
+
+function isMissingOrderField(value) {
+  return value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+}
+
+function buildHydrationUpdateFromDefaultAddress(order, addressDoc = {}) {
+  if (!addressDoc || typeof addressDoc !== 'object') {
+    return {};
+  }
+
+  const contactName = pickFirstNonEmptyText(addressDoc.userName, addressDoc.name);
+  const contactPhone = pickFirstNonEmptyText(addressDoc.telNumber, addressDoc.phone);
+  const structuredAddress = pickFirstNonEmptyText(
+    `${addressDoc.province || ''}${addressDoc.city || ''}${addressDoc.district || ''}${addressDoc.detail || ''}`,
+    addressDoc.fullAddress,
+    addressDoc.locationAddress,
+    addressDoc.address
+  );
+  const locationName = pickFirstNonEmptyText(addressDoc.locationName, addressDoc.name);
+  const locationAddress = pickFirstNonEmptyText(addressDoc.locationAddress, structuredAddress);
+  const latitude = normalizeCoordinate(addressDoc.latitude);
+  const longitude = normalizeCoordinate(addressDoc.longitude);
+
+  const hydrationUpdate = {};
+
+  if (isMissingOrderField(order.contactName) && contactName) {
+    hydrationUpdate.contactName = contactName;
+  }
+  if (isMissingOrderField(order.contactPhone) && contactPhone) {
+    hydrationUpdate.contactPhone = contactPhone;
+  }
+  if (isMissingOrderField(order.address) && structuredAddress) {
+    hydrationUpdate.address = structuredAddress;
+  }
+  if (isMissingOrderField(order.locationName) && locationName) {
+    hydrationUpdate.locationName = locationName;
+  }
+  if (isMissingOrderField(order.locationAddress) && locationAddress) {
+    hydrationUpdate.locationAddress = locationAddress;
+  }
+  if ((order.latitude === undefined || order.latitude === null || order.latitude === '') && latitude !== null) {
+    hydrationUpdate.latitude = latitude;
+  }
+  if ((order.longitude === undefined || order.longitude === null || order.longitude === '') && longitude !== null) {
+    hydrationUpdate.longitude = longitude;
+  }
+
+  return hydrationUpdate;
+}
+
 const UPDATE_ORDER_CONTENT_EDITABLE_STATUSES = [0, 1];
 
 const UPDATE_ORDER_CONTENT_EDITABLE_FIELDS = [
@@ -396,6 +457,17 @@ const PAYMENT_STATUS = {
   PAID: 1          // 已支付
 };
 
+// 工作流里程碑（用于读模型与统计语义）
+const WORKFLOW_MILESTONE = {
+  UNCLAIMED: 'unclaimed',
+  CLAIMED_UNCONFIRMED: 'claimed-unconfirmed',
+  CONFIRMED_READY_FOR_SERVICE: 'confirmed-ready-for-service',
+  PROCESSING: 'processing',
+  SERVICE_DONE_UNPAID: 'service-done-unpaid',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled'
+};
+
 /**
  * 旧status到新字段映射
  * @param {number} status - 旧的订单状态
@@ -427,6 +499,123 @@ function mapNewStatusToLegacy(orderStatus, paymentStatus) {
   if (orderStatus === ORDER_FLOW_STATUS.PROCESSING) return ORDER_STATUS.PROCESSING; // PROCESSING
   if (orderStatus === ORDER_FLOW_STATUS.CREATED && paymentStatus === PAYMENT_STATUS.PAID) return ORDER_STATUS.PAID; // CREATED + PAID
   return ORDER_STATUS.PENDING; // CREATED + UNPAID
+}
+
+function normalizeFlowAndPaymentStatus(order = {}) {
+  const hasOrderStatus = order.orderStatus !== undefined && order.orderStatus !== null && order.orderStatus !== '';
+  const hasPaymentStatus = order.paymentStatus !== undefined && order.paymentStatus !== null && order.paymentStatus !== '';
+
+  if (hasOrderStatus && hasPaymentStatus) {
+    return {
+      orderStatus: Number(order.orderStatus),
+      paymentStatus: Number(order.paymentStatus)
+    };
+  }
+
+  return mapLegacyStatusToNew(order.status, order.payTime);
+}
+
+function getWorkflowMilestone(order = {}) {
+  const normalized = normalizeFlowAndPaymentStatus(order);
+  const orderStatus = normalized.orderStatus;
+
+  if (orderStatus === ORDER_FLOW_STATUS.CANCELLED) {
+    return WORKFLOW_MILESTONE.CANCELLED;
+  }
+
+  if (orderStatus === ORDER_FLOW_STATUS.COMPLETED) {
+    return WORKFLOW_MILESTONE.COMPLETED;
+  }
+
+  if (orderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
+    return WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID;
+  }
+
+  if (orderStatus === ORDER_FLOW_STATUS.PROCESSING) {
+    return WORKFLOW_MILESTONE.PROCESSING;
+  }
+
+  if (orderStatus === ORDER_FLOW_STATUS.CREATED) {
+    if (order.waitForBind === true) {
+      return WORKFLOW_MILESTONE.UNCLAIMED;
+    }
+
+    if (order.contentConfirmedAt) {
+      return WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE;
+    }
+
+    return WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED;
+  }
+
+  return WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED;
+}
+
+function getAdminMainStatusBucket(order = {}) {
+  const milestone = getWorkflowMilestone(order);
+  const milestoneToBucket = {
+    [WORKFLOW_MILESTONE.UNCLAIMED]: 'pendingPayment',
+    [WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED]: 'pendingPayment',
+    [WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE]: 'waitService',
+    [WORKFLOW_MILESTONE.PROCESSING]: 'processing',
+    [WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID]: 'serviceDone',
+    [WORKFLOW_MILESTONE.COMPLETED]: 'completed',
+    [WORKFLOW_MILESTONE.CANCELLED]: 'cancelled'
+  };
+
+  return milestoneToBucket[milestone] || 'pendingPayment';
+}
+
+function parseServiceTimeSortValue(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    const time = value.getTime();
+    return Number.isNaN(time) ? null : time;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const dateOnlyMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch;
+      return new Date(Number(year), Number(month) - 1, Number(day), 0, 0, 0, 0).getTime();
+    }
+  }
+
+  const parsed = new Date(value);
+  const time = parsed.getTime();
+  return Number.isNaN(time) ? null : time;
+}
+
+function parseCreateTimeSortValue(value) {
+  if (!value) {
+    return 0;
+  }
+  const parsed = new Date(value);
+  const time = parsed.getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function sortOrdersByServiceTimePriority(orders = []) {
+  return [...orders].sort((left, right) => {
+    const leftServiceTime = parseServiceTimeSortValue(left.serviceTime);
+    const rightServiceTime = parseServiceTimeSortValue(right.serviceTime);
+
+    if (leftServiceTime === null && rightServiceTime !== null) return 1;
+    if (leftServiceTime !== null && rightServiceTime === null) return -1;
+
+    if (leftServiceTime !== null && rightServiceTime !== null && leftServiceTime !== rightServiceTime) {
+      return leftServiceTime - rightServiceTime;
+    }
+
+    return parseCreateTimeSortValue(right.createTime) - parseCreateTimeSortValue(left.createTime);
+  });
 }
 
 // 支付方式枚举
@@ -635,6 +824,8 @@ async function getOrders(data, context, logger) {
     orderStatus,
     orderStatusList,
     paymentStatus,
+    workflowMilestone,
+    workflowMilestoneList,
     keyword,
     startDate,
     endDate,
@@ -649,6 +840,20 @@ async function getOrders(data, context, logger) {
   const parsedOrderStatusList = Array.isArray(orderStatusList)
     ? orderStatusList.map(item => parseInt(item, 10)).filter(item => !Number.isNaN(item))
     : [];
+  const parsedWorkflowMilestoneList = Array.from(new Set([
+    ...(Array.isArray(workflowMilestoneList)
+      ? workflowMilestoneList
+      : (typeof workflowMilestoneList === 'string' && workflowMilestoneList
+        ? String(workflowMilestoneList).split(',')
+        : [])),
+    ...(typeof workflowMilestone === 'string' && workflowMilestone ? [workflowMilestone] : [])
+  ].map(item => String(item || '').trim()).filter(Boolean)));
+  const serviceTimePriorityMilestones = [
+    WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE,
+    WORKFLOW_MILESTONE.PROCESSING
+  ];
+  const shouldPrioritizeServiceTime = parsedWorkflowMilestoneList.length > 0
+    && parsedWorkflowMilestoneList.every((item) => serviceTimePriorityMilestones.includes(item));
 
   const parseDateBoundary = (value, endOfDay = false) => {
     if (!value) return null;
@@ -679,6 +884,8 @@ async function getOrders(data, context, logger) {
     orderStatus,
     orderStatusList: parsedOrderStatusList,
     paymentStatus,
+    workflowMilestone,
+    workflowMilestoneList: parsedWorkflowMilestoneList,
     keyword,
     startDate,
     endDate,
@@ -742,16 +949,58 @@ async function getOrders(data, context, logger) {
     query = query.where(_.and(conditions));
   }
 
-  // 分页查询 - 并行执行查询和计数，提升性能
   const skip = (parsedPage - 1) * parsedSize;
-  const [ordersResult, countResult] = await Promise.all([
-    query
-      .orderBy('createTime', 'desc')
-      .skip(skip)
-      .limit(parsedSize)
-      .get(),
-    query.count()
-  ]);
+  let ordersData = [];
+  let totalCount = 0;
+
+  if (parsedWorkflowMilestoneList.length > 0) {
+    const countResult = await query.count();
+    const baseTotal = countResult.total || 0;
+    const batchSize = 100;
+    let offset = 0;
+    let matchedOrders = [];
+
+    while (offset < baseTotal) {
+      const batchResult = await query
+        .orderBy('createTime', 'desc')
+        .skip(offset)
+        .limit(batchSize)
+        .get();
+
+      const batchOrders = batchResult.data || [];
+      if (batchOrders.length === 0) {
+        break;
+      }
+
+      batchOrders.forEach((order) => {
+        const milestone = getWorkflowMilestone(order);
+        if (parsedWorkflowMilestoneList.includes(milestone)) {
+          matchedOrders.push(order);
+        }
+      });
+
+      offset += batchOrders.length;
+    }
+
+    if (shouldPrioritizeServiceTime) {
+      matchedOrders = sortOrdersByServiceTimePriority(matchedOrders);
+    }
+
+    totalCount = matchedOrders.length;
+    ordersData = matchedOrders.slice(skip, skip + parsedSize);
+  } else {
+    const [ordersResult, countResult] = await Promise.all([
+      query
+        .orderBy('createTime', 'desc')
+        .skip(skip)
+        .limit(parsedSize)
+        .get(),
+      query.count()
+    ]);
+
+    ordersData = ordersResult.data || [];
+    totalCount = countResult.total || 0;
+  }
   
   // 构建字段过滤选项
   const filterOptions = {
@@ -760,7 +1009,7 @@ async function getOrders(data, context, logger) {
   };
   
   // 格式化订单数据 - 列表查询不返回items以提升性能
-  const orders = ordersResult.data.map(order => {
+  const orders = ordersData.map(order => {
     const { items, ...orderWithoutItems } = order;
     const formattedOrder = {
       ...orderWithoutItems,
@@ -771,11 +1020,11 @@ async function getOrders(data, context, logger) {
     return filterFields(formattedOrder, 'orders', filterOptions);
   });
 
-  logger.info('Orders retrieved', { count: orders.length, total: countResult.total });
+  logger.info('Orders retrieved', { count: orders.length, total: totalCount, workflowMilestoneList: parsedWorkflowMilestoneList });
   
   return success({
     records: orders,
-    total: countResult.total,
+    total: totalCount,
     page: parsedPage,
     size: parsedSize,
     hasMore: orders.length === parsedSize
@@ -823,7 +1072,17 @@ async function getOrderDetail(data, context, logger) {
   }
 
   const order = result.data[0];
-
+  const legacyStatusSnapshot = mapLegacyStatusToNew(order.status, order.payTime);
+  const hasOrderStatus = order.orderStatus !== undefined && order.orderStatus !== null && order.orderStatus !== '';
+  const hasPaymentStatus = order.paymentStatus !== undefined && order.paymentStatus !== null && order.paymentStatus !== '';
+  const parsedOrderStatus = hasOrderStatus ? Number(order.orderStatus) : NaN;
+  const parsedPaymentStatus = hasPaymentStatus ? Number(order.paymentStatus) : NaN;
+  const currentOrderStatus = Number.isFinite(parsedOrderStatus)
+    ? parsedOrderStatus
+    : legacyStatusSnapshot.orderStatus;
+  const currentPaymentStatus = Number.isFinite(parsedPaymentStatus)
+    ? parsedPaymentStatus
+    : legacyStatusSnapshot.paymentStatus;
   // 构建字段过滤选项
   const filterOptions = {
     role: isAdmin ? Roles.ADMIN : Roles.USER,
@@ -1174,6 +1433,17 @@ async function updateOrderUserInfo(data, context, logger) {
   }
 
   const order = result.data[0];
+  const legacyStatusSnapshot = mapLegacyStatusToNew(order.status, order.payTime);
+  const hasOrderStatus = order.orderStatus !== undefined && order.orderStatus !== null && order.orderStatus !== '';
+  const hasPaymentStatus = order.paymentStatus !== undefined && order.paymentStatus !== null && order.paymentStatus !== '';
+  const parsedOrderStatus = hasOrderStatus ? Number(order.orderStatus) : NaN;
+  const parsedPaymentStatus = hasPaymentStatus ? Number(order.paymentStatus) : NaN;
+  const currentOrderStatus = Number.isFinite(parsedOrderStatus)
+    ? parsedOrderStatus
+    : legacyStatusSnapshot.orderStatus;
+  const currentPaymentStatus = Number.isFinite(parsedPaymentStatus)
+    ? parsedPaymentStatus
+    : legacyStatusSnapshot.paymentStatus;
 
   // 必须是订单归属用户
   if (order.userOpenid !== OPENID) {
@@ -1181,12 +1451,13 @@ async function updateOrderUserInfo(data, context, logger) {
   }
 
   // 只允许在 CREATED 状态下修改
-  if (order.orderStatus !== ORDER_FLOW_STATUS.CREATED) {
+  if (currentOrderStatus !== ORDER_FLOW_STATUS.CREATED) {
     return error(ErrorCodes.PERMISSION_DENIED, '订单已进入服务流程，无法修改信息');
   }
 
   // 构建更新字段（只更新传入的非空字段）
-  const updateData = { updateTime: new Date() };
+  const now = new Date();
+  const updateData = { updateTime: now };
 
   if (contactName !== undefined && contactName !== null) {
     updateData.contactName = contactName;
@@ -1227,6 +1498,22 @@ async function updateOrderUserInfo(data, context, logger) {
     updateData.remarks = remarks;
   }
 
+  // 标记用户确认（仅在未确认时写入确认时间）
+  if (!order.contentConfirmedAt) {
+    updateData.contentConfirmedAt = now;
+  }
+
+  // 兼容缺失的新字段（不改变支付语义，仅补齐状态字段）
+  if (!hasOrderStatus) {
+    updateData.orderStatus = currentOrderStatus;
+  }
+  if (!hasPaymentStatus) {
+    updateData.paymentStatus = currentPaymentStatus;
+  }
+  if (order.status === undefined || order.status === null || order.status === '') {
+    updateData.status = mapNewStatusToLegacy(currentOrderStatus, currentPaymentStatus);
+  }
+
   const updateResult = await db.collection('orders')
     .where(_.or([
       { _id: orderNo },
@@ -1239,7 +1526,12 @@ async function updateOrderUserInfo(data, context, logger) {
   }
 
   logger.info('Order user info updated', { orderNo, fields: Object.keys(updateData) });
-  return success(null, '订单信息更新成功');
+  return success({
+    orderNo: order.orderNo || orderNo,
+    contentConfirmedAt: updateData.contentConfirmedAt || order.contentConfirmedAt || null,
+    orderStatus: updateData.orderStatus !== undefined ? updateData.orderStatus : currentOrderStatus,
+    paymentStatus: updateData.paymentStatus !== undefined ? updateData.paymentStatus : currentPaymentStatus
+  }, '订单信息更新成功');
 }
 
 /**
@@ -1273,6 +1565,15 @@ async function bindOrder(data, context, logger) {
     return error(ErrorCodes.PERMISSION_DENIED, qrLifecycle.bindBlockedReason || '二维码不可用');
   }
 
+  const defaultAddressResult = await db.collection('addresses')
+    .where({ userOpenid: OPENID })
+    .orderBy('isDefault', 'desc')
+    .orderBy('updateTime', 'desc')
+    .limit(1)
+    .get();
+  const defaultAddress = defaultAddressResult.data[0] || null;
+  const hydrationUpdate = buildHydrationUpdateFromDefaultAddress(order, defaultAddress);
+
   const result = await db.collection('orders')
     .where({
       _id: order._id,
@@ -1286,17 +1587,21 @@ async function bindOrder(data, context, logger) {
         qrCodeStatus: 'used',
         qrCodeUsedAt: new Date(),
         qrCodeUsedByOpenid: OPENID,
-        updateTime: new Date()
+        updateTime: new Date(),
+        ...hydrationUpdate
       }
     });
-  
+
   if (result.stats.updated === 0) {
     return notFoundError('订单不存在或已绑定');
   }
 
-  logger.info('Order bound successfully', { orderNo });
+  logger.info('Order bound successfully', {
+    orderNo,
+    hydratedFields: Object.keys(hydrationUpdate)
+  });
   await deleteQrAssetQuietly(order.qrCodeUrl, logger, orderNo);
-  
+
   return success(null, '订单绑定成功');
 }
 
@@ -2254,26 +2559,16 @@ async function getStatistics(data, context, logger) {
     // 计算本月开始时间 (1号 00:00:00)
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const legacyMissingCondition = _.or([
-      { orderStatus: _.exists(false) },
-      { paymentStatus: _.exists(false) },
-      { orderStatus: null },
-      { paymentStatus: null },
-      { orderStatus: '' },
-      { paymentStatus: '' }
-    ]);
-
     // 并行查询各项统计数据
     const [
       todayOrdersResult,
       weekOrdersResult,
       monthOrdersResult,
       allOrdersResult,
+      totalOrdersCountResult,
       orderStatusResult,
       orderStatusGroupResult,
       paymentStatusGroupResult,
-      orderStatusPaymentGroupResult,
-      legacyMissingCountResult,
       productsResult,
       activeProductsResult
     ] = await Promise.all([
@@ -2323,6 +2618,9 @@ async function getStatistics(data, context, logger) {
         })
         .end(),
 
+      // 全量订单数（用于里程碑聚合扫描）
+      db.collection('orders').count(),
+
       // 各状态订单数量（旧status）
       db.collection('orders')
         .aggregate()
@@ -2349,23 +2647,6 @@ async function getStatistics(data, context, logger) {
           count: _.aggregate.sum(1)
         })
         .end(),
-
-      // 按 orderStatus + paymentStatus 组合分组统计（新字段）
-      db.collection('orders')
-        .aggregate()
-        .group({
-          _id: {
-            orderStatus: '$orderStatus',
-            paymentStatus: '$paymentStatus'
-          },
-          count: _.aggregate.sum(1)
-        })
-        .end(),
-
-      // 缺失新字段的订单数量（兼容）
-      db.collection('orders')
-        .where(legacyMissingCondition)
-        .count(),
 
       // 商品总数
       db.collection('products').count(),
@@ -2408,6 +2689,16 @@ async function getStatistics(data, context, logger) {
       });
     }
 
+    const workflowMilestoneDist = {
+      [WORKFLOW_MILESTONE.UNCLAIMED]: 0,
+      [WORKFLOW_MILESTONE.CLAIMED_UNCONFIRMED]: 0,
+      [WORKFLOW_MILESTONE.CONFIRMED_READY_FOR_SERVICE]: 0,
+      [WORKFLOW_MILESTONE.PROCESSING]: 0,
+      [WORKFLOW_MILESTONE.SERVICE_DONE_UNPAID]: 0,
+      [WORKFLOW_MILESTONE.COMPLETED]: 0,
+      [WORKFLOW_MILESTONE.CANCELLED]: 0
+    };
+
     const mainStatus = {
       pendingPayment: 0,
       waitService: 0,
@@ -2417,87 +2708,40 @@ async function getStatistics(data, context, logger) {
       cancelled: 0
     };
 
-    const applyMainStatus = (orderStatus, paymentStatus, count = 1) => {
-      if (orderStatus === undefined || orderStatus === null || orderStatus === '') {
-        return;
-      }
-      const normalizedOrderStatus = Number(orderStatus);
-      if (Number.isNaN(normalizedOrderStatus)) {
-        return;
-      }
-      let normalizedPaymentStatus = paymentStatus;
-      if (normalizedPaymentStatus === undefined || normalizedPaymentStatus === null || normalizedPaymentStatus === '') {
-        normalizedPaymentStatus = PAYMENT_STATUS.UNPAID;
-      }
-      normalizedPaymentStatus = Number(normalizedPaymentStatus);
-      if (Number.isNaN(normalizedPaymentStatus)) {
-        normalizedPaymentStatus = PAYMENT_STATUS.UNPAID;
+    const milestoneBatchSize = 200;
+    let milestoneOffset = 0;
+    const totalOrders = totalOrdersCountResult.total || 0;
+
+    while (milestoneOffset < totalOrders) {
+      const batchResult = await db.collection('orders')
+        .field({
+          orderStatus: true,
+          paymentStatus: true,
+          status: true,
+          payTime: true,
+          waitForBind: true,
+          contentConfirmedAt: true
+        })
+        .skip(milestoneOffset)
+        .limit(milestoneBatchSize)
+        .get();
+
+      const orders = batchResult.data || [];
+      if (orders.length === 0) {
+        break;
       }
 
-      if (normalizedOrderStatus === ORDER_FLOW_STATUS.CREATED) {
-        if (normalizedPaymentStatus === PAYMENT_STATUS.PAID) {
-          mainStatus.waitService += count;
-        } else {
-          mainStatus.pendingPayment += count;
+      orders.forEach((order) => {
+        const milestone = getWorkflowMilestone(order);
+        const bucket = getAdminMainStatusBucket(order);
+
+        workflowMilestoneDist[milestone] = (workflowMilestoneDist[milestone] || 0) + 1;
+        if (mainStatus[bucket] !== undefined) {
+          mainStatus[bucket] += 1;
         }
-        return;
-      }
-
-      if (normalizedOrderStatus === ORDER_FLOW_STATUS.PROCESSING) {
-        mainStatus.processing += count;
-        return;
-      }
-
-      if (normalizedOrderStatus === ORDER_FLOW_STATUS.SERVICE_DONE) {
-        if (normalizedPaymentStatus === PAYMENT_STATUS.UNPAID) {
-          mainStatus.serviceDone += count;
-        }
-        return;
-      }
-
-      if (normalizedOrderStatus === ORDER_FLOW_STATUS.COMPLETED) {
-        mainStatus.completed += count;
-        return;
-      }
-
-      if (normalizedOrderStatus === ORDER_FLOW_STATUS.CANCELLED) {
-        mainStatus.cancelled += count;
-      }
-    };
-
-    if (orderStatusPaymentGroupResult && orderStatusPaymentGroupResult.list) {
-      orderStatusPaymentGroupResult.list.forEach(item => {
-        const orderStatus = item._id && item._id.orderStatus;
-        const paymentStatus = item._id && item._id.paymentStatus;
-        
-        applyMainStatus(orderStatus, paymentStatus, item.count || 0);
       });
-    }
 
-    if (legacyMissingCountResult && legacyMissingCountResult.total > 0) {
-      const legacyBatchSize = 200;
-      let legacyOffset = 0;
-
-      while (legacyOffset < legacyMissingCountResult.total) {
-        const legacyResult = await db.collection('orders')
-          .where(legacyMissingCondition)
-          .field({ status: true, payTime: true })
-          .skip(legacyOffset)
-          .limit(legacyBatchSize)
-          .get();
-
-        const legacyOrders = legacyResult.data || [];
-        if (legacyOrders.length === 0) {
-          break;
-        }
-
-        legacyOrders.forEach(order => {
-          const mapped = mapLegacyStatusToNew(order.status, order.payTime);
-          applyMainStatus(mapped.orderStatus, mapped.paymentStatus, 1);
-        });
-
-        legacyOffset += legacyOrders.length;
-      }
+      milestoneOffset += orders.length;
     }
 
     const statistics = {
@@ -2543,6 +2787,8 @@ async function getStatistics(data, context, logger) {
         unpaid: paymentStatusMap[PAYMENT_STATUS.UNPAID] || 0,  // 未支付
         paid: paymentStatusMap[PAYMENT_STATUS.PAID] || 0       // 已支付
       },
+      // 工作流里程碑分布（里程碑优先的读模型）
+      workflowMilestoneDist,
       // 展示用主状态分布（单一主状态）
       mainStatus: {
         pendingPayment: mainStatus.pendingPayment,

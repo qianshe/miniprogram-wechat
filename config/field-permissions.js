@@ -61,6 +61,7 @@ const CollectionPermissions = {
       _id: { access: FieldAccess.PUBLIC },
       orderNo: { access: FieldAccess.PUBLIC },
       status: { access: FieldAccess.PUBLIC },
+      orderStatus: { access: FieldAccess.PUBLIC },  // 新系统流程状态
       createTime: { access: FieldAccess.PUBLIC },
       updateTime: { access: FieldAccess.PUBLIC },
       
@@ -91,6 +92,9 @@ const CollectionPermissions = {
       payTime: { access: FieldAccess.OWNER },
       completeTime: { access: FieldAccess.OWNER },
       processTime: { access: FieldAccess.OWNER },
+      // Phase 1A: 确认里程碑驱动字段
+      contentConfirmedAt: { access: FieldAccess.OWNER },  // 用户确认时间戳
+      paymentStatus: { access: FieldAccess.OWNER },       // 支付状态（新系统）
       
       // 管理员字段 - 仅管理员可见
       userOpenid: { 
