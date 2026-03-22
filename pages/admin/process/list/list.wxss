@@ -14,6 +14,18 @@
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
 }
 
+.header-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16rpx;
+}
+
 .page-title {
   font-size: 38rpx;
   font-weight: 700;
@@ -181,6 +193,15 @@
 .meta-text {
   font-size: 22rpx;
   color: #8c8175;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid rgba(166, 124, 82, 0.12);
 }
 
 .skeleton-list {

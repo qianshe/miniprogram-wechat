@@ -1,0 +1,141 @@
+page {
+  --bg-color: #f5f5f5;
+  --text-main: #333;
+  --text-sub: #999;
+  --admin-container-padding: 24rpx;
+  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.page-container {
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  padding-bottom: 200rpx;
+  box-sizing: border-box;
+}
+
+.header-section {
+  padding: 40rpx var(--admin-container-padding);
+  background-color: var(--bg-color);
+}
+
+.header-title {
+  font-size: 48rpx;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 12rpx;
+  letter-spacing: -1rpx;
+}
+
+.header-subtitle {
+  font-size: 28rpx;
+  color: var(--text-sub);
+}
+
+.form-container {
+  padding: 0 var(--admin-container-padding);
+}
+
+.form-card {
+  background-color: #fff;
+  border-radius: 32rpx;
+  padding: 40rpx var(--admin-container-padding);
+  margin-bottom: 32rpx;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 32rpx;
+  padding-left: 16rpx;
+  border-left: 8rpx solid var(--admin-primary);
+  line-height: 1;
+}
+
+.input-group {
+  margin-bottom: 32rpx;
+}
+
+.input-group:last-child {
+  margin-bottom: 0;
+}
+
+.input-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 16rpx;
+  margin-left: 8rpx;
+}
+
+.filled-input {
+  background-color: #f7f8fa !important;
+  border: 2rpx solid #e5e7eb !important;
+  border-radius: 16rpx !important;
+  padding: 24rpx var(--admin-container-padding) !important;
+  font-size: 28rpx;
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+.readonly-value {
+  color: #8c8175;
+}
+
+.textarea-input {
+  min-height: 180rpx;
+  width: auto !important;
+}
+
+.textarea-input--large {
+  min-height: 280rpx;
+}
+
+.input-helper {
+  margin-top: 12rpx;
+  padding-left: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #8c8175;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8rpx 0;
+}
+
+.setting-info {
+  flex: 1;
+  padding-right: 24rpx;
+}
+
+.setting-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 8rpx;
+}
+
+.setting-desc {
+  font-size: 24rpx;
+  color: var(--text-sub);
+}
+
+.footer-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx var(--admin-container-padding);
+  background-color: #fff;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  z-index: 100;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+.submit-btn {
+  box-shadow: 0 8rpx 16rpx var(--admin-primary-light);
+}

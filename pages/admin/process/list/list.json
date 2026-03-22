@@ -4,6 +4,7 @@
   "backgroundColor": "#f6f0e7",
   "usingComponents": {
     "c-empty": "/components/c-empty/c-empty",
+    "t-button": "tdesign-miniprogram/button/button",
     "t-loading": "tdesign-miniprogram/loading/loading",
     "t-tag": "tdesign-miniprogram/tag/tag"
   }

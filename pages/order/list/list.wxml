@@ -86,17 +86,13 @@
           </view>
         </view>
         <view class="order-info">
-          <view class="info-row">
-            <text class="label">记录时间：</text>
-            <text>{{item.createdTime}}</text>
-          </view>
-          <view class="info-row" wx:if="{{item.orderStatus === 3 && item.completedTime}}">
-            <text class="label">完成时间：</text>
-            <text>{{item.completedTime}}</text>
-          </view>
           <view class="info-row" wx:if="{{item.serviceTime}}">
             <text class="label">服务时间：</text>
             <text>{{item.serviceTime}}</text>
+          </view>
+          <view class="info-row">
+            <text class="label">服务金额：</text>
+            <text class="amount">¥{{item.totalAmount}}</text>
           </view>
         </view>
       </view>

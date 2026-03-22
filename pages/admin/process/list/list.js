@@ -11,7 +11,8 @@ Page({
     hasMore: true,
     isLoading: false,
     keyword: '',
-    currentType: 'white'
+    currentType: 'white',
+    shouldRefreshOnShow: false
   },
 
   onLoad() {
@@ -20,7 +21,8 @@ Page({
   },
 
   onShow() {
-    if (this.data.rawSteps.length > 0) {
+    if (this.data.shouldRefreshOnShow || this.data.rawSteps.length > 0) {
+      this.setData({ shouldRefreshOnShow: false })
       this.loadSteps(true)
     }
   },
@@ -156,6 +158,62 @@ Page({
 
     this.setData({ currentType: type }, () => {
       this.loadSteps(true)
+    })
+  },
+
+  createStep() {
+    if (this.data.currentType !== 'white') {
+      wx.showToast({
+        title: '当前仅支持新增白事流程',
+        icon: 'none'
+      })
+      return
+    }
+
+    this.setData({ shouldRefreshOnShow: true })
+    wx.navigateTo({
+      url: '/pages/admin/process/edit/edit'
+    })
+  },
+
+  editStep(e) {
+    const { id } = e.currentTarget.dataset
+    if (!id) {
+      wx.showToast({ title: '缺少流程ID', icon: 'none' })
+      return
+    }
+
+    this.setData({ shouldRefreshOnShow: true })
+    wx.navigateTo({
+      url: `/pages/admin/process/edit/edit?id=${id}`
+    })
+  },
+
+  deleteStep(e) {
+    const { id, title } = e.currentTarget.dataset
+    if (!id) {
+      wx.showToast({ title: '缺少流程ID', icon: 'none' })
+      return
+    }
+
+    wx.showModal({
+      title: '确认删除',
+      content: `确定删除“${title || '当前流程'}”吗？删除后不可恢复。`,
+      success: async (res) => {
+        if (!res.confirm) return
+
+        try {
+          await adminApi.deleteProcessStep(id)
+          wx.showToast({ title: '删除成功', icon: 'success' })
+          this.loadSteps(true)
+        } catch (error) {
+          console.error('[admin/process/list] 删除流程步骤失败:', error)
+          wx.showToast({
+            title: error.message || '删除失败',
+            icon: 'none'
+          })
+        }
+      }
     })
   }
 })

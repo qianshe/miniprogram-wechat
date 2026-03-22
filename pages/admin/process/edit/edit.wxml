@@ -1,0 +1,147 @@
+<view class="page-container">
+  <view class="header-section">
+    <view class="header-title">{{isEdit ? '编辑流程步骤' : '新增流程步骤'}}</view>
+    <view class="header-subtitle">完善治丧指南的标题、摘要、正文、提示和关联商品</view>
+  </view>
+
+  <view class="form-container">
+    <view class="form-card">
+      <view class="card-title">基本信息</view>
+
+      <view class="input-group">
+        <view class="input-label">步骤标题</view>
+        <t-input
+          placeholder="请输入流程标题"
+          value="{{formData.title}}"
+          bind:change="onTitleChange"
+          borderless="{{true}}"
+          class="filled-input"
+          maxlength="30"
+        />
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">步骤摘要</view>
+        <t-textarea
+          placeholder="请输入简短摘要，列表页会优先展示这里"
+          value="{{formData.description}}"
+          bind:change="onDescriptionChange"
+          autosize
+          borderless="{{true}}"
+          class="filled-input textarea-input"
+          maxlength="120"
+          indicator
+        />
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">排序</view>
+        <t-stepper
+          value="{{formData.order}}"
+          min="1"
+          max="999"
+          bind:change="onOrderChange"
+          size="medium"
+        />
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">流程类型</view>
+        <view class="filled-input readonly-value">
+          {{formData.type === 'red' ? '兼容红事（仅维护内容）' : '白事流程'}}
+        </view>
+      </view>
+    </view>
+
+    <view class="form-card">
+      <view class="card-title">展示内容</view>
+
+      <view class="input-group">
+        <view class="input-label">详细正文</view>
+        <t-textarea
+          placeholder="请输入流程正文说明"
+          value="{{formData.content}}"
+          bind:change="onContentChange"
+          autosize
+          borderless="{{true}}"
+          class="filled-input textarea-input textarea-input--large"
+          maxlength="1000"
+          indicator
+        />
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">配图地址</view>
+        <t-input
+          placeholder="请输入图片 URL 或 cloud fileID"
+          value="{{formData.imageUrl}}"
+          bind:change="onImageUrlChange"
+          borderless="{{true}}"
+          class="filled-input"
+        />
+      </view>
+    </view>
+
+    <view class="form-card">
+      <view class="card-title">扩展信息</view>
+
+      <view class="input-group">
+        <view class="input-label">提示文案</view>
+        <t-textarea
+          placeholder="一行一个提示，也支持逗号分隔"
+          value="{{formData.tipsText}}"
+          bind:change="onTipsChange"
+          autosize
+          borderless="{{true}}"
+          class="filled-input textarea-input"
+          maxlength="500"
+          indicator
+        />
+        <view class="input-helper">会自动拆成 tips 数组，用于详情页提示区展示。</view>
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">关联商品 ID</view>
+        <t-textarea
+          placeholder="一行一个商品 ID，也支持逗号分隔"
+          value="{{formData.productListText}}"
+          bind:change="onProductListChange"
+          autosize
+          borderless="{{true}}"
+          class="filled-input textarea-input"
+          maxlength="500"
+          indicator
+        />
+        <view class="input-helper">详情页会按这些 ID 拉取商品详情并展示。</view>
+      </view>
+
+      <view class="setting-row">
+        <view class="setting-info">
+          <view class="setting-title">启用流程</view>
+          <view class="setting-desc">关闭后该步骤不会在用户侧流程中展示</view>
+        </view>
+        <t-switch
+          value="{{formData.status === 1}}"
+          bind:change="onStatusChange"
+          colors="{{['var(--primary-color)', '#e6e6e6']}}"
+          custom-value="{{[1, 0]}}"
+        />
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-bar">
+    <t-button
+      theme="primary"
+      size="large"
+      block
+      shape="round"
+      class="submit-btn"
+      loading="{{isSubmitting}}"
+      disabled="{{isSubmitting}}"
+      bind:tap="submitForm"
+    >
+      {{isEdit ? '保存流程' : '创建流程'}}
+    </t-button>
+  </view>
+</view>

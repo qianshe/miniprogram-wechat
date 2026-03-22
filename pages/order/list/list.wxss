@@ -494,7 +494,7 @@
   color: var(--text-main);
 }
 
-.amount {
+.order-info .info-row text.amount {
   font-size: 32rpx;
   font-weight: bold;
   color: var(--danger-color);

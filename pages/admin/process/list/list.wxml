@@ -1,10 +1,13 @@
 <view class="admin-process-container">
   <view class="page-header">
-    <view>
+    <view class="header-main">
       <view class="page-title">流程管理</view>
-      <view class="page-subtitle">浏览当前治丧流程步骤与状态</view>
+      <view class="page-subtitle">维护治丧指南的步骤内容、提示与关联商品</view>
     </view>
-    <view class="summary-chip">共 {{total}} 条</view>
+    <view class="header-side">
+      <view class="summary-chip">共 {{total}} 条</view>
+      <t-button theme="primary" size="small" bindtap="createStep">新增流程</t-button>
+    </view>
   </view>
 
   <view class="search-container">
@@ -55,6 +58,25 @@
           <view class="status-pill {{item.status === 1 ? 'status-on' : 'status-off'}}">{{item.statusText}}</view>
           <view class="meta-text">提示 {{item.tips.length}}</view>
           <view class="meta-text">商品 {{item.productList.length}}</view>
+        </view>
+
+        <view class="step-actions">
+          <t-button
+            size="small"
+            theme="default"
+            variant="outline"
+            shape="round"
+            catchtap="editStep"
+            data-id="{{item.id}}"
+          >编辑</t-button>
+          <t-button
+            size="small"
+            theme="danger"
+            variant="text"
+            catchtap="deleteStep"
+            data-id="{{item.id}}"
+            data-title="{{item.title}}"
+          >删除</t-button>
         </view>
       </view>
 

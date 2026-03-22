@@ -129,19 +129,11 @@
             <text>{{item.contactName}}</text>
           </view>
           <view class="info-row">
-            <text class="label">联系电话：</text>
-            <text>{{item.contactPhone}}</text>
-          </view>
-          <view class="info-row">
             <text class="label">服务时间：</text>
             <view class="service-time-block">
-              <text>{{item.serviceTime}}</text>
+              <text class="service-time-text">{{item.serviceTime}}</text>
               <text wx:if="{{item.showServiceUrgencyHint}}" class="service-urgency service-urgency--{{item.serviceUrgencyLevel || 'normal'}}">{{item.serviceUrgencyHint}}</text>
             </view>
-          </view>
-          <view class="info-row">
-            <text class="label">创建时间：</text>
-            <text>{{item.createdTime}}</text>
           </view>
           <view class="info-row">
             <text class="label">服务金额：</text>

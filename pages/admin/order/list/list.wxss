@@ -533,9 +533,16 @@
 
 .service-time-block {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6rpx;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  width: 100%;
+  min-width: 0;
+}
+
+.service-time-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .service-urgency {
@@ -545,6 +552,7 @@
   padding: 4rpx 14rpx;
   border-radius: 999rpx;
   background: #f5eee7;
+  flex-shrink: 0;
 }
 
 .service-urgency--today {

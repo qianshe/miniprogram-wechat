@@ -46,6 +46,7 @@
         "package/list/list",
         "package/edit/edit",
         "process/list/list",
+        "process/edit/edit",
         "user/list/list",
         "assets/images/images",
         "assets/site-info/site-info"
