@@ -5,10 +5,10 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 
-const userJs = read('pages/user/user.js');
-const guardJs = read('pages/admin/common/adminGuard.js');
-const loginJs = read('pages/admin/login/login.js');
-const orderListJs = read('pages/admin/order/list/list.js');
+const userJs = read('miniprogram/pages/user/user.js');
+const guardJs = read('miniprogram/pages/admin/common/adminGuard.js');
+const loginJs = read('miniprogram/pages/admin/login/login.js');
+const orderListJs = read('miniprogram/pages/admin/order/list/list.js');
 
 const toManageMatch = userJs.match(/toManagePage\(\)\s*{([\s\S]*?)\n\s*},/);
 const toManageBody = toManageMatch ? toManageMatch[1] : '';

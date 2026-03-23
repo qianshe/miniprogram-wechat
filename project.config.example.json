@@ -3,9 +3,9 @@
   "appid": "YOUR_WECHAT_APPID_HERE",
   "compileType": "miniprogram",
   "projectname": "miniprogram1",
-  "miniprogramRoot": "",
+  "miniprogramRoot": "miniprogram/",
   "cloudfunctionRoot": "cloudfunctions/",
-  "srcMiniprogramRoot": "",
+  "srcMiniprogramRoot": "miniprogram/",
   "setting": {
     "urlCheck": true,
     "es6": true,

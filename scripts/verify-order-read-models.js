@@ -15,7 +15,7 @@ const {
   getOrderFlowText,
   getPaymentStatusDisplayText,
   shouldShowPaymentStatusTag
-} = require('../config/constants.js');
+} = require('../miniprogram/config/constants.js');
 
 function parsePhaseArg() {
   const args = process.argv.slice(2);

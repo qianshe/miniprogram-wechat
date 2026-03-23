@@ -42,7 +42,7 @@
 ```bash
 cp cloudbaserc.example.json cloudbaserc.json
 cp project.config.example.json project.config.json
-cp config/cloud.config.example.js config/cloud.config.js
+cp miniprogram/config/cloud.config.example.js miniprogram/config/cloud.config.js
 ```
 
 ### 3. 环境变量配置
@@ -81,8 +81,20 @@ npm install --production
 
 ```
 miniprogram1/
-├── api/                          # 前端 API 封装
-├── assets/                       # 静态资源（字体等）
+├── miniprogram/                  # 小程序前端根目录
+│   ├── api/                      # 前端 API 封装
+│   ├── assets/                   # 静态资源（字体等）
+│   ├── components/               # 自定义组件
+│   ├── config/                   # 前端配置文件
+│   ├── custom-tab-bar/           # 自定义底部导航栏
+│   ├── miniprogram_npm/          # 小程序 npm 产物
+│   ├── pages/                    # 页面与分包
+│   ├── services/                 # 前端服务层
+│   ├── utils/                    # 前端工具模块
+│   ├── app.js                    # 小程序入口
+│   ├── app.json                  # 小程序配置
+│   ├── app.wxss                  # 全局样式
+│   └── sitemap.json              # 小程序 sitemap
 ├── cloudbase/                    # CloudBase 配置
 ├── cloudfunctions/               # 云函数
 │   ├── _shared/                  # 云函数共享模块
@@ -94,34 +106,13 @@ miniprogram1/
 │   ├── packageManagement/        # 套餐管理
 │   ├── userDataManagement/       # 用户数据管理
 │   └── wxpaycommon/              # 微信支付通用模块
-├── components/                   # 自定义组件
-│   ├── c-empty/                  # 空状态组件
-│   ├── c-loading/                # 加载组件
-│   ├── c-price/                  # 价格组件
-│   ├── c-quantity-stepper/       # 数量步进器组件
-│   └── product-selector/         # 商品选择器组件
-├── config/                       # 配置文件
-├── custom-tab-bar/               # 自定义底部导航栏
 ├── database/                     # 数据库索引配置
 ├── docs/                         # 项目文档
-├── pages/                        # 页面文件
-│   ├── index_home/               # 启动页
-│   ├── index/                    # 首页
-│   ├── goods/                    # 商品（分类、详情）
-│   ├── order/                    # 服务记录分包（列表、详情、认领、管理员创建）
-│   ├── package/                  # 套餐（列表、详情、联系服务人员）
-│   ├── process/                  # 流程（列表、详情）
-│   ├── user/                     # 用户中心
-│   ├── address/                  # 地址管理
-│   ├── feedback/                 # 意见反馈
-│   ├── scan-result/              # 扫码结果
-│   └── admin/                    # 管理后台（分包）
 ├── rules/                        # CloudBase MCP 规则
 ├── scripts/                      # 构建脚本
-├── utils/                        # 前端工具模块
 ├── cloudbaserc.json              # CloudBase CLI 配置
 ├── project.config.json           # 微信开发者工具配置
-└── app.js                        # 小程序入口
+└── package.json                  # Node.js 脚本与依赖
 ```
 
 ## 页面说明
@@ -178,12 +169,12 @@ miniprogram1/
 
 | 文件路径 | 说明 |
 |----------|------|
-| `config/cloud.config.js` | 云开发环境配置（环境ID等） |
-| `config/api.config.js` | API 配置（集合名、超时时间、分页等） |
-| `config/field-permissions.js` | 字段级权限配置 |
-| `config/assets.config.js` | 静态资源配置 |
-| `config/contact.js` | 联系方式配置 |
-| `config/mock.js` | Mock 数据配置 |
+| `miniprogram/config/cloud.config.js` | 云开发环境配置（环境ID等） |
+| `miniprogram/config/api.config.js` | API 配置（集合名、超时时间、分页等） |
+| `miniprogram/config/field-permissions.js` | 字段级权限配置 |
+| `miniprogram/config/assets.config.js` | 静态资源配置 |
+| `miniprogram/config/contact.js` | 联系方式配置 |
+| `miniprogram/config/mock.js` | Mock 数据配置 |
 | `cloudbaserc.json` | CloudBase CLI 配置 |
 | `project.config.json` | 微信开发者工具配置 |
 
@@ -262,7 +253,7 @@ miniprogram1/
 
 - `cloudbaserc.json` - 包含环境 ID
 - `project.config.json` - 包含 AppID
-- `config/cloud.config.js` - 包含云开发配置
+- `miniprogram/config/cloud.config.js` - 包含云开发配置
 
 ### 管理员密码
 

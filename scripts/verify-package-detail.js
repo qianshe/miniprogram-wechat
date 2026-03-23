@@ -8,9 +8,9 @@ const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 const selectedCaseArg = process.argv.find((arg) => arg.startsWith('--case='));
 const selectedCase = selectedCaseArg ? selectedCaseArg.split('=')[1] : '';
 
-const detailJs = read('pages/package/detail/detail.js');
-const detailWxml = read('pages/package/detail/detail.wxml');
-const detailWxss = read('pages/package/detail/detail.wxss');
+const detailJs = read('miniprogram/pages/package/detail/detail.js');
+const detailWxml = read('miniprogram/pages/package/detail/detail.wxml');
+const detailWxss = read('miniprogram/pages/package/detail/detail.wxss');
 
 const checks = {
   'swipe-delete': {

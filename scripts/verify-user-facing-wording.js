@@ -5,26 +5,26 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 
 const targetFiles = [
-  'pages/index/index.wxml',
-  'pages/index/index.js',
-  'pages/goods/detail/detail.wxml',
-  'pages/goods/detail/detail.js',
-  'pages/package/list/list.wxml',
-  'pages/package/detail/detail.wxml',
-  'pages/package/detail/detail.js',
-  'pages/package/confirm/confirm.wxml',
-  'pages/package/confirm/confirm.js',
-  'pages/user/user.wxml',
-  'pages/user/user.js',
-  'pages/order/list/list.wxml',
-  'pages/order/detail/detail.wxml',
-  'pages/order/detail/detail.js',
-  'pages/order/confirm/confirm.wxml',
-  'pages/order/confirm/confirm.js',
-  'pages/order/user-confirm/user-confirm.wxml',
-  'pages/order/user-confirm/user-confirm.js',
-  'pages/scan-result/scan-result.wxml',
-  'pages/scan-result/scan-result.js'
+  'miniprogram/pages/index/index.wxml',
+  'miniprogram/pages/index/index.js',
+  'miniprogram/pages/goods/detail/detail.wxml',
+  'miniprogram/pages/goods/detail/detail.js',
+  'miniprogram/pages/package/list/list.wxml',
+  'miniprogram/pages/package/detail/detail.wxml',
+  'miniprogram/pages/package/detail/detail.js',
+  'miniprogram/pages/package/confirm/confirm.wxml',
+  'miniprogram/pages/package/confirm/confirm.js',
+  'miniprogram/pages/user/user.wxml',
+  'miniprogram/pages/user/user.js',
+  'miniprogram/pages/order/list/list.wxml',
+  'miniprogram/pages/order/detail/detail.wxml',
+  'miniprogram/pages/order/detail/detail.js',
+  'miniprogram/pages/order/confirm/confirm.wxml',
+  'miniprogram/pages/order/confirm/confirm.js',
+  'miniprogram/pages/order/user-confirm/user-confirm.wxml',
+  'miniprogram/pages/order/user-confirm/user-confirm.js',
+  'miniprogram/pages/scan-result/scan-result.wxml',
+  'miniprogram/pages/scan-result/scan-result.js'
 ];
 
 const forbiddenTerms = [

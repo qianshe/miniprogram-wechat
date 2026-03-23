@@ -9,10 +9,10 @@ const selectedCaseArg = process.argv.find((arg) => arg.startsWith('--case='));
 const selectedCase = selectedCaseArg ? selectedCaseArg.split('=')[1] : '';
 
 const cloudFn = read('cloudfunctions/userDataManagement/index.js');
-const addressApi = read('api/address.js');
-const addressSelection = read('utils/addressSelection.js');
-const addressJs = read('pages/address/address.js');
-const appJson = JSON.parse(read('app.json'));
+const addressApi = read('miniprogram/api/address.js');
+const addressSelection = read('miniprogram/utils/addressSelection.js');
+const addressJs = read('miniprogram/pages/address/address.js');
+const appJson = JSON.parse(read('miniprogram/app.json'));
 const privateInfos = Array.isArray(appJson.requiredPrivateInfos) ? appJson.requiredPrivateInfos : [];
 
 const checks = {
@@ -54,7 +54,7 @@ const checks = {
   'permission-denied': {
     chooseLocationApi: /wx\.chooseLocation\(/.test(addressJs),
     chooseLocationDeclared: privateInfos.includes('chooseLocation'),
-    locationPermissionDeclared: /"scope\.userLocation"\s*:\s*\{/.test(read('app.json')),
+    locationPermissionDeclared: /"scope\.userLocation"\s*:\s*\{/.test(read('miniprogram/app.json')),
     deniedRecognizer: /isLocationAuthDenied\(/.test(addressJs),
     deniedHandler: /handleLocationPermissionDenied\(/.test(addressJs),
     deniedHandlerContainsOpenSetting: /handleLocationPermissionDenied\([\s\S]*?wx\.openSetting\(/.test(addressJs),

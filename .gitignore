@@ -1,5 +1,5 @@
 # 忽略miniprogram_npm文件夹和node_modules文件夹
-miniprogram_npm/
+miniprogram/miniprogram_npm/
 node_modules/
 .idea/
 .vscode/
@@ -24,7 +24,7 @@ project.private.config.json
 
 # 云开发环境配置（包含环境ID等敏感信息）
 cloudbaserc.json
-config/cloud.config.js
+miniprogram/config/cloud.config.js
 
 # 其他敏感/临时文件
 ClaudeCode使用指南.md

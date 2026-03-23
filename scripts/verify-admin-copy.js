@@ -6,9 +6,9 @@ const root = path.resolve(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 
 const files = [
-  'pages/admin/index/index.wxml',
-  'pages/admin/order/list/list.wxml',
-  'config/constants.js'
+  'miniprogram/pages/admin/index/index.wxml',
+  'miniprogram/pages/admin/order/list/list.wxml',
+  'miniprogram/config/constants.js'
 ];
 
 const baselineLabel = '待付款';
@@ -21,7 +21,7 @@ const baselineWxmlHits = wxmlFiles.filter(({ text }) => text.includes(baselineLa
 const targetWxmlHits = wxmlFiles.filter(({ text }) => text.includes(targetLabel)).length;
 
 // Check constants.js for ADMIN_ORDER_TABS only (not user-side labels)
-const constants = contents.find((x) => x.file === 'config/constants.js').text;
+const constants = contents.find((x) => x.file === 'miniprogram/config/constants.js').text;
 const hasBaselineTab = /name:\s*'待付款'/.test(constants);
 const hasTargetTab = /name:\s*'待沟通'/.test(constants);
 

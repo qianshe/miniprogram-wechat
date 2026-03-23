@@ -5,8 +5,8 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 
-const wxml = read('pages/index_home/index_home.wxml');
-const wxss = read('pages/index_home/index_home.wxss');
+const wxml = read('miniprogram/pages/index_home/index_home.wxml');
+const wxss = read('miniprogram/pages/index_home/index_home.wxss');
 const logoBlock = (wxss.match(/\.logo-img\s*{[\s\S]*?}/) || [''])[0];
 const doorBlock = (wxss.match(/\.door\s*{[\s\S]*?}/) || [''])[0];
 

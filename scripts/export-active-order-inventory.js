@@ -7,7 +7,7 @@ const {
   WORKFLOW_MILESTONE,
   getWorkflowMilestone,
   mapLegacyStatusToNew
-} = require('../config/constants.js');
+} = require('../miniprogram/config/constants.js');
 
 function parseArgs() {
   const args = process.argv.slice(2);

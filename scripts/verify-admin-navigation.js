@@ -8,11 +8,11 @@ const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 const selectedCaseArg = process.argv.find((arg) => arg.startsWith('--case='));
 const selectedCase = selectedCaseArg ? selectedCaseArg.split('=')[1] : '';
 
-const navigationUtil = read('pages/order/utils/navigation.js');
-const addressApi = read('api/address.js');
-const orderDetailJs = read('pages/order/detail/detail.js');
-const orderDetailWxml = read('pages/order/detail/detail.wxml');
-const adminOrderListJs = read('pages/admin/order/list/list.js');
+const navigationUtil = read('miniprogram/pages/order/utils/navigation.js');
+const addressApi = read('miniprogram/api/address.js');
+const orderDetailJs = read('miniprogram/pages/order/detail/detail.js');
+const orderDetailWxml = read('miniprogram/pages/order/detail/detail.wxml');
+const adminOrderListJs = read('miniprogram/pages/admin/order/list/list.js');
 
 const checks = {
   'open-map-app': {

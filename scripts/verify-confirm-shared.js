@@ -13,8 +13,8 @@ function readJson(relPath) {
 }
 
 const pageFiles = [
-  'pages/package/confirm/confirm',
-  'pages/order/confirm/confirm'
+  'miniprogram/pages/package/confirm/confirm',
+  'miniprogram/pages/order/confirm/confirm'
 ];
 
 const sharedComponents = {
@@ -34,8 +34,8 @@ pageFiles.forEach((pageBase) => {
   });
 });
 
-const packageJs = read('pages/package/confirm/confirm.js');
-const orderJs = read('pages/order/confirm/confirm.js');
+const packageJs = read('miniprogram/pages/package/confirm/confirm.js');
+const orderJs = read('miniprogram/pages/order/confirm/confirm.js');
 
 assert.ok(packageJs.includes('onSubmitOrder'), 'package confirm should keep onSubmitOrder');
 assert.ok(orderJs.includes('submitOrder'), 'order confirm should keep submitOrder');

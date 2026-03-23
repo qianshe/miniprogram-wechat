@@ -8,7 +8,7 @@ const path = require('path');
 
 const targets = [
   'node_modules/tdesign-miniprogram/miniprogram_dist/icon/icon.wxss',
-  'miniprogram_npm/tdesign-miniprogram/icon/icon.wxss',
+  'miniprogram/miniprogram_npm/tdesign-miniprogram/icon/icon.wxss',
 ];
 
 const OFFICIAL_FONT_FACE = "@font-face{font-family:t;src:url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.eot),url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.eot?#iefix) format('ded-opentype'),url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.woff) format('woff'),url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.ttf) format('truetype'),url(https://tdesign.gtimg.com/icon/0.3.2/fonts/t.svg) format('svg');font-weight:400;font-style:normal;}";

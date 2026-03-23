@@ -6,17 +6,17 @@ const root = path.resolve(__dirname, '..')
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8')
 const exists = (rel) => fs.existsSync(path.join(root, rel))
 
-const appJson = read('app.json')
-const permissionJs = read('utils/permission.js')
-const processListJs = read('pages/admin/process/list/list.js')
-const processListWxml = read('pages/admin/process/list/list.wxml')
-const processEditJs = read('pages/admin/process/edit/edit.js')
+const appJson = read('miniprogram/app.json')
+const permissionJs = read('miniprogram/utils/permission.js')
+const processListJs = read('miniprogram/pages/admin/process/list/list.js')
+const processListWxml = read('miniprogram/pages/admin/process/list/list.wxml')
+const processEditJs = read('miniprogram/pages/admin/process/edit/edit.js')
 
 const checks = {
-  editPageExists: exists('pages/admin/process/edit/edit.js')
-    && exists('pages/admin/process/edit/edit.wxml')
-    && exists('pages/admin/process/edit/edit.json')
-    && exists('pages/admin/process/edit/edit.wxss'),
+  editPageExists: exists('miniprogram/pages/admin/process/edit/edit.js')
+    && exists('miniprogram/pages/admin/process/edit/edit.wxml')
+    && exists('miniprogram/pages/admin/process/edit/edit.json')
+    && exists('miniprogram/pages/admin/process/edit/edit.wxss'),
   appRouteRegistered: /"process\/edit\/edit"/.test(appJson),
   adminPermissionRegistered: /'pages\/admin\/process\/edit\/edit'/.test(permissionJs),
   listHasCreateHandler: /createStep\(\)/.test(processListJs),
