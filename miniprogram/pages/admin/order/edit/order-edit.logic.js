@@ -1,4 +1,4 @@
-const { api, adminApi } = require('../../../../services/api')
+const { api, adminApi } = require('../../../../services/api/index.js')
 const validation = require('../../utils/validation.js')
 const { mapLegacyStatusToNew } = require('../../../../config/constants.js')
 const { getAdminEditOrderState } = require('../../../order/detail/order-edit-state.helper.js')

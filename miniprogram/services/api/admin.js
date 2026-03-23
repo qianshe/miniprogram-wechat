@@ -1,4 +1,4 @@
-const { call } = require('../cloudFunction')
+const { call } = require('../cloudFunction/index.js')
 
 const adminApi = {
   getProducts: (params) => {

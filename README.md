@@ -171,7 +171,6 @@ miniprogram1/
 |----------|------|
 | `miniprogram/config/cloud.config.js` | 云开发环境配置（环境ID等） |
 | `miniprogram/config/api.config.js` | API 配置（集合名、超时时间、分页等） |
-| `miniprogram/config/field-permissions.js` | 字段级权限配置 |
 | `miniprogram/config/assets.config.js` | 静态资源配置 |
 | `miniprogram/config/contact.js` | 联系方式配置 |
 | `miniprogram/config/mock.js` | Mock 数据配置 |
@@ -263,7 +262,6 @@ miniprogram1/
 
 ### 字段级权限控制
 
-- 前端通过 `config/field-permissions.js` 配置字段访问权限
 - 云函数通过 `cloudfunctions/_shared/fieldFilter.js` 实现字段过滤
 - 敏感数据通过 `cloudfunctions/_shared/sensitive.js` 进行脱敏处理
 

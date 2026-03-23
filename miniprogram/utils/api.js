@@ -1,1 +1,1 @@
-module.exports = require('../services/api')
+module.exports = require('../services/api/index.js')

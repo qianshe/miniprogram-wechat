@@ -2,7 +2,7 @@
 const cloudConfig = require('./config/cloud.config.js')
 const errorHandler = require('./utils/errorHandler.js')
 const assetsConfig = require('./config/assets.config.js')
-const { api, adminApi } = require('./services/api')
+const { api, adminApi } = require('./services/api/index.js')
 
 App({
 

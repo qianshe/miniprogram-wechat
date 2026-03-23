@@ -518,7 +518,7 @@ const pageConfig = {
 
   getAdminApi() {
     const app = typeof getApp === 'function' ? getApp() : null
-    return (app && app.globalData && app.globalData.adminApi) || require('../../../../services/api').adminApi
+    return (app && app.globalData && app.globalData.adminApi) || require('../../../../services/api/index.js').adminApi
   }
 }
 
